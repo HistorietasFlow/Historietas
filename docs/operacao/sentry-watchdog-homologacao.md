@@ -1,36 +1,77 @@
 # Homologacao do watchdog Sentry — preparacao, sem ativacao
 
-Base: `main` `cda7e996`, 11/11/2026. O responsavel informou que criou o monitor
-e o alerta Sentry e cadastrou `AGENDAMENTO_SENTRY_CHECKIN_URL` no GitHub.
-Esse relato nao certifica a configuracao do painel, a URL, o recebimento de
-alertas ou uma execucao periodica; nenhum secret foi lido nem check-in enviado.
+Base atual: `main` `aaf693fc`, 11/11/2026. O responsavel informou que criou o
+monitor/alerta Sentry e cadastrou o secret. A execucao real
+[#43089501994](https://github.com/HistorietasFlow/Historietas/actions/runs/43089501994),
+attempt 1, comprova SQL/entrega v2 na mesma main: transporte de teste skipped,
+preflight TLS e etapa v2 success. Criada 19:41:13Z, job 19:41:17Z–19:41:27Z,
+etapa v2 19:41:21Z–19:41:24Z. Os 4 s ate iniciar o job e os 3 s da etapa sao
+uma amostra MANUAL, nao distribuicao de atrasos do schedule nem SLA.
+O responsavel confirmou `AGENDAMENTO_MONITOR_AUTORIZADO=false` apos o ensaio.
+Nao reabrir a auditoria de credenciais; nao ler secrets ou repetir SQL remoto.
+Periodicidade, check-ins reais, incidentes Sentry e recebimento de e-mail ainda
+nao foram homologados. Nenhum check-in foi enviado nesta preparacao.
 
 ## Cadencia preparada
 
-Watchdog: **`*/15 * * * *`, UTC**, aprovado para preparacao. O patch existente
-`agendamento-periodico.patch.example` continua INERTE. Os dois workflows reais
-continuam somente manuais. A cadencia do monitor SQL ainda e um placeholder;
-nao aplicar o patch inteiro nem deduzir que o SQL deve executar a cada 15 minutos.
+Watchdog: **`*/15 * * * *`, UTC**, aprovado para preparacao. Monitor SQL:
+**proposta `10,25,40,55 * * * *`, UTC**, nominalmente cinco minutos antes de cada
+watchdog. Reutiliza os dois workflows existentes e seus locks/gates separados.
+O patch `agendamento-periodico.patch.example` continua INERTE, agora com os
+dois crons concretos. Ambos os workflows reais continuam somente manuais.
+Nem o merge deste documento nem o patch autorizam ativacao.
 
 Validacao local, sem modificar workflows:
 
 ```powershell
-git apply --check --include=.github/workflows/agendamento-watchdog.yml docs/operacao/agendamento-periodico.patch.example
+git apply --check docs/operacao/agendamento-periodico.patch.example
 ```
 
-Depois de autorizacao explicita de ativacao, uma revisao separada devera incluir
-somente esse hunk no workflow do watchdog. Nao remover `--check` nesta fase.
-Aplicar o template ou fazer merge desta preparacao NAO autoriza habilitar gates.
+Depois de autorizacao explicita, uma revisao separada devera incluir os dois
+hunks coordenados. Nao remover `--check` nesta fase. O SQL usa a etapa v2 real
+no evento schedule (input de teste ausente/falso); dispatch continua com teste
+de transporte por default. Isso deve ser conferido na revisao de ativacao.
 Sentry precisa usar o mesmo cron UTC. Margem de 10 min, runtime de 3 min e
 limiares de falha/recuperacao de 1 continuam propostas, a conferir/aprovar no
 painel; somente a cadencia de 15 min foi aprovada aqui. O job limita-se a 2 min.
 
-Sao 96 execucoes/dia, 2.880 em 30 dias e ate 5.760 requests de check-in, mais
-os acessos GitHub existentes e o monitor SQL. Conferir quotas/minutos/slot Sentry
+Sao 96 execucoes/dia POR workflow: 5.760 jobs em 30 dias entre os dois, ate
+11.520 minutos de job pelo teto de 2 min (nao previsao de consumo), e ate 5.760
+requests de check-in do watchdog. Somar GETs GitHub e leituras SQL existentes.
+Nao repetir POST de alerta quando o estado nao mudou. Conferir quotas/minutos/slot Sentry
 antes de ativar; nao implica custo zero certificado. Schedules do GitHub sao
 best-effort e podem atrasar ou ser descartados, especialmente no inicio da hora.
 Nao ha SLA de deteccao de 15 min. Se o deslocamento do cron for desejado,
 alinhar tambem o Sentry em revisao explicita, nao alterar so um dos lados.
+
+### Janela de observacao proposta, ainda nao aprovada
+
+`AGENDAMENTO_MONITOR_MAX_INTERVALO_MS=1800000` (30 min), sem adicionar default
+ao codigo; `AGENDAMENTO_MONITOR_ESPERADO_DESDE` deve ser o inicio UTC da janela
+autorizada, nunca retrodatado para aceitar uma prova antiga. O watchdog mede
+idade da CONCLUSAO da etapa v2, nao do inicio/update do run. Um SQL nominalmente
+5 min anterior ainda pode estar queued; a conclusao anterior pode sustentar a
+prova apenas enquanto fresca. Falha concluida mais recente nao e ocultada por
+sucesso antigo. Um ciclo SQL perdido produz idade nominal de ~20 min; dois,
+~35 min e alerta. Isso aceita explicitamente perda de um ciclo, nao a esconde.
+
+Os 30 min sao proposta de tolerancia a uma perda de 15 min + fase de 5 min +
+2 min de job + folga de 8 min. Nao sao percentil medido nem limite de atraso
+do GitHub. A fase nao garante ordem entre workflows; nao adicionar espera,
+polling, workflow_run ou dependencia que impece o watchdog independente de rodar.
+Margem Sentry de 10 min cobre somente atraso para INICIAR o check-in;
+max_runtime de 3 min cobre o par iniciado. Nao somar essas margens como SLA.
+
+Proposta de ensaio: 72 h (288 oportunidades por workflow), registrar slot UTC,
+created_at, started_at, fim v2, fim do job, attempt, idade SQL, status de entrega,
+incidente/e-mail e recuperacao; sem snapshots/URLs de check-in/credenciais. Medir atrasos e
+lacunas reais, p50/p95/max e filas separadamente da duracao SQL. Slot sem run e
+perda, nao duracao zero. Suspender aprovacao se houver falso ok, entrega nao
+confirmada, lacuna nao detectada ou atraso incompativel com o contrato aprovado;
+nao aumentar a janela automaticamente. Uma observacao finita nao garante SLA.
+Sentry e e-mail tambem podem atrasar ou falhar. Falha conjunta dos provedores
+nao e coberta por uma garantia de entrega; registrar a lacuna, sem criar outra
+testemunha ou um novo servico nesta preparacao.
 
 ## Dependencias e autorizacao verificadas no codigo
 
@@ -42,14 +83,13 @@ alinhar tambem o Sentry em revisao explicita, nao alterar so um dos lados.
 | Janela | `AGENDAMENTO_MONITOR_ESPERADO_DESDE` (instante UTC) e `AGENDAMENTO_MONITOR_MAX_INTERVALO_MS` (intervalo positivo aprovado entre conclusoes SQL). Sem defaults; 15 min do watchdog nao define o intervalo SQL. |
 | Destino GitHub | `AGENDAMENTO_ALERT_ISSUE`: issue aberta aprovada com marcador `<!-- historietas-agendamento-monitor:v1 -->`; token pode comentar, nao precisa PAT extra. |
 | Monitor SQL | Gate independente `AGENDAMENTO_MONITOR_AUTORIZADO=true`, `main`, `psql` disponivel; secrets `AGENDAMENTO_MONITOR_PGHOST` e `AGENDAMENTO_MONITOR_PGPASSWORD`, variable `AGENDAMENTO_MONITOR_PROJECT_REF`. Shared Session pooler, porta 5432, banco postgres, usuario `historietas_agendamento_monitor_login.PROJECT_REF`; TLS `verify-full` e CA oficial versionada/preflight, sem novo secret de CA. |
-| Papel SQL | Grupo original permanece NOLOGIN; migration `20261111155517_identidade_login_monitor_agendamento.sql` prepara LOGIN separado, sem senha, NOINHERIT e somente SET explicito para o grupo do snapshot. Provisionamento autorizado, ACL efetiva e conexao gerenciada continuam pendentes. Ver [requisitos exatos](monitor-sql-login.md); nunca usar postgres/service_role como runtime. |
+| Papel SQL | Grupo permanece NOLOGIN; LOGIN separado NOINHERIT com SET explicito para o snapshot. Conexao real v2 aprovada no run #43089501994; migration nao contem senha. Ver [requisitos](monitor-sql-login.md); nunca usar postgres/service_role como runtime. |
 | Snapshot | Atualizacoes `20261110062820` e `20261110174613` acrescentam recursos e operacoesCache mantendo ACL. Leitura em REPEATABLE READ/READ ONLY com rollback, timeouts 5 s/500 ms/5 s e limite externo 12 s. Nao executa runner, observador mutante, retomada, ACK ou purga. |
 
-O merge das migrations nao comprova sua aplicacao remota. Conferir previamente
-papel, ACL, conectividade/TLS e contrato do snapshot em inventario autorizado,
-sem modificar grants nesta preparacao. Os gates/variaveis/secrets remotos nao
-foram consultados nem alterados. Nao supor autorizacao a partir da existencia
-do secret Sentry. Cron SQL, runner e uploads continuam bloqueados.
+A prova real v2 substitui a pendencia anterior de conexao SQL, nao certifica
+periodicidade ou o painel Sentry. Os gates/variaveis/secrets remotos nao foram
+consultados nem alterados nesta preparacao. Nao supor autorizacao a partir da
+existencia do secret Sentry. Cron SQL, runner e uploads continuam bloqueados.
 
 ## Contrato v2: execucao/entrega separadas da saude
 
@@ -79,48 +119,67 @@ chamador concorrente fora desse contrato. Entrega obsoleta falha tambem no watch
 O bloqueador de contrato foi corrigido; a homologacao remota de recebimento,
 periodicidade e recuperacao ainda exige autorizacao e os pre-requisitos acima.
 
-## Procedimento futuro de homologacao — requer autorizacao propria
+## Matriz de testes controlados
 
-1. Registrar aprovacao, janela, responsavel e destino de e-mail, confirmar
-   limites do plano, cron UTC, margem/runtime/limiares no monitor existente.
-   Se ele ja estiver habilitado no Sentry sem produtor ativo, `missed` pode ser
-   esperado; nao enviaremos sinais artificiais para silencia-lo. Coordenar
-   essa manutencao com o responsavel, sem mudar o painel nesta fase.
-2. Confirmar a versao v2 na main e os pre-requisitos SQL. Realizar leitura autentica
-   com `workflow_dispatch` do monitor, `teste_entrega=false`, somente apos
-   autorizacao para acesso/alerta. Registrar run/attempt/horarios/codigos, nunca
-   stdout SQL, host, senha, token ou URL de check-in. Teste de transporte
-   (`teste_entrega=true`, default) nao renova a prova do banco.
-3. Ativar somente a agenda do watchdog em mudanca futura aprovada. Aguardar
-   evento REAL `schedule`: conferir mesmo `check_in_id` em `in_progress` e
-   `ok`/`error`, e correlacionar conclusao SQL/entrega GitHub. Dispatch manual
-   nao emite check-ins, mesmo que termine verde. Nao exportar variaveis
-   GITHUB_* falsas, chamar a URL diretamente ou usar retry manual como prova.
-4. Falha: numa janela autorizada, suspender apenas novas observacoes do monitor
-   SQL, sem quebrar banco/credenciais ou mexer no runner. Apos a janela aprovada,
-   uma execucao REAL do watchdog deve acusar ausencia/atraso/desativacao e
-   enviar `error`. Confirmar incidente Sentry e recebimento pelo responsavel.
-   Se o estado inicial ja era `error`, isso nao comprova nova transicao nem
-   exige novo e-mail; registrar a limitacao, nao forcar recuperacao.
-5. Ausencia: omitir controladamente a agenda do watchdog, com autorizacao e
-   plano de restauracao, sem mandar check-in. Conferir `missed` apos a margem
-   e recebimento independente do GitHub. Isso prova ausencia do produtor,
-   nao uma indisponibilidade real de toda a infraestrutura GitHub/Sentry.
-   Interrupcao apos `in_progress` deve ser distinguida de `missed` (`timed_out`).
-6. Recuperacao: restaurar exclusivamente as configuracoes autorizadas de
-   monitoramento; exigir nova leitura SQL valida/entrega e proximo `schedule`
-   real. Confirmar recuperacao no Sentry segundo seu limiar, sem reduzir gates
-   de saude. Alertas operacionais podem permanecer ativos durante essa
-   recuperacao do transporte; nao os declarar resolvidos. Sem prova real,
-   marcar a homologacao PENDENTE.
-7. Encerrar o ensaio com estado de agendas/gates registrado e conforme a
-   autorizacao, mantendo runner/Cron SQL/publicacao/uploads desativados. Nao
-   apagar incidentes, eventos ou recibos. Se a homologacao falhar, suspender
-   a ativacao operacional; nunca mascarar os alertas.
+| Caso | Prova local sem rede remota | Homologacao futura autorizada e criterio |
+| --- | --- | --- |
+| Sucesso | Wrapper + watchdog exigem etapa v2 exata, mesma tentativa, frescor e entrega | SQL REAL recente/entrega confirmada seguido de schedule REAL; mesmo ID in_progress/ok; alertas de saude continuam presentes |
+| Falha SQL/entrega | Timeout/JSON/identidade/contrato invalidos, HTTP 503 e resposta perdida nunca geram ok | Primeiro omitir novas leituras SQL pelo gate do monitor; nao danificar credenciais/banco. Falha SQL real so conta se ocorrer/capturada legitimamente; nao inventar incidente remoto |
+| Execucao ausente | Ausencia/obsolescencia/desativacao falham fechadas | Suspender apenas watchdog numa janela; nenhum check-in; Sentry missed + e-mail apos margem. Diferenciar ausencia de toda a plataforma (nao simulada) |
+| Timeout | Erro/aborto SQL rejeita prova; falha no check-in final nao certifica recebimento | Cancelar job REAL somente depois de confirmar in_progress no Sentry; exigir ausencia de final e timed_out apos max_runtime. Se ja acabou, ensaio inconclusivo, nao enviar check-in avulso nem repetir indiscriminadamente |
+| Recuperacao | Novo par/novo ID, SQL fresco e entrega; erro anterior nao pode ser mascarado | Restaurar SOMENTE monitoramento autorizado, nova prova SQL + proximo schedule real; Sentry recupera segundo limiar; nao limpar alertas operacionais |
+| E-mail | Transportes sinteticos/loopback nao provam recebimento | Responsavel confirma incidente e recebimento, horarios e recuperacao no painel; registrar confirmacao sem copiar mensagem com URL/secret/dados pessoais |
+
+O timeout do PRODUTOR SQL e diferente de timed_out do watchdog no Sentry.
+Cancelar antes de in_progress testa ausencia, nao runtime. A janela curta pode
+impedir cancelamento manual; se nao for reproduzivel, manter timed_out pendente
+ou planejar ensaio seguro separado, nunca atrasar o workflow de producao para
+fabricar prova. O codigo atual nao possui um modo de injetar falhas em producao.
+
+Testes de transporte manuais podem invalidar temporariamente a prova mais
+recente (intencional: a etapa SQL fica skipped). Durante o ensaio periodico,
+nao os intercalar; se necessarios, registrar que NAO renovam o banco e exigir
+uma nova execucao real v2 antes de declarar recuperacao. Nao enviar sinais
+artificiais para silenciar missed enquanto o monitor SQL esta desautorizado.
+
+## Acoes administrativas restantes — nenhuma executada aqui
+
+1. Aprovar cadencia SQL, janela 30 min, ensaio 72 h, responsavel/horario de
+   retorno e tolerancias Sentry (cron UTC aprovado, margem 10 min, runtime
+   3 min, falha/recuperacao 1). Conferir no monitor/alerta EXISTENTES o destino
+   e-mail, nao silenciado, ambiente correto, quotas e custos; nao criar outro.
+2. Aprovar uma mudanca separada que aplique o patch inerte na main. Conferir
+   diff de ambos os workflows, input real, gates e secrets existentes, sem
+   alterar senha, TLS, monitor SQL ou contrato v2. Antes de ativar o watchdog,
+   conferir no Sentry que nao existe incidente preexistente confundindo ensaio.
+3. Na janela autorizada, definir ESPERADO_DESDE/intervalo e habilitar somente
+   AGENDAMENTO_MONITOR_AUTORIZADO; aguardar primeira prova v2 criada depois do
+   inicio aprovado. So entao habilitar AGENDAMENTO_WATCHDOG_AUTORIZADO, sem
+   aceitar o run manual antigo como heartbeat. Registrar estado inicial/final.
+   Hoje o primeiro permanece false por relato do responsavel.
+4. Coletar prova periodica/alertas conforme matriz. Habilitar schedules exige
+   aprovacao propria; nao autoriza Cron SQL, runner, publicacao ou uploads.
+5. Ao encerrar, restaurar gates/agendas conforme autorizacao. Se falhar, manter
+   ativacao suspensa e incidentes preservados. Nao tratar ok de transporte como
+   certificacao de capacidade fisica, WAL ou agendamento automatico.
+
+Links administrativos: [variables GitHub](https://github.com/HistorietasFlow/Historietas/settings/variables/actions),
+[monitor SQL](https://github.com/HistorietasFlow/Historietas/actions/workflows/agendamento-monitor.yml)
+e [watchdog](https://github.com/HistorietasFlow/Historietas/actions/workflows/agendamento-watchdog.yml).
+Usar o monitor Sentry ja cadastrado em Insights/Crons e sua regra de alerta,
+sem copiar a URL de check-in. Nao e necessario cadastrar novos secrets.
+
+Se o Sentry estiver habilitado sem produtor ativo, missed pode ser esperado;
+coordenar manutencao autorizada, nunca silenciar com check-ins artificiais.
+Cada caso da matriz comeca com estado inicial registrado e recuperacao real
+antes do proximo. Incidente ja aberto nao comprova uma nova transicao nem
+obriga outro e-mail; marcar essa prova inconclusiva, nao forcar recuperacao.
+Dispatch manual continua proibido como prova de Sentry: nao exportar GITHUB_*
+falsos, chamar a URL diretamente ou usar retry manual para fabricar schedule.
 
 Testes automatizados usam somente fixtures sinteticas e transporte simulado
 ou loopback; comprovam selecao de prova, erros, correlacao e isolamento manual,
 nao entrega Sentry/e-mail ou disponibilidade do banco gerenciado.
 
-Fontes: [GitHub: atrasos e descarte de schedules](https://docs.github.com/en/actions/how-tos/troubleshoot-workflows),
+Fontes: [GitHub: atrasos, descarte e desativacao de schedules](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule),
 [Sentry: inicio/fim e timeout](https://www.sentry.help/en/articles/13963932-why-are-my-cron-monitors-marked-as-timed-out).

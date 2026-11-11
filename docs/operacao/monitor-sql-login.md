@@ -131,10 +131,14 @@ Linux: CA correta aceita; CA ausente/invalida e hostname errado rejeitados.
 O psql parou em `no password supplied`, sem executar SQL remoto. Isso nao
 certifica autenticacao nem a perna interna pooler/Postgres.
 
-Permanecem pendentes: provisionamento autorizado, autenticacao do LOGIN no
-Supavisor gerenciado, execucao psql no runner efetivo, execucao real v2,
-entrega de alerta/check-in e homologacao de ausencia/falha/recuperacao. Nenhum
-teste sintetico ou local e apresentado como essa homologacao operacional.
+Atualizacao 11/11/2026: a execucao real
+[#43089501994](https://github.com/HistorietasFlow/Historietas/actions/runs/43089501994)
+na main `aaf693fc` aprovou preflight/etapa v2, com transporte sintetico skipped.
+Comprova autenticacao, identidade/read-only/snapshot e entrega pelo contrato v2.
+Nao repetir provisionamento nem auditoria de senha. O responsavel confirmou
+AGENDAMENTO_MONITOR_AUTORIZADO=false ao terminar. Periodicidade, check-ins e
+ausencia/falha/recuperacao Sentry/e-mail seguem pendentes; consultar o plano
+`sentry-watchdog-homologacao.md`. Nenhum teste local substitui essas provas.
 
 Fontes: [Supabase: conexoes e pooler](https://supabase.com/docs/guides/database/connecting-to-postgres),
 [Supabase: papeis e logins](https://supabase.com/docs/guides/database/postgres/roles),
