@@ -169,5 +169,9 @@ test('workflows sem schedule, com gates distintos e main; watchdog nunca recebe 
     ['AGENDAMENTO_SENTRY_CHECKIN_URL']);
   assert.match(monitor,/if: inputs.teste_entrega/);assert.match(monitor,/if: \$\{\{ !inputs.teste_entrega \}\}/);
   const template=read('../../docs/operacao/agendamento-periodico.patch.example');
-  assert.match(template,/__CADENCIA_MONITOR_UTC_APROVADA__/);assert.match(template,/__CADENCIA_WATCHDOG_UTC_APROVADA__/);
+  assert.match(template,/__CADENCIA_MONITOR_UTC_APROVADA__/);
+  const watchdogPatch=template.split('diff --git a/.github/workflows/agendamento-watchdog.yml')[1];
+  assert.equal((watchdogPatch.match(/^\+    - cron:/gm)??[]).length,1);
+  assert.match(watchdogPatch,/^\+    - cron: '\*\/15 \* \* \* \*'$/m);
+  assert.doesNotMatch(watchdogPatch,/__CADENCIA_|agendamento-monitor\.yml/);
 });

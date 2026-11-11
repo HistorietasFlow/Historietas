@@ -46,6 +46,13 @@ test('saude valida, sem inferir sucesso de uma resposta vazia',()=>{
   for(const value of [null,{}, {...snapshot(),saude:{}}, {...snapshot(),ultimaExecucaoCron:{estado:'inventado'}}])
     assert.deepEqual(classifySnapshot(value,now).codigos,['CONTRATO_INVALIDO']);
 });
+
+test('runner desativado e capacidade nao certificada impedem homologacao verde, mesmo com snapshot valido',()=>{
+  const value=snapshot();value.saude.habilitado=false;
+  assert.deepEqual(classifySnapshot(value,now).codigos,expected(['RUNNER_DESATIVADO']));
+  value.saude.habilitado=true;
+  assert.deepEqual(classifySnapshot(value,now).codigos,capacityWarnings);
+});
 test('relogio divergente e evidencia antiga nao confirmam funcionamento',()=>{
   assert.deepEqual(classifySnapshot(snapshot(),now+61000).codigos,['RELOGIO_DIVERGENTE']);
   const s=snapshot();s.saude.ultimaObservacao=new Date(now-181000).toISOString();s.ultimaExecucaoCron.fim=s.saude.ultimaObservacao;

@@ -2,6 +2,18 @@
 
 Atualizado em: 2026-11-09
 
+### Sentry/watchdog — preparacao de homologacao, 11/11/2026
+
+Base `cda7e996`. Responsavel confirmou criacao de monitor/alerta Sentry e secret
+GitHub; nao inspecionados nem usados nesta etapa. Cadencia aprovada de 15 min UTC
+registrada somente no patch inerte; workflows reais continuam manuais.
+Monitor SQL depende de papel NOLOGIN provisionado separadamente, TLS, gates e
+janela de observacao aprovada. Alertas de capacidade e runner desativado fazem
+a etapa SQL falhar: recuperacao `ok` real continua bloqueada pelo contrato atual,
+nao deve ser simulada nem obtida habilitando publicacao. Ver
+`docs/operacao/sentry-watchdog-homologacao.md` e
+`DESBLOQUEIO_OPERACIONAL_AGENDAMENTO.md`. Nenhum check-in, schedule ou gate ativado.
+
 ### Agendamento — fase 6B3, freios privados sem ativacao
 
 Migration `20261109215507_protecao_capacidade_outbox_capitulos.sql`: limite
