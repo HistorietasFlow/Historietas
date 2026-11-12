@@ -1,5 +1,39 @@
 # Problemas conhecidos e soluções
 
+## QA do Leitor: cópia oculta do streaming não é o leitor ativo
+
+A CI `43269859618` (#2275) registrou strict mode em `chapter-canonical` na
+primeira abertura: dois `span[data-historietas-i18n-ignore]` com o mesmo texto.
+O retry passou, mas isso não explicava a causa. Não houve artefato de DOM/trace
+da tentativa flaky entre os artefatos publicados dessa execução.
+
+Inspeção local na main `e96f677f`, com MutationObserver no Chromium e build de
+produção de código equivalente, capturou os dois spans: um visível em
+`main[data-historietas-ler-capitulo-root="true"] > section > article > p`,
+outro em árvore equivalente sob `div#S:1[hidden]`, com `display:none`.
+Após a confirmação pública HTTP 200 havia exatamente um Leitor visível.
+Isso comprova a fragilidade do seletor global diante do streaming, não dois
+leitores simultaneamente ativos nem defeito de conteúdo da aplicação.
+
+O cenário de histórico agora registra uma nova requisição de
+`/api/leitura-publica` antes de cada ação, filtra slug/número e acompanha a
+resposta daquele objeto Request (não uma resposta antiga). Confere HTTP 200,
+estado público e identidade, depois uma única raiz visível, sem aria-busy,
+URL, título e texto exatos em 1 → 2 → Voltar → Avançar. A cópia oculta
+controlada reproduz deterministicamente a ambiguidade; uma cópia visível
+controlada confirma que o seletor encontra ambas e não escolhe uma arbitrária.
+Os testes separados de SSR, metadata, 404, query conflitante e IDs internos
+permanecem intactos. Não generalizar esse filtro a verificações de HTML inicial.
+
+Validação local final: arquivo completo 7/7, workers=1/retries=0, desktop/mobile,
+contra next start (12,0s). A primeira rodada de implementação ficou 5/7:
+o novo seletor exato omitia a seta do nome real `Próximo capítulo →`; corrigido
+pelo snapshot, sem mudar timeout/retry. Lint focado e diff check aprovados.
+O Storage do descartável excedeu a saúde de inicialização; a rodada usou apenas
+Database/Auth/Data API, sem testar Storage/Realtime. Build/lockfiles/aplicação
+idênticos à main foram reutilizados; suíte ampla fica para a CI. Uma rodada
+verde não garante ausência absoluta de instabilidade. Nenhuma mudança funcional.
+
 ## TLS do monitor SQL: raiz privada Supabase nao confiada pelo sistema
 
 Em 11/11/2026, negociacao sem credenciais no Session Pooler falhou com
