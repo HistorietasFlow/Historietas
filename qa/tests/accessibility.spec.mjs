@@ -112,27 +112,42 @@ for (const dispositivo of ["desktop", "mobile"]) {
   });
 }
 
-test("capítulo público canônico integra o baseline axe após hidratar o leitor", async ({
-  page,
-}) => {
-  test.skip(
-    !publicWorkSlug,
-    "Prepare a obra e o capítulo públicos no Supabase local descartável.",
-  );
+for (const dispositivo of ["desktop", "mobile"]) {
+  test(`capítulo público canônico integra o baseline axe após hidratar o leitor (${dispositivo})`, async ({
+    page,
+  }) => {
+    test.skip(
+      !publicWorkSlug,
+      "Prepare a obra e o capítulo públicos no Supabase local descartável.",
+    );
 
-  const rota = `/obra/${encodeURIComponent(publicWorkSlug)}/capitulo/1`;
-  await page.goto(rota, { waitUntil: "domcontentloaded" });
+    const rota = `/obra/${encodeURIComponent(publicWorkSlug)}/capitulo/1`;
+    await page.setViewportSize(dispositivo === "mobile"
+      ? { width: 390, height: 844 } : { width: 1440, height: 900 });
+    const confirmacao = page.waitForResponse(response => {
+      const url = new URL(response.url());
+      return url.pathname === "/api/leitura-publica" &&
+        url.searchParams.get("slug") === publicWorkSlug && url.searchParams.get("numero") === "1";
+    });
+    await page.goto(rota, { waitUntil: "domcontentloaded" });
+    expect((await confirmacao).status()).toBe(200);
 
-  const main = page.locator('[data-historietas-ler-capitulo-root="true"]');
-  await expect(page.getByRole("heading", { name: "Capítulo 1" })).toBeVisible();
-  await expect(
-    page.getByText(
-      "Este capítulo existe somente no ambiente local descartável dos testes E2E.",
-    ),
-  ).toBeVisible();
-  await expect(main).not.toHaveAttribute("aria-busy", "true");
-  await esperarAxeSemViolacoesCriticas(page, rota);
-});
+    // Não confundir o texto do SSR oculto com o Leitor hidratado, nem aceitar duas raízes ativas.
+    const main = page.locator('main[data-historietas-ler-capitulo-root="true"]:visible');
+    await expect(main).toHaveCount(1);
+    await expect(main).not.toHaveAttribute("aria-busy", "true");
+    await expect(page.locator("main:visible")).toHaveCount(1);
+    await expect(main.getByRole("heading", { name: "Capítulo 1", exact: true })).toBeVisible();
+    await expect(
+      main.getByText(
+        "Este capítulo existe somente no ambiente local descartável dos testes E2E.",
+        { exact: true },
+      ),
+    ).toBeVisible();
+    await expect(main).not.toHaveAttribute("aria-busy", "true");
+    await esperarAxeSemViolacoesCriticas(page, rota);
+  });
+}
 
 for (const dispositivo of ["desktop", "mobile"]) {
   test(`Comunidade integra o baseline axe após carregar o feed público (${dispositivo})`, async ({ page }) => {

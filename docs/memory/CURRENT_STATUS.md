@@ -2,6 +2,31 @@
 
 Atualizado em: 2026-11-12
 
+### QA — CI da #2281, raízes públicas durante streaming
+
+CI `43323946415`, job `131551528152`: 171 passes, uma falha definitiva em
+`smoke-routes.spec.mjs:106` (main global ambíguo nas três tentativas) e duas
+falhas recuperadas no retry: texto global do Leitor no axe e timeout de
+`Acesso negado` no histórico administrativo. Os 14 testes dos indicadores
+passaram. Banco/integrações/preparo passaram; Lighthouse/k6/ZAP posteriores
+não executaram. Os três arquivos envolvidos eram idênticos à base `40a5d759`.
+
+Smoke original passou na única tentativa local; isso não prova estabilidade.
+MutationObserver no build da PR capturou, desktop/mobile, loading visível junto
+da Obra/Leitor sob `div#S:*[hidden]`, incluindo cópia oculta do texto após a
+resposta pública. HTTP 200 e apenas uma raiz visível confirmada ao estabilizar:
+evidência de seletor amplo/transição, não de duas páginas ativas da aplicação.
+QA agora aguarda Obra confirmada, sem busy/inert; axe usa texto/título do Leitor
+visível único após a resposta pública correspondente. Confere também um único
+main visível, sem aceitar duplicação ativa; axe continua na página inteira.
+
+Validação afetada: 6/6 Playwright, workers=1/retries=0, smoke Obra e axe Leitor
+desktop/mobile, smoke capítulo e teste administrativo intacto. Lint focado e
+diff check aprovados. Build da PR reutilizado, apenas QA alterado; sem repetir
+as suítes de banco ou os 14 testes dos indicadores já verdes na CI. Timeout
+administrativo não reproduzido, causa ainda inconclusiva, sem atribuir ao
+ambiente ou aos indicadores nem alterar autorização/fixture por suposição.
+
 ### Explorar — filtros selecionados e remoção individual
 
 Indicadores compactos acima dos resultados mostram somente formato, tag
