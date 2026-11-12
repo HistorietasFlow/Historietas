@@ -2,6 +2,31 @@
 
 Atualizado em: 2026-11-12
 
+### Prévia integral de capítulos de texto
+
+Adicionar/Editar já possuíam prévia local, mas limitada visualmente a duas
+linhas, inclusive no desktop. O painel existente agora permite expandir e
+recolher o corpo completo com teclado e estado acessível, preservando parágrafos
+e espaços internos como no Leitor (`pre-wrap`, texto simples escapado).
+A prévia usa somente o buffer do formulário: não salva, publica, consulta ou
+altera o capítulo remoto. A expansão é local à obra/capítulo e o modo compacto
+continua sendo o inicial. Conteúdo autoral do corpo não é traduzido pelo bridge.
+Sem mudanças em rascunhos, RLS, agendamento, Leitor ou capítulos ilustrados.
+A prévia da criação inicial de obra (`/publicar`) continua resumindo o arquivo
+importado; não foi ampliada nesta alteração de Adicionar/Editar capítulo.
+Validação: quatro cenários novos Playwright passaram no build de produção local,
+desktop/mobile, workers=1/retries=0, com axe, teclado, EN/ES, texto literal,
+ausência de consultas adicionais e rascunho privado inalterado na Data API.
+Audit de produção, Lint, Typecheck, Build, gates static/pagination/session e
+antispam local passaram. As suítes Node dos gates rodaram em série por memória.
+Limitações independentes: paginação integrada voltou a atingir statement timeout
+na segunda página de comentários da Comunidade, já registrado neste descartável.
+O fluxo E2E longo de publicar/editar/excluir excedeu 45s (menu do painel consumiu
+14,7s na execução instrumentada); no build anterior, de código equivalente à
+main, esse fluxo falhou antes da prévia, no login. Isso não comprova causa comum
+nem autoriza declarar a regressão ampla aprovada. Nenhum timeout, retry,
+asserção ou fluxo de produção foi alterado para obter aprovação.
+
 ### Painel do autor — conversas sem resposta
 
 O menu da obra publicada passa a oferecer `Ver comentários`, reutilizando
