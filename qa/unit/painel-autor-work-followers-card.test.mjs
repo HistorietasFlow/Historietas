@@ -4,6 +4,7 @@ import test from "node:test";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import typescript from "typescript";
+import "./painel-autor-draft-chapters.test.mjs";
 
 const source = readFileSync(
   new URL("../../app/painel-autor/components/painel-autor-work-card.tsx", import.meta.url),
@@ -16,7 +17,10 @@ const javascript = typescript.transpileModule(source, {
     jsx: typescript.JsxEmit.React,
   },
 }).outputText;
-const Link = ({ children, ...props }) => React.createElement("a", props, children);
+const Link = ({ children, prefetch, ...props }) => {
+  if (prefetch !== undefined) assert.equal(prefetch, false);
+  return React.createElement("a", props, children);
+};
 const styles = new Proxy({}, { get: () => ({}) });
 const dependencies = {
   "next/link": { __esModule: true, default: Link },
@@ -102,5 +106,29 @@ test("opções da obra publicada reutilizam o deep link de comentários em deskt
       }));
       assert.match(html, /href="\/obra\/obra-teste\?comentarios=1"[^>]*>Ver comentários<\/a>/);
     }
+  } finally { acoesAbertasNoTeste = false; }
+});
+
+test("rascunhos confirmados: indicação, destino e Editar capítulo preservado, sem prefetch", () => {
+  acoesAbertasNoTeste = true;
+  try {
+    for (const isDesktop of [false, true]) {
+      for (const rascunhosConfirmados of [undefined, { total: 0, primeiro: null },
+        { total: 1, primeiro: { id: "rascunho-7", titulo: "Capítulo em rascunho muito longo" } },
+        { total: 2, primeiro: { id: "rascunho-7", titulo: "Capítulo em rascunho muito longo" } }]) {
+        const html = renderToStaticMarkup(React.createElement(ObraPainelCard, {
+          obra: { id: "obra-1", titulo: "Obra publicada", autor: "Autora", publicado: true,
+            capitulos: [{ id: "publicado-1", publicado: true }], ultimoCapituloLido: null,
+            visualizacoes: 0, totalCurtidas: 0, totalComentarios: 0, totalSalvos: 0, totalSeguidores: 0 },
+          rascunhosConfirmados, isDesktop, onAbrirArquivo: () => {}, onCompartilhar: () => {}, onExcluirObra: () => {},
+        }));
+        assert.match(html, /capituloId=publicado-1[^>]*>Editar capítulo/);
+        if (!rascunhosConfirmados) assert.doesNotMatch(html, /em rascunho|Continuar rascunho/);
+        else assert.ok(html.includes(`${rascunhosConfirmados.total} ${rascunhosConfirmados.total === 1 ? "capítulo" : "capítulos"} em rascunho`));
+        if (rascunhosConfirmados?.primeiro) assert.match(html, /capituloId=rascunho-7[^>]*>Continuar rascunho — Capítulo em rascunho muito longo/);
+        else assert.doesNotMatch(html, /Continuar rascunho/);
+      }
+    }
+    assert.match(source, /href=\{`\/editar-capitulo\?obraId=\$\{encodeURIComponent\(obra.id\)\}&capituloId=\$\{encodeURIComponent\(rascunhosConfirmados.primeiro.id\)\}`\}\s+prefetch=\{false\}/);
   } finally { acoesAbertasNoTeste = false; }
 });

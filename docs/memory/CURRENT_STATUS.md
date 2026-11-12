@@ -2,6 +2,43 @@
 
 Atualizado em: 2026-11-12
 
+### Painel do autor — continuar capítulos em rascunho
+
+Cards mostram a quantidade de capítulos em rascunho, separada do status da
+obra, apenas após paginação remota concluída e no contexto de identidade atual.
+O menu oferece `Continuar rascunho — título`, na rota existente de edição,
+para o primeiro `publicado=false` na ordem remota (obra/ordem/ID), sem inferir
+número pela posição. `Editar capítulo` continua apontando ao primeiro capítulo.
+Sem novas consultas, textos adicionais, RPCs, persistência ou prefetch do atalho.
+Mapa transitório separado das obras/cache: fallback, falha parcial, propriedade
+ou publicado desconhecidos não certificam zero; mudança de contexto e cleanup
+descartam confirmações antigas. Legados e obras/capítulos locais são preservados.
+Não publicado não significa não agendado; abrir o editor não altera o agendamento.
+
+Validação: 38/38 unitários focados (incluídos no gate de sessão existente),
+Playwright 4/4 em build de produção local, desktop/mobile, workers=1/retries=0,
+com teclado, PT/EN/ES, título longo, overflow, axe e falha remota com fallback.
+Consulta existente de capítulos: uma por carga na fixture; nenhuma adicional
+ao abrir opções/mostrar indicação. Texto, publicação e timestamp persistidos
+permaneceram intactos após abrir a edição. Lint focado, Typecheck e Build
+aprovados; suíte ampla permanece para a CI. Somente Supabase descartável 58421,
+Database/Auth/Data API; Storage/Realtime não foram homologados nesta tarefa.
+Confirmação é do carregamento atual, não acompanhamento em tempo real de
+edições em outra aba/dispositivo. Sem mudanças em schema/RLS ou produção.
+
+Correção QA da #2278: a CI `43302563475` teve uma única falha no gate de
+sessão (1490/1491), em `painel-autor-work-merge-utils.test.mjs:84`. A asserção
+exigia retorno direto da função de mesclagem; o agregador agora guarda o mesmo
+resultado para emitir a confirmação transitória antes de devolvê-lo. Reprodução
+local confirmou essa divergência estrutural, não uma falha funcional ou de Storage.
+Teste atualizado sem remover a garantia de delegação; regressão executável
+verifica uma única mesclagem, parâmetros, identidade do objeto retornado e
+confirmação posterior, preservando falha/fallback/sessão. Aplicação inalterada.
+Node 22.23.4: afetados 8/8; `npm run test:session` completo aprovado, incluindo
+pre/post (387 + 1491 + 140 = 2018/2018), sem skips/retries; Lint focado e diff
+check aprovados. Banco/Playwright não executaram na CI interrompida e não foram
+repetidos nesta correção exclusivamente QA; validação ampla permanece para a CI.
+
 ### QA — navegação do Leitor canônico
 
 Ambiguidade da CI `43269859618` investigada sem alterar o Leitor. Inspeção
