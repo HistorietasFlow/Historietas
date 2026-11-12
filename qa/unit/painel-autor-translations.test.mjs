@@ -57,6 +57,17 @@ test("traduz contagem singular/plural e somente o controle de continuar rascunho
   }
 });
 
+test("traduz novo filtro e cobertura limitada em PT/EN/ES sem traduzir conteúdo autoral", () => {
+  for (const texto of ["Com capítulos em rascunho", "Confirmação de rascunhos limitada",
+    "Exibimos somente obras com capítulos em rascunho confirmados nesta atualização. Outras obras podem não ter sido confirmadas."]) {
+    assert.equal(traduzirTextoPainelAutor(texto, "pt-BR"), texto);
+    for (const idioma of ["en", "es"]) {
+      assert.equal(traduzirTextoPainelAutor(texto, idioma), PAINEL_AUTOR_UI_TRANSLATIONS[texto][idioma]);
+      assert.notEqual(traduzirTextoPainelAutor(texto, idioma), texto);
+    }
+  }
+});
+
 test("exporta a tabela integral e o helper de traduções do Painel do Autor", () => {
   assert.match(translations, /export type PainelAutorTranslationEntry = \{/);
   assert.match(translations, /export const PAINEL_AUTOR_UI_TRANSLATIONS/);

@@ -176,6 +176,7 @@ test("opções de filtro preservam valores, rótulos e ordem", () => {
     { valor: "todas", rotulo: "Todas as obras" },
     { valor: "publicadas", rotulo: "Publicadas" },
     { valor: "rascunhos", rotulo: "Rascunhos" },
+    { valor: "com-rascunhos", rotulo: "Com capítulos em rascunho" },
     { valor: "sem-capitulos", rotulo: "Sem capítulos" },
     { valor: "favoritas", rotulo: "Na lista" },
     { valor: "concluidas", rotulo: "Concluídas" },
@@ -266,6 +267,52 @@ test("filtragem preserva todas as ordenações", () => {
     filtrarObras({ ordenacao: "progresso" }).map((obra) => obra.id),
     ["concluida", "publicada", "rascunho"],
   );
+});
+
+test("capítulos em rascunho dependem somente do mapa confirmado, nunca do status ou cache", () => {
+  const obras = obrasParaFiltrar.map(obra => ({ ...obra, capitulos: [{ titulo: "Cache", publicado: false }] }));
+  const antes = structuredClone(obras);
+  const rascunhosConfirmados = new Map([
+    ["publicada", { total: 2, primeiro: { id: "remoto-7", titulo: "Remoto" } }],
+    ["rascunho", { total: 0, primeiro: null }],
+  ]);
+  const opcoes = { obrasComMetricas: obras, filtro: "com-rascunhos", rascunhosConfirmados };
+  assert.deepEqual(filtrarObras(opcoes).map(obra => obra.id), ["publicada"]);
+  assert.deepEqual(filtrarObras({ ...opcoes, rascunhosConfirmados: undefined }), []);
+  assert.deepEqual(filtrarObras({ ...opcoes, rascunhosConfirmados: new Map() }), []);
+  assert.deepEqual(obras, antes);
+  assert.equal(rascunhosConfirmados.get("publicada").primeiro.id, "remoto-7");
+
+  const obraRascunho = { ...obrasParaFiltrar[1], capitulos: [{ titulo: "Publicado", publicado: true }] };
+  assert.deepEqual(filtrarObras({ obrasComMetricas: [obraRascunho], filtro: "com-rascunhos",
+    rascunhosConfirmados: new Map([["rascunho", { total: 0, primeiro: null }]]) }), []);
+  for (const total of [1, 3]) {
+    assert.deepEqual(filtrarObras({ ...opcoes, rascunhosConfirmados: new Map([
+      ["rascunho", { total, primeiro: { id: "rascunho-1", titulo: "Rascunho" } }],
+    ]) }).map(obra => obra.id), ["rascunho"]);
+  }
+});
+
+test("novo filtro combina busca e ordenação sem alterar opções antigas ou referências", () => {
+  const rascunhosConfirmados = new Map(obrasParaFiltrar.map(obra => [obra.id, { total: 1, primeiro: null }]));
+  assert.deepEqual(filtrarObras({ filtro: "com-rascunhos", rascunhosConfirmados, busca: "ficcao", ordenacao: "titulo" }).map(obra => obra.id), ["publicada"]);
+  for (const ordenacao of ORDENACOES_PAINEL.map(opcao => opcao.valor)) {
+    assert.deepEqual(filtrarObras({ filtro: "com-rascunhos", rascunhosConfirmados, ordenacao }), filtrarObras({ ordenacao }));
+  }
+  for (const filtro of FILTROS_PAINEL.map(opcao => opcao.valor).filter(valor => valor !== "com-rascunhos")) {
+    assert.deepEqual(filtrarObras({ filtro }), filtrarObras({ filtro, rascunhosConfirmados }));
+  }
+  assert.strictEqual(filtrarObras({ filtro: "com-rascunhos", rascunhosConfirmados, busca: "aventura" })[0], obrasParaFiltrar[0]);
+  assert.deepEqual(filtrarObras({ filtro: "com-rascunhos", rascunhosConfirmados, busca: "inexistente" }), []);
+});
+
+test("confirmação participa da memoização sem filtrar o resumo geral; cobertura ausente tem aviso e limpeza", () => {
+  assert.match(pagina, /obterObrasFiltradasPainel\(\{[^}]*rascunhosConfirmados,[^}]*\}\),\s*\[[^\]]*rascunhosConfirmados,/);
+  assert.match(pagina, /obterResumoMetricasPainel\(obrasComMetricas\)/);
+  assert.match(pagina, /const confirmacaoRascunhosLimitada = filtro === "com-rascunhos" &&\s*\(!rascunhosConfirmados \|\| obrasComMetricas\.some\(obra => !rascunhosConfirmados\.has\(obra\.id\)\)\)/);
+  assert.match(pagina, /confirmacaoRascunhosLimitada && \([\s\S]*?role="status"[\s\S]*?Confirmação de rascunhos limitada[\s\S]*?onClick=\{limparFiltros\}/);
+  assert.match(pagina, /obrasFiltradas\.length === 0 \? !confirmacaoRascunhosLimitada &&/);
+  assert.match(pagina, /aria-pressed=\{ativo\}/);
 });
 
 test("Painel do Autor delega somente tipos e opções de filtro e ordenação", () => {

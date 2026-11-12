@@ -2,6 +2,33 @@
 
 Atualizado em: 2026-11-12
 
+### Painel do autor — filtro de obras com capítulos em rascunho
+
+Filtro `Com capítulos em rascunho` reutiliza exclusivamente o mapa transitório
+da #2278: entrada confirmada com total > 0, inclusive em obra publicada. Mapa
+opcional na função pura e na memoização; não inferir confirmação pelos capítulos
+mesclados/cache. `Rascunhos` continua sendo o status da obra, e `Em leitura`,
+busca, ordenações e resumo geral permanecem inalterados. Cards e os dois atalhos
+de edição não foram modificados. Sem consultas, persistência ou escritas novas.
+
+Confirmação ausente ou sem entrada para alguma obra carregada mostra aviso de
+cobertura limitada e o controle existente de limpar filtros, mesmo havendo
+resultados confirmados. Não afirma ausência de rascunhos, nem inventa causa da
+indisponibilidade. Zero confirmado é distinto de entrada ausente. Estados
+selecionados acessíveis e controles/aviso em PT/EN/ES; conteúdo autoral intacto.
+Reutiliza os guards de identidade, paginação completa e respostas antigas da
+#2278, sem reestruturar o carregamento ou alterar regras de agendamento.
+
+Validação: 33/33 unitários focados e Playwright 4/4, desktop/mobile, build de
+produção local, workers=1/retries=0. Teclado, seleção acessível, axe sem violações
+graves/críticas, PT/EN/ES e falha 503 controlada com fallback. Alternar/limpar
+filtro: zero chamadas Data API; consulta inicial de capítulos continua única na
+fixture. Destinos de edição e texto/publicação/timestamp dos capítulos intactos.
+Lint focado, Typecheck, Build e diff check aprovados; suíte completa para a CI.
+Primeiro Build interrompido por fetch de fontes Geist no sandbox; concluído com
+rede autorizada, sem alterar fontes/configuração. Somente Supabase descartável
+58421 (Database/Auth/Data API); nenhuma homologação de produção ou Storage.
+
 ### Painel do autor — continuar capítulos em rascunho
 
 Cards mostram a quantidade de capítulos em rascunho, separada do status da
