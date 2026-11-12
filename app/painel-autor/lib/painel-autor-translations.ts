@@ -66,6 +66,7 @@ export const PAINEL_AUTOR_UI_TRANSLATIONS: Record<
   "Ajuste a busca ou limpe os filtros para voltar a ver suas obras.": { en: "Adjust your search or clear the filters to see your works again.", es: "Ajusta la búsqueda o limpia los filtros para volver a ver tus obras." },
   "Por": { en: "By", es: "Por" },
   "Editar capítulo": { en: "Edit chapter", es: "Editar capítulo" },
+  "Ver comentários": { en: "View comments", es: "Ver comentarios" },
   "Continuar leitura": { en: "Continue reading", es: "Continuar leyendo" },
   "Ler capítulo": { en: "Read chapter", es: "Leer capítulo" },
   "Editar obra": { en: "Edit work", es: "Editar obra" },

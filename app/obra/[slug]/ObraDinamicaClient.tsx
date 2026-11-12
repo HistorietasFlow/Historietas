@@ -164,7 +164,6 @@ export default function ObraDinamicaPage({ snapshotInicial }: { snapshotInicial?
     fecharMenuOrdenacaoComentarios,
     limparRespostaComentario: () => setRespostaComentario(null),
   });
-  useObraCommentsDeepLink({ abrirComentariosObra });
   const {
     acoesObraAbertas,
     setAcoesObraAbertas,
@@ -263,6 +262,11 @@ export default function ObraDinamicaPage({ snapshotInicial }: { snapshotInicial?
   const obraLeitura = snapshotInicial ? publica.leitura : obra;
   // Estado privado não é inicializado com a identidade anônima do SSR.
   const obraInteracoes = snapshotInicial && !publica.pronta ? null : obra;
+  useObraCommentsDeepLink({
+    abrirComentariosObra,
+    pronto: autenticacaoCarregada && (!snapshotInicial || publica.interativa),
+    chaveRota: slug,
+  });
   const contextoAcaoRef = useRef("");
   useLayoutEffect(() => {
     if (contextoAcaoRef.current && contextoAcaoRef.current !== publica.contexto) {
@@ -318,10 +322,11 @@ export default function ObraDinamicaPage({ snapshotInicial }: { snapshotInicial?
   });
   const obraIdComentarios = obterObraIdComentarios(obraInteracoes);
   const carregarMetricasObra = useObraWorkMetricsRequest(usuarioIdLogado);
-  const { carregarMaisComentariosObra } = useObraCommentsLoadPagination({
+  const { carregarMaisComentariosObra, comentariosRemotosConfirmados } = useObraCommentsLoadPagination({
     comentariosAbertos,
     obraIdComentarios,
     usuarioIdLogado,
+    versaoIdentidade,
     identidadeAutenticadaObraRef,
     comentariosCarregando,
     comentariosCarregandoMais,
@@ -627,6 +632,7 @@ export default function ObraDinamicaPage({ snapshotInicial }: { snapshotInicial?
                 comentarioRemovendoId={comentarioRemovendoId}
                 comentarioCurtindoId={comentarioCurtindoId}
                 agoraComentarios={agoraComentarios}
+                comentariosRemotosConfirmados={comentariosRemotosConfirmados}
                 onResponder={responderComentarioObra}
                 onRemover={removerComentarioObra}
                 onDenunciar={abrirDenunciaComentarioObra}

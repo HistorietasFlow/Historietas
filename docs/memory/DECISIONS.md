@@ -294,6 +294,11 @@
 - A localização de comentários em obras reutiliza a central de Notificações e o comments sheet existente; não deve criar um segundo inbox nem duplicar consultas de comentários.
 - O parâmetro público `comentarios=1` abre apenas o sheet da rota canônica `/obra/[slug]`. Links de capítulo, Comunidade e outros destinos não recebem esse estado.
 - Respostas, moderação e permissões permanecem nos fluxos existentes e sob RLS; o deep link não concede novas capacidades.
+- A indicação de conversa sem resposta do autor reutiliza os descendentes já
+  carregados do comentário raiz, somente após confirmação remota para a obra e
+  versão da identidade atuais. Não inferir a ausência por contador, nome público,
+  expansão visual ou cache local. Não é inbox global nem cobertura de capítulos;
+  não adicionar consultas ou quebrar a paginação para preencher essa lacuna.
 
 ## Proteção contra spoilers
 

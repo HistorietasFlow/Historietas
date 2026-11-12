@@ -258,6 +258,16 @@ export function ObraPainelCard<T extends ObraPainelCardBase>({
             </div>
 
             <div style={isDesktop ? desktopCardActionsGridStyle : actionsGridStyle}>
+              {obraComStatusPublicado && (
+                <Link
+                  href={`/obra/${encodeURIComponent(slugObraPainel)}?comentarios=1`}
+                  prefetch={false}
+                  onClick={() => setAcoesAbertas(false)}
+                  style={openButtonStyle}
+                >
+                  Ver comentários
+                </Link>
+              )}
               <Link
                 href={editarCapituloHref}
                 onClick={() => setAcoesAbertas(false)}
