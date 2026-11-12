@@ -1,6 +1,19 @@
 # Estado atual
 
-Atualizado em: 2026-11-11
+Atualizado em: 2026-11-12
+
+### PR #2273 — isolamento QA de notificacoes
+
+Run `43140137033`: primeira falha real em capacidade:167, notificacoes 0/2.
+Fixture anterior deixou capitulo vencido em erro; runner global publicou esse
+capitulo antes dos alvos da suite. Reproduzido em banco inicialmente vazio:
+13/17, mesma assercao, com captura de estados/notificacoes na ocorrencia.
+Correcao QA cancela somente agendamentos ativos proprios pela RPC autenticada
+e revisao/CAS, preservando obra, outbox, recibos, debitos e limites. Nenhuma
+alteracao adicional em migration, producao, locks/RLS ou controles administrativos.
+Em outro descartavel: pgTAP completo 954/954; sequencia notificacoes ->
+capacidade 18/18, serial e sem retries, mantendo todas as assercoes anteriores.
+Ver `QA_AGENDAMENTO_OUTBOX.md` e checks da propria PR para os gates completos.
 
 ### PH-1 — capacidade fisica/WAL, reducao parcial
 
