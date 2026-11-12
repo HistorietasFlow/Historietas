@@ -47,6 +47,7 @@ export default function PublicarPage() {
     arquivoCapituloMinutos,
     arquivoCapituloNome,
     arquivoCapituloPalavras,
+    arquivoCapituloTexto,
     arquivoCapituloTitulo,
     arquivoConteudoInputRef,
     arquivoObra,
@@ -197,6 +198,11 @@ export default function PublicarPage() {
           <PublicarWorkPreview
             arquivoCapituloMinutos={arquivoCapituloMinutos}
             arquivoCapituloPalavras={arquivoCapituloPalavras}
+            arquivoCapituloTexto={
+              !arquivoTextoPendente && !arquivoCapituloErro && !arquivoObraErro
+                ? arquivoCapituloTexto
+                : ""
+            }
             arquivoCapituloTitulo={arquivoCapituloTitulo}
             autor={autor}
             capa={capa}

@@ -260,6 +260,15 @@ export const previewImportedTextStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
+export const previewImportedBodyStyle: CSSProperties = {
+  ...previewImportedTextStyle,
+  margin: "4px 0 0",
+  display: "-webkit-box",
+  WebkitLineClamp: 2,
+  WebkitBoxOrient: "vertical",
+  overflow: "hidden",
+};
+
 export const previewTopRowStyle: CSSProperties = {
   display: "grid",
   gridTemplateColumns: "1fr",

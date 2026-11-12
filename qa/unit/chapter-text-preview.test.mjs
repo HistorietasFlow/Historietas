@@ -160,3 +160,18 @@ test("instâncias independentes não compartilham expansão nem alvo acessível"
   assert.equal(segundoBotao.props["aria-expanded"], false);
   assert.notEqual(primeiroBotao.props["aria-controls"], segundoBotao.props["aria-controls"]);
 });
+
+test("rótulos opcionais traduzem somente os controles sem modificar o conteúdo", () => {
+  const render = criarPrevia();
+  const props = {children: "Ler prévia completa\n\nTexto do autor.", textStyle, buttonStyle,
+    expandLabel: "Read full preview", collapseLabel: "Collapse preview"};
+  const compacta = render(props);
+  assert.equal(unico(compacta, "button").elemento.props.children, "Read full preview");
+  unico(compacta, "button").elemento.props.onClick();
+  const expandida = render(props);
+  assert.equal(unico(expandida, "button").elemento.props.children, "Collapse preview");
+  assert.equal(unico(expandida, "p").elemento.props.children, props.children);
+  const espanhol = render({...props, expandLabel: "Leer vista previa completa", collapseLabel: "Contraer vista previa"});
+  assert.equal(unico(espanhol, "button").elemento.props.children, "Contraer vista previa");
+  assert.equal(unico(espanhol, "button").elemento.props["aria-expanded"], true);
+});

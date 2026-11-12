@@ -33,6 +33,7 @@ export function usePublicarContentFileUpload({
   const [arquivoCapituloErro, setArquivoCapituloErro] = useState("");
   const [arquivoTextoPendente, setArquivoTextoPendente] = useState<File | null>(null);
   const arquivoConteudoInputRef = useRef<HTMLInputElement | null>(null);
+  const versaoLeituraRef = useRef(0);
 
   function limparArquivoAnexado() {
     setArquivoObra(null);
@@ -48,6 +49,7 @@ export function usePublicarContentFileUpload({
   }
 
   function limparSelecaoConteudoArquivo() {
+    versaoLeituraRef.current += 1;
     limparArquivoAnexado();
     limparCapituloImportado();
     setArquivoTextoPendente(null);
@@ -58,6 +60,7 @@ export function usePublicarContentFileUpload({
   }
 
   function anexarArquivoCompleto(arquivo: File) {
+    const versaoLeitura = ++versaoLeituraRef.current;
     setArquivoObraErro("");
     setArquivoCapituloErro("");
     setErro("");
@@ -65,6 +68,7 @@ export function usePublicarContentFileUpload({
     const leitor = new FileReader();
 
     leitor.onload = () => {
+      if (versaoLeitura !== versaoLeituraRef.current) return;
       const resultado = typeof leitor.result === "string" ? leitor.result : "";
 
       if (!resultado) {
@@ -90,6 +94,7 @@ export function usePublicarContentFileUpload({
     };
 
     leitor.onerror = () => {
+      if (versaoLeitura !== versaoLeituraRef.current) return;
       setArquivoObraErro("Não consegui carregar esse arquivo.");
     };
 
@@ -97,6 +102,7 @@ export function usePublicarContentFileUpload({
   }
 
   function transformarArquivoTextoEmCapitulo(arquivo: File) {
+    const versaoLeitura = ++versaoLeituraRef.current;
     setArquivoObraErro("");
     setArquivoCapituloErro("");
     setErro("");
@@ -111,6 +117,7 @@ export function usePublicarContentFileUpload({
     const leitor = new FileReader();
 
     leitor.onload = () => {
+      if (versaoLeitura !== versaoLeituraRef.current) return;
       const resultado = typeof leitor.result === "string" ? leitor.result : "";
       const textoImportado = resultado.replace(/\r\n/g, "\n").trim();
 
@@ -133,6 +140,7 @@ export function usePublicarContentFileUpload({
     };
 
     leitor.onerror = () => {
+      if (versaoLeitura !== versaoLeituraRef.current) return;
       setArquivoCapituloErro("Não consegui ler esse arquivo.");
     };
 
@@ -140,6 +148,7 @@ export function usePublicarContentFileUpload({
   }
 
   function cancelarEscolhaArquivoTexto() {
+    versaoLeituraRef.current += 1;
     setArquivoTextoPendente(null);
     setArquivoObraErro("");
     setArquivoCapituloErro("");
@@ -159,6 +168,8 @@ export function usePublicarContentFileUpload({
     if (!arquivo) {
       return;
     }
+
+    versaoLeituraRef.current += 1;
 
     if (!arquivoObraAceito(arquivo)) {
       setArquivoObraErro(

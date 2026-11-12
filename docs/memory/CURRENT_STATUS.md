@@ -2,6 +2,31 @@
 
 Atualizado em: 2026-11-12
 
+### Publicar — prévia integral do primeiro capítulo importado
+
+`/publicar` encaminha `arquivoCapituloTexto` já validado pelo controlador para
+`PublicarWorkPreview`. O corpo usa `ChapterTextPreview`, compacto inicialmente,
+com rótulos opcionais PT/EN/ES; Adicionar/Editar mantêm os padrões anteriores.
+A leitura ocupa a largura disponível abaixo do card. O texto é simples,
+escapado, com o mesmo trim da publicação e as quebras/espaços internos da
+importação atual; não há interpretação HTML/Markdown nem releitura do arquivo.
+Seleção pendente ou erro de arquivo ocultam o corpo anterior sem apagar o buffer.
+Cancelar pode retomar a seleção válida anterior; remover e anexo completo não
+oferecem prévia de capítulo. Expandir/recolher não salva, publica ou persiste.
+Testes reproduziram callbacks de FileReader restaurando texto cancelado ou
+sobrescrevendo seleção nova. Uma revisão local invalida resultados/erros antigos
+após nova seleção, leitura, cancelamento ou remoção, inclusive no contrato de
+anexo completo. Normalizações, formatos, limites e publicação não mudaram.
+Sem novas consultas, dependências, schema/RLS ou alterações no agendamento.
+Validação: 53/53 unitários focados; Playwright 8/8 contra build de produção,
+workers=1/retries=0 (quatro novos e quatro regressões de Adicionar/Editar),
+desktop/mobile, teclado/foco, axe, PT/EN/ES, texto literal, overflow, substituição,
+remoção, anexo completo e callback real liberado depois de cancelar. Contadores
+confirmaram uma leitura do TXT, sem releitura, requisições ou persistência pela
+prévia. Fixtures usaram a prioridade publishable/anon da #2275, com ANON ausente.
+Lint focado, Typecheck e Build passaram. Suíte completa reservada à CI, conforme
+estratégia econômica autorizada nesta fase; nenhum gate removido ou relaxado.
+
 ### Prévia integral de capítulos de texto
 
 Adicionar/Editar já possuíam prévia local, mas limitada visualmente a duas
