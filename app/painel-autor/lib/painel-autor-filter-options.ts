@@ -2,6 +2,7 @@ export type FiltroPainel =
   | "todas"
   | "publicadas"
   | "rascunhos"
+  | "com-rascunhos"
   | "sem-capitulos"
   | "favoritas"
   | "concluidas"
@@ -18,6 +19,7 @@ export const FILTROS_PAINEL: { valor: FiltroPainel; rotulo: string }[] = [
   { valor: "todas", rotulo: "Todas as obras" },
   { valor: "publicadas", rotulo: "Publicadas" },
   { valor: "rascunhos", rotulo: "Rascunhos" },
+  { valor: "com-rascunhos", rotulo: "Com capítulos em rascunho" },
   { valor: "sem-capitulos", rotulo: "Sem capítulos" },
   { valor: "favoritas", rotulo: "Na lista" },
   { valor: "concluidas", rotulo: "Concluídas" },

@@ -1,6 +1,7 @@
 import { normalizarTexto } from "../../../lib/utils";
 import { colecaoTemObraPainel } from "./painel-autor-collection-utils";
 import type { FiltroPainel, OrdenacaoPainel } from "./painel-autor-filter-options";
+import type { RascunhosCapitulosPainel } from "./painel-autor-draft-chapters";
 import {
   formatarGeneroPainelAutor,
   obterTimestamp,
@@ -41,6 +42,7 @@ type OpcoesObrasFiltradasPainel<TObra extends ObraParaFiltroPainel> = {
   ordenacao: OrdenacaoPainel;
   obrasFavoritas: string[];
   obrasConcluidas: string[];
+  rascunhosConfirmados?: ReadonlyMap<string, RascunhosCapitulosPainel>;
 };
 
 export function obterObrasFiltradasPainel<TObra extends ObraParaFiltroPainel>({
@@ -50,6 +52,7 @@ export function obterObrasFiltradasPainel<TObra extends ObraParaFiltroPainel>({
   ordenacao,
   obrasFavoritas,
   obrasConcluidas,
+  rascunhosConfirmados,
 }: OpcoesObrasFiltradasPainel<TObra>): TObra[] {
   const termoBusca = normalizarTexto(busca);
 
@@ -80,6 +83,8 @@ export function obterObrasFiltradasPainel<TObra extends ObraParaFiltroPainel>({
           ? obraPublicadaComConteudoPainel(obra)
           : filtro === "rascunhos"
           ? obraRascunhoOuSemConteudoPainel(obra)
+          : filtro === "com-rascunhos"
+          ? (rascunhosConfirmados?.get(obra.id)?.total ?? 0) > 0
           : filtro === "sem-capitulos"
           ? obra.capitulos.length === 0
           : filtro === "favoritas"

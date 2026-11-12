@@ -150,6 +150,7 @@ export default function PainelAutorPage() {
         ordenacao,
         obrasFavoritas,
         obrasConcluidas,
+        rascunhosConfirmados,
       }),
     [
       obrasComMetricas,
@@ -158,8 +159,12 @@ export default function PainelAutorPage() {
       ordenacao,
       obrasFavoritas,
       obrasConcluidas,
+      rascunhosConfirmados,
     ]
   );
+
+  const confirmacaoRascunhosLimitada = filtro === "com-rascunhos" &&
+    (!rascunhosConfirmados || obrasComMetricas.some(obra => !rascunhosConfirmados.has(obra.id)));
 
   const {
     obrasPublicadas,
@@ -470,6 +475,7 @@ export default function PainelAutorPage() {
                         setMostrarFiltrosPainel(false);
                       }}
                       style={criarFilterSheetOptionStyle(ativo)}
+                      aria-pressed={ativo}
                     >
                       <span>{opcao.rotulo}</span>
                       <span
@@ -496,6 +502,7 @@ export default function PainelAutorPage() {
                         setMostrarFiltrosPainel(false);
                       }}
                       style={criarFilterSheetOptionStyle(ativo)}
+                      aria-pressed={ativo}
                     >
                       <span>{opcao.rotulo}</span>
                       <span
@@ -539,7 +546,19 @@ export default function PainelAutorPage() {
           </div>
         )}
 
-        {obrasComMetricas.length === 0 ? (
+        {confirmacaoRascunhosLimitada && (
+          <section style={emptyMiniBoxStyle} role="status">
+            <strong style={emptyMiniTitleStyle}>Confirmação de rascunhos limitada</strong>
+            <span style={emptyMiniTextStyle}>
+              Exibimos somente obras com capítulos em rascunho confirmados nesta atualização. Outras obras podem não ter sido confirmadas.
+            </span>
+            <button type="button" onClick={limparFiltros} style={emptyMiniButtonStyle}>
+              Limpar filtros
+            </button>
+          </section>
+        )}
+
+        {obrasComMetricas.length === 0 ? !confirmacaoRascunhosLimitada && (
           <p
             style={{
               margin: "10px 0 0",
@@ -551,7 +570,7 @@ export default function PainelAutorPage() {
           >
             Não tem obra criada
           </p>
-        ) : obrasFiltradas.length === 0 ? (
+        ) : obrasFiltradas.length === 0 ? !confirmacaoRascunhosLimitada && (
           <section style={emptyMiniBoxStyle}>
             <strong style={emptyMiniTitleStyle}>Nenhuma obra encontrada</strong>
             <span style={emptyMiniTextStyle}>
