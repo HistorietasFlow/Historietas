@@ -46,9 +46,18 @@ test("prévia recebe o texto já validado, literal, e traduz somente os controle
     assert.match(html, /-webkit-line-clamp:2/);
     assert.match(html, /Ler prévia completa\n\n  Parágrafo intacto\./);
     assert.match(html, /&lt;script&gt;não executar&lt;\/script&gt;\n\*\*Marcação literal\*\*/);
-    assert.doesNotMatch(html, /<script|<strong>Marcação/);
+    assert.doesNotMatch(html, /<script|<strong>Marcação/i);
   }
 });
+
+for (const tag of ["script", "SCRIPT", "ScRiPt"]) {
+  test(`prévia mantém ${tag} escapado e Markdown literal`, () => {
+    const arquivoCapituloTexto = `<${tag}>não executar</${tag}>\n**Marcação literal**`;
+    const html = renderToStaticMarkup(React.createElement(PublicarWorkPreview, {...props, arquivoCapituloTexto}));
+    assert.ok(html.includes(`&lt;${tag}&gt;não executar&lt;/${tag}&gt;\n**Marcação literal**`));
+    assert.doesNotMatch(html, /<script|<strong>Marcação/i);
+  });
+}
 
 test("prévia vazia, anexo completo e ausência de conteúdo não oferecem leitura de capítulo", () => {
   for (const estado of [{arquivoCapituloTexto: ""}, {arquivoCapituloTexto: "   "}, {temCapituloImportado: false}, {previewTemConteudo: false}]) {
