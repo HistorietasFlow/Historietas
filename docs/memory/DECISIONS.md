@@ -2,6 +2,13 @@
 
 ## Refatoração
 
+- Rascunhos de capítulos no painel: certificar somente metadados remotos da
+  paginação concluída, antes da mescla local. Confirmação transitória por
+  contexto de identidade, nunca persistida nas obras/cache. Falha, parcial ou
+  registro legado sem publicado/propriedade explícitos omitem a indicação da
+  obra, sem apagar fallback. Contar somente false; primeiro na ordem existente,
+  sem inferir último editado, número ou ausência de agendamento. Atalho apenas
+  navega ao editor existente, sem prefetch; manter `Editar capítulo` inalterado.
 - Refatorações devem ser incrementais e pequenas.
 - Um PR pode reunir 2–3 extrações pequenas e diretamente relacionadas quando o risco continuar baixo.
 - Funções grandes, delicadas ou pouco relacionadas devem ficar em PRs separados.

@@ -45,6 +45,18 @@ const {
   `data:text/javascript;base64,${Buffer.from(translationsJavascript).toString("base64")}`,
 );
 
+test("traduz contagem singular/plural e somente o controle de continuar rascunho", () => {
+  for (const [idioma, um, varios, acao] of [
+    ["pt-BR", "1 capítulo em rascunho", "2 capítulos em rascunho", "Continuar rascunho"],
+    ["en", "1 draft chapter", "2 draft chapters", "Continue draft"],
+    ["es", "1 capítulo en borrador", "2 capítulos en borrador", "Continuar borrador"],
+  ]) {
+    assert.equal(traduzirTextoPainelAutor("1 capítulo em rascunho", idioma), um);
+    assert.equal(traduzirTextoPainelAutor("2 capítulos em rascunho", idioma), varios);
+    assert.equal(traduzirTextoPainelAutor("Continuar rascunho — Editar capítulo", idioma), `${acao} — Editar capítulo`);
+  }
+});
+
 test("exporta a tabela integral e o helper de traduções do Painel do Autor", () => {
   assert.match(translations, /export type PainelAutorTranslationEntry = \{/);
   assert.match(translations, /export const PAINEL_AUTOR_UI_TRANSLATIONS/);

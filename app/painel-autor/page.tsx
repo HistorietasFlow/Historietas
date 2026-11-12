@@ -127,7 +127,7 @@ export default function PainelAutorPage() {
     verificandoUsuario,
   });
 
-  usePainelAutorInitialData({
+  const rascunhosConfirmados = usePainelAutorInitialData({
     usuarioIdLogado,
     verificandoUsuario,
     setObras,
@@ -569,6 +569,7 @@ export default function PainelAutorPage() {
             onCompartilhar={compartilharObra}
             onExcluirObra={excluirObra}
             Card={ObraPainelCard}
+            rascunhosConfirmados={rascunhosConfirmados}
           />
         )}
       </section>

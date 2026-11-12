@@ -2,6 +2,8 @@
 
 import {
   useEffect,
+  useMemo,
+  useState,
   type Dispatch,
   type SetStateAction,
 } from "react";
@@ -36,6 +38,7 @@ import {
 } from "../lib/painel-autor-storage-keys";
 import { filtrarListaPorObrasDoUsuario } from "../lib/painel-autor-collection-utils";
 import { normalizarObraPainel } from "../lib/painel-autor-work-normalizer";
+import type { ConfirmacaoRascunhosPainel } from "../lib/painel-autor-draft-chapters";
 
 type UsePainelAutorInitialDataProps = {
   usuarioIdLogado: string;
@@ -54,6 +57,11 @@ export function usePainelAutorInitialData({
   setObrasConcluidas,
   setCarregandoDados,
 }: UsePainelAutorInitialDataProps) {
+  const contexto = useMemo(() => ({ usuarioIdLogado, verificandoUsuario }), [usuarioIdLogado, verificandoUsuario]);
+  const [confirmacao, setConfirmacao] = useState<{
+    contexto: typeof contexto;
+    dados: ConfirmacaoRascunhosPainel;
+  } | null>(null);
   useEffect(() => {
     if (verificandoUsuario || !usuarioIdLogado) {
       return;
@@ -69,6 +77,7 @@ export function usePainelAutorInitialData({
       }
 
       setCarregandoDados(true);
+      setConfirmacao(null);
 
       try {
         const obrasSalvasTexto = lerStorageUsuarioPainel(
@@ -128,10 +137,12 @@ export function usePainelAutorInitialData({
         setObrasFavoritas(obrasFavoritasUsuario);
         setObrasConcluidas(obrasConcluidasUsuario);
 
+        let rascunhosRemotos: ConfirmacaoRascunhosPainel | null = null;
         const dadosSupabase = await carregarPainelAutorSupabase(
           obrasUsuarioLogado,
           obrasFavoritasUsuario,
-          obrasConcluidasUsuario
+          obrasConcluidasUsuario,
+          (dados) => { rascunhosRemotos = dados; },
         );
 
         if (!componenteAtivo) {
@@ -156,6 +167,7 @@ export function usePainelAutorInitialData({
         );
 
         setObras(obrasFinais);
+        if (rascunhosRemotos) setConfirmacao({ contexto, dados: rascunhosRemotos });
         setObrasFavoritas(dadosSupabase.favoritas);
         setObrasConcluidas(dadosSupabase.concluidas);
       } catch (error) {
@@ -177,6 +189,7 @@ export function usePainelAutorInitialData({
       componenteAtivo = false;
     };
   }, [
+    contexto,
     usuarioIdLogado,
     verificandoUsuario,
     setObras,
@@ -184,4 +197,6 @@ export function usePainelAutorInitialData({
     setObrasConcluidas,
     setCarregandoDados,
   ]);
+  return !verificandoUsuario && usuarioIdLogado && confirmacao?.contexto === contexto &&
+    confirmacao.dados.usuarioId === usuarioIdLogado ? confirmacao.dados.porObra : undefined;
 }

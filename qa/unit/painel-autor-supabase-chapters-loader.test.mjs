@@ -160,6 +160,19 @@ test("carregarCapitulosPainelAutorSupabase mantém fallback vazio e warning", as
   assert.equal(avisos[0][1].message, "falha da paginação");
 });
 
+test("confirma somente paginação completa; falha parcial não confirma o fallback vazio", async () => {
+  for (const deveFalhar of [false, true]) {
+    const confirmacoes = [];
+    prepararLoader({ lote: ["obra-1"], registros: [{ id: "rascunho", publicado: false }], deveFalhar });
+    const warn = console.warn; console.warn = () => {};
+    try {
+      await carregarCapitulosPainelAutorSupabase("usuario-1", ["obra-1"], rows => confirmacoes.push(rows));
+    } finally { console.warn = warn; }
+    assert.equal(confirmacoes.length, deveFalhar ? 0 : 1);
+    assert.equal(estado.consultas.length, 1);
+  }
+});
+
 test("Painel do Autor delega somente o carregamento de capítulos Supabase", () => {
   assert.match(
     dataLoaderSource,
@@ -169,7 +182,7 @@ test("Painel do Autor delega somente o carregamento de capítulos Supabase", () 
   assert.doesNotMatch(pagina, /type SupabaseCapituloRow =/);
   assert.match(
     dataLoaderSource,
-    /const capitulosSupabaseBanco = await carregarCapitulosPainelAutorSupabase\([\s\S]*?userId,[\s\S]*?obraIds[\s\S]*?\);/,
+    /const capitulosSupabaseBanco = await carregarCapitulosPainelAutorSupabase\([\s\S]*?userId,[\s\S]*?obraIds,[\s\S]*?capitulosConfirmados = true;[\s\S]*?\);/,
   );
   assert.match(
     loaderSource,

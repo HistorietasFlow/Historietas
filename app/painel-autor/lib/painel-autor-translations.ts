@@ -66,6 +66,7 @@ export const PAINEL_AUTOR_UI_TRANSLATIONS: Record<
   "Ajuste a busca ou limpe os filtros para voltar a ver suas obras.": { en: "Adjust your search or clear the filters to see your works again.", es: "Ajusta la búsqueda o limpia los filtros para volver a ver tus obras." },
   "Por": { en: "By", es: "Por" },
   "Editar capítulo": { en: "Edit chapter", es: "Editar capítulo" },
+  "Continuar rascunho": { en: "Continue draft", es: "Continuar borrador" },
   "Ver comentários": { en: "View comments", es: "Ver comentarios" },
   "Continuar leitura": { en: "Continue reading", es: "Continuar leyendo" },
   "Ler capítulo": { en: "Read chapter", es: "Leer capítulo" },
@@ -123,7 +124,21 @@ export function traduzirTextoPainelAutor(
     return `${inicio}${traducaoExata[idioma]}${fim}`;
   }
 
-  let correspondencia = /^Abrir opções de (.+)$/.exec(conteudo);
+  let correspondencia = /^Continuar rascunho — ([\s\S]+)$/.exec(conteudo);
+  if (correspondencia) {
+    return `${inicio}${idioma === "en" ? "Continue draft" : "Continuar borrador"} — ${correspondencia[1]}${fim}`;
+  }
+
+  correspondencia = /^(\d+) (capítulo|capítulos) em rascunho$/.exec(conteudo);
+  if (correspondencia) {
+    const quantidade = correspondencia[1];
+    const singular = quantidade === "1";
+    return idioma === "en"
+      ? `${inicio}${quantidade} draft ${singular ? "chapter" : "chapters"}${fim}`
+      : `${inicio}${quantidade} ${singular ? "capítulo en borrador" : "capítulos en borrador"}${fim}`;
+  }
+
+  correspondencia = /^Abrir opções de (.+)$/.exec(conteudo);
   if (correspondencia) {
     return idioma === "en"
       ? `${inicio}Open options for ${correspondencia[1]}${fim}`

@@ -19,11 +19,13 @@ import { prepararEstadoMetricasPainel } from "./painel-autor-metrics-state";
 import { mesclarResultadoSupabasePainelAutor } from "./painel-autor-supabase-result-merge";
 import { normalizarListaIds } from "./painel-autor-storage-utils";
 import type { ObraLocal } from "./painel-autor-types";
+import { confirmarRascunhosPainel, type ConfirmacaoRascunhosPainel } from "./painel-autor-draft-chapters";
 
 export async function carregarPainelAutorSupabase(
   obrasLocais: ObraLocal[],
   obrasFavoritasLocais: string[],
-  obrasConcluidasLocais: string[]
+  obrasConcluidasLocais: string[],
+  onRascunhosConfirmados?: (confirmacao: ConfirmacaoRascunhosPainel) => void,
 ) {
   try {
     const { data: usuarioData } = await supabase.auth.getUser();
@@ -67,9 +69,11 @@ export async function carregarPainelAutorSupabase(
       };
     }
 
+    let capitulosConfirmados = false;
     const capitulosSupabaseBanco = await carregarCapitulosPainelAutorSupabase(
       userId,
-      obraIds
+      obraIds,
+      () => { capitulosConfirmados = true; },
     );
 
     const capituloIds = capitulosSupabaseBanco
@@ -120,7 +124,11 @@ export async function carregarPainelAutorSupabase(
       };
     });
 
-    return mesclarResultadoSupabasePainelAutor({ obrasLocaisUsuario, obrasSupabase, userId, nomeProfileAutor, obrasFavoritasUsuario, obrasConcluidasUsuario, favoritosSupabase, concluidasSupabase });
+    const resultado = mesclarResultadoSupabasePainelAutor({ obrasLocaisUsuario, obrasSupabase, userId, nomeProfileAutor, obrasFavoritasUsuario, obrasConcluidasUsuario, favoritosSupabase, concluidasSupabase });
+    if (capitulosConfirmados) {
+      onRascunhosConfirmados?.(confirmarRascunhosPainel(userId, obrasSupabaseBanco, capitulosSupabaseBanco));
+    }
+    return resultado;
   } catch (error) {
     console.warn("Não consegui acessar o Supabase no Painel do Autor:", error);
 

@@ -65,6 +65,7 @@ import {
   criarPerfilAutorHref,
 } from "../lib/painel-autor-route-utils";
 import { obterCapitulosPublicadosPainel } from "../lib/painel-autor-reading-progress-utils";
+import type { RascunhosCapitulosPainel } from "../lib/painel-autor-draft-chapters";
 
 type CapituloPainelCard = {
   id: string;
@@ -96,8 +97,10 @@ export function ObraPainelCard<T extends ObraPainelCardBase>({
   onAbrirArquivo,
   onCompartilhar,
   onExcluirObra,
+  rascunhosConfirmados,
 }: {
   obra: T;
+  rascunhosConfirmados?: RascunhosCapitulosPainel;
   isDesktop: boolean;
   onAbrirArquivo: (obra: T) => void | Promise<void>;
   onCompartilhar: (obra: T) => void | Promise<void>;
@@ -161,6 +164,11 @@ export function ObraPainelCard<T extends ObraPainelCardBase>({
               >
                 👥 {obra.totalSeguidores}
               </span>
+              {rascunhosConfirmados && (
+                <span style={draftStatusStyle}>
+                  {`${rascunhosConfirmados.total} ${rascunhosConfirmados.total === 1 ? "capítulo em rascunho" : "capítulos em rascunho"}`}
+                </span>
+              )}
 
             </div>
 
@@ -275,6 +283,16 @@ export function ObraPainelCard<T extends ObraPainelCardBase>({
               >
                 Editar capítulo
               </Link>
+              {rascunhosConfirmados?.primeiro && (
+                <Link
+                  href={`/editar-capitulo?obraId=${encodeURIComponent(obra.id)}&capituloId=${encodeURIComponent(rascunhosConfirmados.primeiro.id)}`}
+                  prefetch={false}
+                  onClick={() => setAcoesAbertas(false)}
+                  style={{ ...openButtonStyle, whiteSpace: "normal", lineHeight: 1.3, padding: "12px 30px" }}
+                >
+                  {`Continuar rascunho — ${rascunhosConfirmados.primeiro.titulo}`}
+                </Link>
+              )}
 
               {capituloParaLer && (
                 <Link
