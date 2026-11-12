@@ -21,6 +21,7 @@ import { ExplorarLoadMoreButton } from "./components/explorar-load-more-button";
 import { ExplorarLoginNotice } from "./components/explorar-login-notice";
 import { ExplorarCatalogErrorNotice } from "./components/explorar-catalog-error-notice";
 import { ExplorarCategoriesBar } from "./components/explorar-categories-bar";
+import { ExplorarActiveCatalogFilters } from "./components/explorar-active-catalog-filters";
 import { ExplorarDesktopHeader } from "./components/explorar-desktop-header";
 import { ExplorarMobileHeader } from "./components/explorar-mobile-header";
 import { ExplorarCreativeWorkSections } from "./components/explorar-creative-work-sections";
@@ -111,6 +112,7 @@ const ExplorarAdvancedFiltersComposition = lazy(
 );
 
 export default function ExplorarPage() {
+  const containerExplorarRef = useRef<HTMLElement>(null);
   const router = useRouter();
   const { language } = useHistorietasLanguage();
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
@@ -733,7 +735,7 @@ export default function ExplorarPage() {
 
       <ExplorarTopWaterFade isDesktop={isDesktop} />
 
-      <section style={isDesktop ? desktopContainerStyle : containerStyle}>
+      <section ref={containerExplorarRef} style={isDesktop ? desktopContainerStyle : containerStyle}>
         {isDesktop ? (
           <ExplorarDesktopHeader
             busca={busca}
@@ -773,6 +775,22 @@ export default function ExplorarPage() {
           )}
 
         </section>
+
+        <ExplorarActiveCatalogFilters
+          language={language}
+          modoConteudo={modoConteudo}
+          filtroFormato={filtroFormato}
+          filtroTag={filtroTag}
+          tagExcluida={tagExcluida}
+          generoExcluido={generoExcluido}
+          notaMinima={notaMinima}
+          onSelecionarFormato={selecionarFormatoExplorar}
+          onSelecionarTag={selecionarTagExplorar}
+          onSelecionarTagExcluida={selecionarTagExcluidaExplorar}
+          onSelecionarGeneroExcluido={selecionarGeneroExcluidoExplorar}
+          onSelecionarNotaMinima={selecionarNotaMinimaExplorar}
+          onFocarFiltros={() => containerExplorarRef.current?.querySelector<HTMLButtonElement>('button[aria-haspopup="dialog"]')?.focus({ preventScroll: true })}
+        />
 
         {(erroCatalogoExplorar || erroColecoesExplorar) && (
           <ExplorarCatalogErrorNotice

@@ -2,6 +2,33 @@
 
 Atualizado em: 2026-11-12
 
+### Explorar — filtros selecionados e remoção individual
+
+Indicadores compactos acima dos resultados mostram somente formato, tag
+incluída/excluída, gênero excluído e avaliação mínima normalizados. Cada remoção
+chama seu handler existente com o neutro, sem limpar outras escolhas. Autores
+mantém somente formato e tag incluída; controles bloqueados não são reativados.
+Normalização de formato apenas exportada do helper atual, sem novo parser.
+
+Componente de apresentação com props/callbacks explícitos; nenhum fetch, efeito
+de histórico, estado paralelo ou persistência. Tags são texto literal, nunca
+traduzidas/interpretadas; rótulos e vocabulário em PT/EN/ES. Foco visível passa
+ao próximo indicador, anterior ou acionador de filtros quando remove o último.
+Seleção não comprova sucesso da consulta; aviso de falha e retry permanecem.
+Regras push/replace, filtros pessoais, cache/identidade, cursores, rankings e
+filtragem no banco não foram alterados. Painel avançado continua lazy.
+
+Validação: 29/29 unitários focados (incluindo cards, traduções e URL); novos
+casos ligados ao gate existente de cards. Playwright 14/14 na primeira rodada,
+desktop/mobile, build de produção, workers=1/retries=0: 12 casos com HTTP
+controlado e dois com RPC Supabase local real. Dez comparações dos cinco
+filtros confirmam uma RPC por remoção e payload idêntico ao painel. Re-render
+dos indicadores/traduções não consulta. Histórico push/replace, reload,
+Autores, foco visível/próximo/anterior/acionador, tags longas literais, falha,
+overflow e axe sem violações graves/críticas cobertos. Lint focado, Typecheck,
+Build e diff check aprovados; suíte completa fica para a CI. Somente banco
+descartável 58421, sem homologar produção/Storage ou refazer testes de RLS.
+
 ### Painel do autor — filtro de obras com capítulos em rascunho
 
 Filtro `Com capítulos em rascunho` reutiliza exclusivamente o mapa transitório
