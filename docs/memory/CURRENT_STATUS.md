@@ -26,6 +26,19 @@ Database/Auth/Data API; Storage/Realtime não foram homologados nesta tarefa.
 Confirmação é do carregamento atual, não acompanhamento em tempo real de
 edições em outra aba/dispositivo. Sem mudanças em schema/RLS ou produção.
 
+Correção QA da #2278: a CI `43302563475` teve uma única falha no gate de
+sessão (1490/1491), em `painel-autor-work-merge-utils.test.mjs:84`. A asserção
+exigia retorno direto da função de mesclagem; o agregador agora guarda o mesmo
+resultado para emitir a confirmação transitória antes de devolvê-lo. Reprodução
+local confirmou essa divergência estrutural, não uma falha funcional ou de Storage.
+Teste atualizado sem remover a garantia de delegação; regressão executável
+verifica uma única mesclagem, parâmetros, identidade do objeto retornado e
+confirmação posterior, preservando falha/fallback/sessão. Aplicação inalterada.
+Node 22.23.4: afetados 8/8; `npm run test:session` completo aprovado, incluindo
+pre/post (387 + 1491 + 140 = 2018/2018), sem skips/retries; Lint focado e diff
+check aprovados. Banco/Playwright não executaram na CI interrompida e não foram
+repetidos nesta correção exclusivamente QA; validação ampla permanece para a CI.
+
 ### QA — navegação do Leitor canônico
 
 Ambiguidade da CI `43269859618` investigada sem alterar o Leitor. Inspeção

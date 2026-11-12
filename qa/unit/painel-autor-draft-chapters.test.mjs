@@ -53,6 +53,8 @@ test("legados ou identidade/propriedade não confirmadas omitem a indicação, s
 test("contrato agregado confirma apenas sucesso completo remoto, sem consultas adicionais", async () => {
   for (const modo of ["sucesso", "capitulos-falham", "erro", "vazio", "sem-sessao"]) {
     const chamadas = [], confirmacoes = [];
+    const mesclagens = [];
+    const resultadoMesclado = Object.freeze({ obras: Object.freeze([]), favoritas: Object.freeze([]), concluidas: Object.freeze([]) });
     const { carregarPainelAutorSupabase } = carregar("lib/painel-autor-supabase-data-loader.ts", {
       "../../../lib/supabase/client": { supabase: { auth: { getUser: async () => ({ data: { user: modo === "sem-sessao" ? null : { id: "A" } } }) } } },
       "../../../lib/utils": { criarSlugBase: v => v },
@@ -71,13 +73,31 @@ test("contrato agregado confirma apenas sucesso completo remoto, sem consultas a
       "./painel-autor-chapter-comments-loader": { carregarComentariosCapitulosUsuarioPainel: async () => new Map() },
       "./painel-autor-metrics-state": { prepararEstadoMetricasPainel: () => ({}) },
       "./painel-autor-supabase-work-converter": { converterObraSupabaseParaLocalPainel: () => ({ id: "obra", titulo: "Obra", slug: "obra", autorId: "A", capitulos: [capitulo("somente-local", false)] }) },
-      "./painel-autor-supabase-result-merge": { mesclarResultadoSupabasePainelAutor: ({ obrasSupabase }) => ({ obras: obrasSupabase, favoritas: [], concluidas: [] }) },
+      "./painel-autor-supabase-result-merge": { mesclarResultadoSupabasePainelAutor: parametros => {
+        mesclagens.push(parametros); return resultadoMesclado;
+      } },
     });
     const warn = console.warn; console.warn = () => {};
+    let resultado;
     try {
-      await carregarPainelAutorSupabase([], [], [], dados => confirmacoes.push(dados));
+      resultado = await carregarPainelAutorSupabase([], [], [], dados => {
+        assert.equal(mesclagens.length, 1, "a confirmação ocorre após a mesclagem");
+        confirmacoes.push(dados);
+      });
     } finally { console.warn = warn; }
     assert.equal(confirmacoes.length, modo === "sucesso" ? 1 : 0, modo);
+    if (modo === "sucesso" || modo === "capitulos-falham") {
+      assert.equal(mesclagens.length, 1, modo);
+      assert.strictEqual(resultado, resultadoMesclado, "devolve o mesmo resultado, sem alterar o contrato legado");
+      assert.deepEqual(Object.keys(mesclagens[0]).sort(), [
+        "obrasLocaisUsuario", "obrasSupabase", "userId", "nomeProfileAutor",
+        "obrasFavoritasUsuario", "obrasConcluidasUsuario", "favoritosSupabase", "concluidasSupabase",
+      ].sort());
+      assert.equal(mesclagens[0].userId, "A");
+      assert.equal(mesclagens[0].obrasSupabase[0].id, "obra");
+    } else {
+      assert.equal(mesclagens.length, 0, modo);
+    }
     if (modo === "sucesso") {
       assert.deepEqual(chamadas, ["obras", "capitulos", "metricas"]);
       assert.equal(confirmacoes[0].porObra.get("obra").primeiro.id, "remoto");
