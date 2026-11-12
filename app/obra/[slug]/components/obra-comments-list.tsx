@@ -12,6 +12,7 @@ import ObraCommentThread from "./obra-comment-thread";
 
 type ObraCommentsListProps = {
   comentariosCarregando: boolean;
+  comentariosRemotosConfirmados?: boolean;
   comentariosRaiz: ComentarioObraPublico[];
   respostasPorRaiz: Map<string, ComentarioObraPublico[]>;
   comentariosTemMais: boolean;
@@ -40,6 +41,7 @@ type ObraCommentsListProps = {
 
 export default function ObraCommentsList({
   comentariosCarregando,
+  comentariosRemotosConfirmados = false,
   comentariosRaiz,
   respostasPorRaiz,
   comentariosTemMais,
@@ -83,6 +85,7 @@ export default function ObraCommentsList({
                 comentarioRemovendoId={comentarioRemovendoId}
                 comentarioCurtindoId={comentarioCurtindoId}
                 agoraComentarios={agoraComentarios}
+                comentariosRemotosConfirmados={comentariosRemotosConfirmados}
                 onResponder={onResponder}
                 onRemover={onRemover}
                 onDenunciar={onDenunciar}

@@ -47,6 +47,8 @@ const dependencies = {
     obterCapitulosPublicadosPainel: () => [],
   },
 };
+let acoesAbertasNoTeste = false;
+dependencies.react = {...React, useState: () => [acoesAbertasNoTeste, () => {}]};
 const compiledModule = { exports: {} };
 new Function("require", "module", "exports", "React", javascript)(
   (name) => {
@@ -86,4 +88,19 @@ test("card do autor mostra seguidores da obra em mobile e desktop sem dados indi
     assert.match(html, /👥 9/);
     assert.doesNotMatch(html, /user_id|email|seguidor_id/);
   }
+});
+
+test("opções da obra publicada reutilizam o deep link de comentários em desktop e mobile", () => {
+  acoesAbertasNoTeste = true;
+  try {
+    for (const isDesktop of [false, true]) {
+      const html = renderToStaticMarkup(React.createElement(ObraPainelCard, {
+        obra: {id: "obra-1", titulo: "Obra teste", slug: "obra-teste", autor: "Autora", publicado: true,
+          capitulos: [], ultimoCapituloLido: null, visualizacoes: 0, totalCurtidas: 0,
+          totalComentarios: 25, totalSalvos: 0, totalSeguidores: 0},
+        isDesktop, onAbrirArquivo: () => {}, onCompartilhar: () => {}, onExcluirObra: () => {},
+      }));
+      assert.match(html, /href="\/obra\/obra-teste\?comentarios=1"[^>]*>Ver comentários<\/a>/);
+    }
+  } finally { acoesAbertasNoTeste = false; }
 });

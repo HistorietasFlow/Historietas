@@ -251,6 +251,7 @@ export const OBRA_DINAMICA_UI_TRANSLATIONS: Record<string, TraducaoObraDinamica>
   "Ocultar respostas": { en: "Hide replies", es: "Ocultar respuestas" },
   "Carregando comentários": { en: "Loading comments", es: "Cargando comentarios" },
   "Sem comentários ainda": { en: "No comments yet", es: "Aún no hay comentarios" },
+  "Sem resposta do autor": { en: "No reply from the author", es: "Sin respuesta del autor" },
   "Adicionar comentário...": { en: "Add a comment...", es: "Añadir un comentario..." },
   "Entre para comentar.": { en: "Sign in to comment.", es: "Inicia sesión para comentar." },
   "Adicionar menção": { en: "Add mention", es: "Añadir mención" },

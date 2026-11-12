@@ -31,7 +31,7 @@ const moduloJavascript = typescript
     'from "../../../../lib/utils";',
     `from "${utilsUrl}";`,
   );
-const { mesclarComentariosObraPorId } = await import(
+const { mesclarComentariosObraPorId, comentarioAguardaRespostaDoAutor, criarEstruturaComentariosObra } = await import(
   criarUrlModulo(moduloJavascript),
 );
 
@@ -49,6 +49,30 @@ function criarComentario(id, texto = id) {
     curtidas: [],
   };
 }
+
+test("identifica conversas de leitores sem resposta somente para o autor atual", () => {
+  const raiz = Object.freeze(criarComentario("raiz"));
+  const respostas = Object.freeze([Object.freeze(criarComentario("outro-leitor"))]);
+  assert.equal(comentarioAguardaRespostaDoAutor(raiz, respostas, "autor", "autor"), true);
+  for (const usuario of ["", "leitor", "outro-autor"]) {
+    assert.equal(comentarioAguardaRespostaDoAutor(raiz, respostas, usuario, "autor"), false);
+  }
+  assert.equal(comentarioAguardaRespostaDoAutor(raiz, respostas, "", ""), false);
+  for (const alteracao of [{userId: "autor"}, {userId: ""}, {local: true}, {comentarioPaiId: "ausente"}]) {
+    assert.equal(comentarioAguardaRespostaDoAutor({...raiz, ...alteracao}, respostas, "autor", "autor"), false);
+  }
+});
+
+test("resposta do autor em qualquer nível elimina o marcador sem depender de expansão ou nome", () => {
+  const raiz = criarComentario("raiz");
+  const primeira = {...criarComentario("resposta"), comentarioPaiId: raiz.id};
+  const autor = {...criarComentario("autor"), userId: "autor", nome: raiz.nome, comentarioPaiId: primeira.id};
+  const estrutura = criarEstruturaComentariosObra([raiz, primeira, autor], "recentes");
+  const respostas = estrutura.respostasPorRaiz.get(raiz.id);
+  assert.equal(comentarioAguardaRespostaDoAutor(raiz, respostas, "autor", "autor"), false);
+  assert.equal(comentarioAguardaRespostaDoAutor(raiz, [{...autor, userId: "homonimo"}], "autor", "autor"), true);
+  assert.equal(comentarioAguardaRespostaDoAutor(raiz, [primeira], "autor", "autor"), true);
+});
 
 test("atualiza IDs existentes sem mudar sua posição e anexa novos comentários", () => {
   const comentarioA = criarComentario("a", "original");

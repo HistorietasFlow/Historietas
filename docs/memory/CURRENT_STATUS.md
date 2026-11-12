@@ -2,6 +2,30 @@
 
 Atualizado em: 2026-11-12
 
+### Painel do autor — conversas sem resposta
+
+O menu da obra publicada passa a oferecer `Ver comentários`, reutilizando
+`comentarios=1` e o sheet atual, sem prefetch adicional. Conversas iniciadas por
+leitores recebem `Sem resposta do autor` somente para a identidade proprietária
+e após leitura remota confirmada da obra/versão de identidade atuais.
+Respostas do autor em qualquer nível contam, inclusive recolhidas; nomes iguais
+não comprovam autoria. Cache/fallback e comentários locais não certificam ausência.
+Não existe contador global nem varredura do catálogo: a indicação abrange apenas
+as conversas paginadas já carregadas. Novas respostas/remoções locais recalculam
+o marcador; alterações externas exigem nova leitura pelo fluxo existente.
+Comentários de capítulos, spoilers, RLS e agendamento não foram alterados.
+O deep link aguarda identidade e barreira pública antes de abrir: a limpeza
+inicial de conta fechava o sheet autenticado prematuramente. Reconfirmações não
+reabrem um sheet já fechado manualmente; Voltar/Avançar mantém a intenção da URL.
+Validação local: Playwright 9/9 (5 novos e 4 existentes), desktop/mobile,
+workers=1/retries=0, incluindo axe; autorização Data API 5/5 e auditoria estática
+199/199; unitários focados 27/27, Typecheck e Build passaram. Não houve
+migration, mudança de RLS ou nova consulta.
+Integrações amplas no descartável reutilizado não ficaram verdes: paginação
+57014 e antispam 28/60 curtidas aceitas; nenhuma regra/limite foi relaxado.
+Não atribuir essas falhas ao frontend nem declarar a suíte completa aprovada.
+Detalhes dos demais gates e limitações constam na PR correspondente.
+
 ### PR #2273 — isolamento QA de notificacoes
 
 Run `43140137033`: primeira falha real em capacidade:167, notificacoes 0/2.
