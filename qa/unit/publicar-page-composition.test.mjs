@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
+import "./publicar-chapter-preview.test.mjs";
 
 const pagina = readFileSync(
   new URL("../../app/publicar/page.tsx", import.meta.url),
