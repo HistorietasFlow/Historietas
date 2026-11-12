@@ -66,7 +66,7 @@ function normalizarBuscaExplorar(valor: string | null) {
   return (valor || "").trim().slice(0, LIMITE_BUSCA_EXPLORAR);
 }
 
-function normalizarFormatoExplorar(valor: string | null | undefined) {
+export function normalizarFormatoExplorar(valor: string | null | undefined) {
   return OPCOES_FORMATO_OBRA.find(
     (formato) => formato.localeCompare(valor?.trim() || "", "pt-BR", {
       sensitivity: "base",
