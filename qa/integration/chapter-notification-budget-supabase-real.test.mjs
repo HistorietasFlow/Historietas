@@ -79,12 +79,36 @@ test("orcamento de notificacoes local: concorrencia, snapshot, rollback e Data A
     check(await author.rpc("agendar_capitulo", { p_capitulo_id: chapter(n), p_revisao_esperada: 0, p_publicar_em: "2099-01-01Z", p_fuso_horario: "UTC" }));
     sql(`update historietas_privado.capitulo_agendamentos set publicar_em=now()-interval '1 hour' where capitulo_id='${chapter(n)}';`);
   };
-  t.after(() => {
+  const preserved = () => sql(`select jsonb_build_object(
+    'outbox',(select coalesce(jsonb_agg(to_jsonb(e) order by e.id),'[]'::jsonb) from historietas_privado.capitulo_cache_outbox e),
+    'recibos',(select coalesce(jsonb_agg(to_jsonb(e) order by e.capitulo_id,e.revisao_agendada),'[]'::jsonb) from historietas_privado.capitulo_publicacao_eventos e),
+    'saldo',(select to_jsonb(b) from historietas_privado.capitulo_notificacao_orcamento b),
+    'capacidade',(select to_jsonb(c) from historietas_privado.capitulo_runner_capacidade c));`);
+  const closePendingFixture = async () => {
+    const snapshot = preserved();
+    const pending = JSON.parse(sql(`select coalesce(jsonb_agg(jsonb_build_object('id',a.capitulo_id,'revisao',a.revisao)
+      order by a.capitulo_id),'[]'::jsonb) from historietas_privado.capitulo_agendamentos a
+      join public.capitulos c on c.id=a.capitulo_id
+      where a.autor_id='${AUTHOR}' and c.user_id='${AUTHOR}' and c.obra_id='${WORK}' and a.estado in ('agendado','erro');`));
+    for (const item of pending) {
+      const result = check(await author.rpc("cancelar_agendamento_capitulo", { p_capitulo_id: item.id, p_revisao_esperada: item.revisao }));
+      assert.equal(result.capituloId, item.id); assert.equal(result.estado, "cancelado");
+      assert.equal(result.revisao, item.revisao + 1);
+    }
+    assert.equal(sql(`select count(*) from historietas_privado.capitulo_agendamentos a
+      join public.capitulos c on c.id=a.capitulo_id where a.autor_id='${AUTHOR}' and c.user_id='${AUTHOR}'
+      and c.obra_id='${WORK}' and a.estado in ('agendado','erro');`), "0", "Fixture nao deixa trabalho para o runner global.");
+    assert.equal(preserved(), snapshot, "Cancelar apenas a fixture preserva integralmente outbox, recibos, saldo e limites fisicos.");
+    return pending.map(item => item.id);
+  };
+  t.after(async () => {
     sql(`update historietas_privado.capitulo_runner_controle set habilitado=false;
-      update historietas_privado.capitulo_notificacao_orcamento set limite_total=${before.limite_total};
-      delete from public.obras where id='${WORK}';
-      delete from public.profiles where user_id in ('${AUTHOR}',${readers.map(id => `'${id}'`).join(",")});
-      delete from auth.users where id in ('${AUTHOR}',${readers.map(id => `'${id}'`).join(",")});`);
+      update historietas_privado.capitulo_notificacao_orcamento set limite_total=${before.limite_total};`);
+    // Preservar tambem os recibos/atividades: excluir a obra/conta da fixture
+    // causaria cascatas. O banco inteiro e descartavel e os IDs sao exclusivos.
+    // Encerrar so as intencoes proprias pelo contrato autenticado/CAS: manter
+    // trabalho vencido ativo contaminaria o runner global das suites seguintes.
+    await closePendingFixture();
     // Nenhuma outbox e removida; debitos confirmados tampouco sao resetados.
     assert.equal(sql("select habilitado from historietas_privado.capitulo_runner_controle;"), "f");
   });
@@ -166,5 +190,35 @@ test("orcamento de notificacoes local: concorrencia, snapshot, rollback e Data A
     }
     assert.equal((await run(6)).estado, "publicado");
     assert.equal((await run(6)).repetido, true);
+  });
+  await t.test("debito zero preserva tupla, saldo e locks; contencao e retry nao gastam capacidade", async () => {
+    const b = budget();
+    const empty = "select historietas_privado.admitir_notificacoes_capitulo('{\"linhas\":[],\"destinatarios\":0}');";
+    const held = await barrier(`begin; ${empty}`);
+    try { await assert.rejects(asyncSql(`begin; ${empty} rollback;`), /55P03/); }
+    finally { assert.equal((await held.finish()).code, 0); }
+    const result = sql(`begin;
+      select ctid::text from historietas_privado.capitulo_notificacao_orcamento;
+      select bool_and(historietas_privado.admitir_notificacoes_capitulo('{"linhas":[],"destinatarios":0}')) from generate_series(1,100);
+      select ctid::text from historietas_privado.capitulo_notificacao_orcamento;
+      rollback;`).split(/\r?\n/);
+    assert.equal(result[1], "t"); assert.equal(result[0], result[2]);
+    assert.deepEqual(budget(), b);
+  });
+  await t.test("plano vazio com snapshot obsoleto nao contorna FOR UPDATE", async () => {
+    await prepare(7);
+    const old = await barrier("begin isolation level repeatable read; select notificacoes_admitidas from historietas_privado.capitulo_notificacao_orcamento;");
+    let result;
+    try {
+      assert.equal((await run(7)).estado, "publicado");
+    } finally { result = await old.finish("select historietas_privado.admitir_notificacoes_capitulo('{\"linhas\":[],\"destinatarios\":0}'); commit;"); }
+    assert.notEqual(result.code, 0); assert.match(result.err, /40001/);
+  });
+  await t.test("encerramento cancela somente a pendencia propria sem apagar evidencias nem reutilizar saldo", async () => {
+    assert.equal(sql(`select publicado from public.capitulos where id='${chapter(2)}';`), "f");
+    assert.deepEqual(await closePendingFixture(), [chapter(2)]);
+    assert.deepEqual(await closePendingFixture(), [], "Encerramento repetido nao altera revisoes ou faz novas escritas.");
+    assert.equal(sql(`select estado||':'||revisao from historietas_privado.capitulo_agendamentos where capitulo_id='${chapter(2)}';`), "cancelado:2");
+    assert.equal(sql(`select publicado from public.capitulos where id='${chapter(2)}';`), "f");
   });
 });

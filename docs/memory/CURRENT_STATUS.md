@@ -1,6 +1,40 @@
 # Estado atual
 
-Atualizado em: 2026-11-11
+Atualizado em: 2026-11-12
+
+### PR #2273 — isolamento QA de notificacoes
+
+Run `43140137033`: primeira falha real em capacidade:167, notificacoes 0/2.
+Fixture anterior deixou capitulo vencido em erro; runner global publicou esse
+capitulo antes dos alvos da suite. Reproduzido em banco inicialmente vazio:
+13/17, mesma assercao, com captura de estados/notificacoes na ocorrencia.
+Correcao QA cancela somente agendamentos ativos proprios pela RPC autenticada
+e revisao/CAS, preservando obra, outbox, recibos, debitos e limites. Nenhuma
+alteracao adicional em migration, producao, locks/RLS ou controles administrativos.
+Em outro descartavel: pgTAP completo 954/954; sequencia notificacoes ->
+capacidade 18/18, serial e sem retries, mantendo todas as assercoes anteriores.
+Ver `QA_AGENDAMENTO_OUTBOX.md` e checks da propria PR para os gates completos.
+
+### PH-1 — capacidade fisica/WAL, reducao parcial
+
+Base `d7194237`. Fonte de disco gerenciada continua nao homologada; sem token
+de menor privilegio disponivel, nenhuma consulta/SQL/carga em producao.
+API oficial oferece timestamp/fs_avail; Metrics API tem series de filesystem,
+mas exemplo/HTTP recente nao certificam coleta nem reserva. PH-1 NAO APTO.
+Encontrado UPDATE sem debito na admissao privada 6D4. Migration dedicada
+`20261112013209_evitar_reescrita_saldo_notificacoes_vazio.sql` evita somente
+reescrita de plano vazio, apos validacoes e mesmos locks; nao recria saldo nem
+altera limites, grants/RLS, monitoramento, runner ou gates.
+Ensaio local de 100 chamadas: CTID variava antes e ficou estavel depois;
+WAL 202 registros/17.908 bytes (2 FPI) antes, 1/54 (0 FPI) depois. Amostras
+com cache/FPI diferentes, nao teto/percentual garantido. Rollback nao apaga WAL.
+Ver `AGENDAMENTO_CAPACIDADE_PH1.md`: fontes, demais escritores, evidencias,
+limites e proxima homologacao. Sem ativacao, ACK, purga ou mudanca de producao.
+Validacao isolada: pgTAP completo 954/954, integracao afetada 8/8 e smoke
+Playwright desktop/mobile 8/8 sem retries; Lint/Typecheck/Build/static/sessao
+e paginacao unitarias passaram. Integracao geral de paginacao ficou pendente
+por timeout na consulta de comentarios; nao mascarado. Volumes preservados e
+onze containers antigos restaurados. Detalhes/limites no relatorio PH-1.
 
 ### Ressincronizacao SQL proposta, sem merge
 
