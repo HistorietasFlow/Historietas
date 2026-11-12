@@ -2,6 +2,21 @@
 
 Atualizado em: 2026-11-12
 
+### QA — navegação do Leitor canônico
+
+Ambiguidade da CI `43269859618` investigada sem alterar o Leitor. Inspeção
+local capturou texto duplicado em uma raiz visível e outra sob `div#S:1[hidden]`
+do streaming; não duas raízes ativas. O teste de histórico limita as asserções
+ao Leitor visível único e aguarda uma nova requisição/resposta pública da
+identidade/capítulo esperado em cada transição. Cópias controladas comprovam
+que conteúdo oculto não confunde a seleção e duplicação visível não é ignorada.
+SSR/metadata/404/query conflitante/leitor interno mantêm seus testes separados.
+Playwright focado 7/7, desktop/mobile, workers=1/retries=0, next start; Lint
+focado e diff check aprovados. Build equivalente à main reutilizado; somente
+Database/Auth/Data API locais, sem Storage/Realtime. Suíte completa para a CI;
+não declarar estabilidade absoluta por uma única rodada. Detalhes e limitações
+em `PROBLEMS_AND_SOLUTIONS.md`. Sem mudanças em produção, banco ou controles.
+
 ### Publicar — prévia integral do primeiro capítulo importado
 
 `/publicar` encaminha `arquivoCapituloTexto` já validado pelo controlador para
