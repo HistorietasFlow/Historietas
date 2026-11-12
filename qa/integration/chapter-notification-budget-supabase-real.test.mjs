@@ -81,10 +81,9 @@ test("orcamento de notificacoes local: concorrencia, snapshot, rollback e Data A
   };
   t.after(() => {
     sql(`update historietas_privado.capitulo_runner_controle set habilitado=false;
-      update historietas_privado.capitulo_notificacao_orcamento set limite_total=${before.limite_total};
-      delete from public.obras where id='${WORK}';
-      delete from public.profiles where user_id in ('${AUTHOR}',${readers.map(id => `'${id}'`).join(",")});
-      delete from auth.users where id in ('${AUTHOR}',${readers.map(id => `'${id}'`).join(",")});`);
+      update historietas_privado.capitulo_notificacao_orcamento set limite_total=${before.limite_total};`);
+    // Preservar tambem os recibos/atividades: excluir a obra/conta da fixture
+    // causaria cascatas. O banco inteiro e descartavel e os IDs sao exclusivos.
     // Nenhuma outbox e removida; debitos confirmados tampouco sao resetados.
     assert.equal(sql("select habilitado from historietas_privado.capitulo_runner_controle;"), "f");
   });
@@ -166,5 +165,28 @@ test("orcamento de notificacoes local: concorrencia, snapshot, rollback e Data A
     }
     assert.equal((await run(6)).estado, "publicado");
     assert.equal((await run(6)).repetido, true);
+  });
+  await t.test("debito zero preserva tupla, saldo e locks; contencao e retry nao gastam capacidade", async () => {
+    const b = budget();
+    const empty = "select historietas_privado.admitir_notificacoes_capitulo('{\"linhas\":[],\"destinatarios\":0}');";
+    const held = await barrier(`begin; ${empty}`);
+    try { await assert.rejects(asyncSql(`begin; ${empty} rollback;`), /55P03/); }
+    finally { assert.equal((await held.finish()).code, 0); }
+    const result = sql(`begin;
+      select ctid::text from historietas_privado.capitulo_notificacao_orcamento;
+      select bool_and(historietas_privado.admitir_notificacoes_capitulo('{"linhas":[],"destinatarios":0}')) from generate_series(1,100);
+      select ctid::text from historietas_privado.capitulo_notificacao_orcamento;
+      rollback;`).split(/\r?\n/);
+    assert.equal(result[1], "t"); assert.equal(result[0], result[2]);
+    assert.deepEqual(budget(), b);
+  });
+  await t.test("plano vazio com snapshot obsoleto nao contorna FOR UPDATE", async () => {
+    await prepare(7);
+    const old = await barrier("begin isolation level repeatable read; select notificacoes_admitidas from historietas_privado.capitulo_notificacao_orcamento;");
+    let result;
+    try {
+      assert.equal((await run(7)).estado, "publicado");
+    } finally { result = await old.finish("select historietas_privado.admitir_notificacoes_capitulo('{\"linhas\":[],\"destinatarios\":0}'); commit;"); }
+    assert.notEqual(result.code, 0); assert.match(result.err, /40001/);
   });
 });

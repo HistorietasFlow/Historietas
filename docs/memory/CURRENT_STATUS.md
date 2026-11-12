@@ -2,6 +2,27 @@
 
 Atualizado em: 2026-11-11
 
+### PH-1 — capacidade fisica/WAL, reducao parcial
+
+Base `d7194237`. Fonte de disco gerenciada continua nao homologada; sem token
+de menor privilegio disponivel, nenhuma consulta/SQL/carga em producao.
+API oficial oferece timestamp/fs_avail; Metrics API tem series de filesystem,
+mas exemplo/HTTP recente nao certificam coleta nem reserva. PH-1 NAO APTO.
+Encontrado UPDATE sem debito na admissao privada 6D4. Migration dedicada
+`20261112013209_evitar_reescrita_saldo_notificacoes_vazio.sql` evita somente
+reescrita de plano vazio, apos validacoes e mesmos locks; nao recria saldo nem
+altera limites, grants/RLS, monitoramento, runner ou gates.
+Ensaio local de 100 chamadas: CTID variava antes e ficou estavel depois;
+WAL 202 registros/17.908 bytes (2 FPI) antes, 1/54 (0 FPI) depois. Amostras
+com cache/FPI diferentes, nao teto/percentual garantido. Rollback nao apaga WAL.
+Ver `AGENDAMENTO_CAPACIDADE_PH1.md`: fontes, demais escritores, evidencias,
+limites e proxima homologacao. Sem ativacao, ACK, purga ou mudanca de producao.
+Validacao isolada: pgTAP completo 954/954, integracao afetada 8/8 e smoke
+Playwright desktop/mobile 8/8 sem retries; Lint/Typecheck/Build/static/sessao
+e paginacao unitarias passaram. Integracao geral de paginacao ficou pendente
+por timeout na consulta de comentarios; nao mascarado. Volumes preservados e
+onze containers antigos restaurados. Detalhes/limites no relatorio PH-1.
+
 ### Ressincronizacao SQL proposta, sem merge
 
 Apos #2271 na `main`, o cron SQL apareceu habilitado no GitHub, mas sem runs
