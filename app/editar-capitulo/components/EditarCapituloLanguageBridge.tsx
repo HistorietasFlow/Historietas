@@ -37,6 +37,8 @@ const EDITAR_CAPITULO_UI_TRANSLATIONS: Record<
   "Excluindo...": { en: "Deleting...", es: "Eliminando..." },
   "Não foi possível excluir": { en: "Could not delete", es: "No se pudo eliminar" },
   "PRÉVIA DO CAPÍTULO": { en: "CHAPTER PREVIEW", es: "VISTA PREVIA DEL CAPÍTULO" },
+  "Ler prévia completa": { en: "Read full preview", es: "Leer vista previa completa" },
+  "Recolher prévia": { en: "Collapse preview", es: "Contraer vista previa" },
   "O texto do capítulo vai aparecer aqui enquanto você edita.": { en: "The chapter text will appear here while you edit.", es: "El texto del capítulo aparecerá aquí mientras lo editas." },
   "Obra sem título": { en: "Untitled work", es: "Obra sin título" },
   "Autor não informado": { en: "Author not provided", es: "Autor no indicado" },

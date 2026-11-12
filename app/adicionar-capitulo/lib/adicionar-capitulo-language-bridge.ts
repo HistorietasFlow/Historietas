@@ -48,6 +48,8 @@ const TRADUCOES_ADICIONAR_CAPITULO: Record<
     "Ver obra": "View work",
     "Cancelar": "Cancel",
     "PRÉVIA DO CAPÍTULO": "CHAPTER PREVIEW",
+    "Ler prévia completa": "Read full preview",
+    "Recolher prévia": "Collapse preview",
     "Obra sem título": "Untitled work",
     "Autor não informado": "Author not provided",
     "Não informado": "Not provided",
@@ -95,6 +97,8 @@ const TRADUCOES_ADICIONAR_CAPITULO: Record<
     "Ver obra": "Ver obra",
     "Cancelar": "Cancelar",
     "PRÉVIA DO CAPÍTULO": "VISTA PREVIA DEL CAPÍTULO",
+    "Ler prévia completa": "Leer vista previa completa",
+    "Recolher prévia": "Contraer vista previa",
     "Obra sem título": "Obra sin título",
     "Autor não informado": "Autor no indicado",
     "Não informado": "No indicado",
@@ -232,7 +236,10 @@ export function traduzirElementoAdicionarCapitulo(
     const elementoPai = noTexto.parentElement;
     const tagPai = elementoPai?.tagName.toLowerCase() || "";
 
-    if (!["script", "style", "textarea"].includes(tagPai)) {
+    if (
+      !["script", "style", "textarea"].includes(tagPai) &&
+      !elementoPai?.closest("[data-historietas-i18n-ignore='true']")
+    ) {
       const textoAtual = noTexto.nodeValue || "";
       const estadoAnterior =
         estadosTextosTraduzidosAdicionarCapitulo.get(noTexto);

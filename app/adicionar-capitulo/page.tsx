@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
+import { ChapterTextPreview } from "../../components/ChapterTextPreview";
 import { useAdicionarCapituloCreateAction } from "./hooks/useAdicionarCapituloCreateAction";
 import { useAdicionarCapituloDesktopMode } from "./hooks/useAdicionarCapituloDesktopMode";
 import { useAdicionarCapituloDerivedValues } from "./hooks/useAdicionarCapituloDerivedValues";
@@ -432,9 +433,13 @@ export default function AdicionarCapituloPage() {
                 </h3>
               </div>
 
-              <p style={isDesktop ? desktopPreviewChapterTextStyle : previewChapterTextStyle}>
-                {textoPreview}
-              </p>
+              <ChapterTextPreview
+                key={obraId}
+                textStyle={isDesktop ? desktopPreviewChapterTextStyle : previewChapterTextStyle}
+                buttonStyle={isDesktop ? desktopSecondaryButtonStyle : secondaryButtonStyle}
+              >
+                <span data-historietas-i18n-ignore="true">{textoPreview}</span>
+              </ChapterTextPreview>
             </article>
           </aside>
         </section>
