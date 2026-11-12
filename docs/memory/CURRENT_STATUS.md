@@ -27,6 +27,20 @@ main, esse fluxo falhou antes da prévia, no login. Isso não comprova causa com
 nem autoriza declarar a regressão ampla aprovada. Nenhum timeout, retry,
 asserção ou fluxo de produção foi alterado para obter aprovação.
 
+Correção QA da #2275: a CI `43264952229` falhou no beforeAll, antes da
+prévia, porque a fixture exigia somente `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
+O preparo E2E exporta `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`; a fixture agora
+reutiliza a prioridade publishable/anon dos outros testes, preservando o guard
+de loopback, a identidade autenticada e o cleanup da própria obra privada.
+Revalidação com ANON ausente: Playwright 6/6 (quatro prévias e retry do
+Explorar desktop/mobile), workers=1/retries=0, mais 25/25 unitários e Lint focado.
+O retry mobile da CI manteve o aviso visível na primeira tentativa e passou
+no retry; só a tentativa aprovada tem trace de rede, com respostas HTTP 200.
+Explorar e seu teste são idênticos à main. Comparação local do build anterior
+atingiu timeout em outra etapa, antes do aviso inicial; não comprova a causa
+da falha original. Sem mudança nesse teste, sem atribuir causa de rede/banco
+sem evidência e sem declarar estabilidade apenas pelo retry aprovado.
+
 ### Painel do autor — conversas sem resposta
 
 O menu da obra publicada passa a oferecer `Ver comentários`, reutilizando

@@ -13,7 +13,8 @@ test.beforeAll(async () => {
   if (!hasAuthorCredentials || !destructiveEnabled) return;
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   expect(["127.0.0.1", "localhost", "[::1]"]).toContain(new URL(url).hostname);
-  cliente = createClient(url, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY, {auth: {persistSession: false, autoRefreshToken: false}});
+  const key = (process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "").trim();
+  cliente = createClient(url, key, {auth: {persistSession: false, autoRefreshToken: false}});
   const login = await cliente.auth.signInWithPassword({email: authorEmail, password: authorPassword});
   expect(login.error).toBeNull();
   const usuarioId = login.data.user.id;
