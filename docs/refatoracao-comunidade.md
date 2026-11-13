@@ -1,5 +1,12 @@
 # Refatoração da Comunidade
 
+## Capas privadas — preparação da integração
+
+- Módulos isolados e desativados preparam referências imutáveis, portas de
+  upload, proteção contra fallback público e reconciliação de quotas privadas.
+  Sem alterações nos fluxos ativos. Contratos de banco/entrega e validação real
+  permanecem dependências; ver [registro](memory/CAPAS_PRIVADAS_INTEGRACAO.md).
+
 ## Ler Capítulo — Fase 6: estado de feedback e overlays do leitor
 
 - Os estados locais de denúncia, mensagem de ação e ajustes do leitor foram reunidos em hook dedicado, preservando autenticação, mensagens, denúncia, callbacks e consumidores existentes.

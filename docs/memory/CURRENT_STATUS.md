@@ -2,6 +2,16 @@
 
 Atualizado em: 2026-11-13
 
+### Capas privadas — preparação de integração desativada
+
+Adaptadores isolados de referência/upload e modelo de quotas incluindo privado,
+sem consumidores ativos, SDK, endpoint ou migration. Entrada retorna `disabled`.
+PR 1 e entrega privada ainda pendentes; formatos/portas são provisórios.
+Inventário de consumidores e dependências em
+[CAPAS_PRIVADAS_INTEGRACAO.md](CAPAS_PRIVADAS_INTEGRACAO.md).
+Guard 18+ legado, uploads ilustrados e produção permanecem sem ativação.
+Testes simulados não homologam banco, Storage, concorrência física ou CDN.
+
 ### Investigação — transição 18+ com capa existente
 
 Sobre `main` `a5ac96c7`, em branch independente da #2286: **sem solução

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readdirSync, readFileSync } from "node:fs";
 import test from "node:test";
+import "./private-cover-integration.test.mjs";
 
 const migrationsDir = new URL("../../supabase/migrations/", import.meta.url);
 const migrationName = readdirSync(migrationsDir).find((name) =>
