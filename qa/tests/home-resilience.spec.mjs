@@ -1,8 +1,13 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
+import { createClient } from "@supabase/supabase-js";
+import { authorEmail, authorPassword, hasAuthorCredentials } from "./helpers.mjs";
 
 // Entirely controlled HTTP fixtures; never access a managed Supabase project.
 const API = (process.env.NEXT_PUBLIC_SUPABASE_URL || "").replace(/\/$/, "");
+const APP = (process.env.E2E_BASE_URL || "http://127.0.0.1:3000").replace(/\/$/, "");
+const PUBLIC_KEY = (process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "").trim();
 const id = (n) => `e0100000-0000-4000-8000-${String(n).padStart(12, "0")}`;
 const WORK = id(1), USER = id(2), CHAPTER = id(3);
 const title = "Obra de teste resiliente";
@@ -18,6 +23,35 @@ const warning = page => page.getByRole("status").filter({ has: page.getByRole("b
 async function fixtures(page, { authenticated = false, badStorage = false, failed = false, holdCollections = false, empty = false } = {}) {
   let offline = failed;
   let release;
+  let fixtureUserId = USER;
+  let fixtureUser = user;
+  if (authenticated) {
+    // The static unsigned JWT previously stored via document.cookie could be
+    // rejected by getUser(), racing INITIAL_SESSION and masking personal cache.
+    // Obtain a genuine, disposable *local* session without modifying data.
+    expect(API).toMatch(/^http:\/\/(?:127\.0\.0\.1|localhost):/);
+    expect(APP).toMatch(/^http:\/\/(?:127\.0\.0\.1|localhost):/);
+    if (!hasAuthorCredentials || !PUBLIC_KEY) {
+      throw new Error("Home E2E requires the existing local author credentials.");
+    }
+    const client = createClient(API, PUBLIC_KEY, {
+      auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+    });
+    const { data, error } = await client.auth.signInWithPassword({
+      email: authorEmail, password: authorPassword,
+    });
+    expect(error).toBeNull();
+    expect(data.session?.access_token).toBeTruthy();
+    expect(data.user?.id).toBeTruthy();
+    fixtureUserId = data.user.id;
+    fixtureUser = data.user;
+    const cookieName = `sb-${new URL(API).hostname.split(".")[0]}-auth-token`;
+    await page.context().addCookies([{
+      name: cookieName,
+      value: `base64-${Buffer.from(JSON.stringify(data.session)).toString("base64url")}`,
+      url: APP,
+    }]);
+  }
   const collectionGate = new Promise(resolve => { release = resolve; });
   const requests = [];
   const warnings = [];
@@ -27,34 +61,28 @@ async function fixtures(page, { authenticated = false, badStorage = false, faile
     const url = new URL(request.url());
     if (request.method() === "OPTIONS") return route.fulfill({ status: 200 });
     requests.push(url.pathname);
-    if (url.pathname.includes("/auth/v1/user")) return route.fulfill({ json: user });
+    if (url.pathname.includes("/auth/v1/user")) return route.fulfill({ json: fixtureUser });
     const table = url.pathname.split("/").pop();
     if (holdCollections && ["favoritos", "concluidas"].includes(table)) await collectionGate;
     if (offline && url.pathname.includes("/rest/")) return route.fulfill({ status: 503, json: { message: "controlled failure" } });
     let result = [];
     if (table === "listar_obras_catalogo" && !empty) result = [{ obra_id: WORK, cursor_id: WORK, cursor_valor: 1, cursor_data: "2026-01-01T00:00:00Z", tem_mais: false }];
     if (table === "obras" && !empty) result = [{
-      id: WORK, user_id: USER, titulo: title, autor: "Autora remota", genero: "Fantasia", formato: "Webnovel", classificacao_indicativa: "Livre", sinopse: "Sinopse", tags: [], capa_url: "", publicado: true,
+      id: WORK, user_id: fixtureUserId, titulo: title, autor: "Autora remota", genero: "Fantasia", formato: "Webnovel", classificacao_indicativa: "Livre", sinopse: "Sinopse", tags: [], capa_url: "", publicado: true,
       slug: "obra-resiliente", criada_em: "2026-01-01T00:00:00Z", link: "/obra/obra-resiliente",
     }];
-    if (table === "capitulos") result = [{ id: CHAPTER, obra_id: WORK, user_id: USER, titulo: "Capítulo", ordem: 1, publicado: true, criado_em: "2026-01-01T00:00:00Z" }];
-    if (table === "profiles_publicos") result = [{ id: USER, user_id: USER, nome: "Autora remota", avatar_url: "", bio: "Bio remota" }];
+    if (table === "capitulos") result = [{ id: CHAPTER, obra_id: WORK, user_id: fixtureUserId, titulo: "Capítulo", ordem: 1, publicado: true, criado_em: "2026-01-01T00:00:00Z" }];
+    if (table === "profiles_publicos") result = [{ id: fixtureUserId, user_id: fixtureUserId, nome: "Autora remota", avatar_url: "", bio: "Bio remota" }];
     if (table === "favoritos") result = [{ obra_id: WORK }];
     return route.fulfill({ json: result });
   });
-  await page.addInitScript(({ authenticated, badStorage, user, localWork, USER, storageKey }) => {
-    // createBrowserClient uses the browser's user-scoped cookies for Auth.
-    if (authenticated) {
-      const now = Math.floor(Date.now() / 1000);
-      const encode = value => btoa(JSON.stringify(value)).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
-      const session = { access_token: `${encode({ alg: "HS256", typ: "JWT" })}.${encode({ sub: USER, exp: now + 3600, iat: now, aud: "authenticated", role: "authenticated" })}.fixture`, refresh_token: "fixture-refresh", expires_at: now + 3600, expires_in: 3600, token_type: "bearer", user };
-      document.cookie = `${storageKey}=base64-${btoa(JSON.stringify(session)).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "")}; path=/; SameSite=Lax`;
-    }
-    localStorage.setItem(`historietas-obras:${USER}`, badStorage ? "{invalid" : JSON.stringify([localWork]));
-    localStorage.setItem(`historietas-obras-favoritas:${USER}`, JSON.stringify([localWork.id]));
-    localStorage.setItem(`historietas-perfis-autores:${USER}`, JSON.stringify({ [USER]: { bio: "Bio local", avatar: "", avatarNome: "" } }));
-  }, { authenticated, badStorage, user, localWork, USER, storageKey: `sb-${new URL(API).hostname.split(".")[0]}-auth-token` });
-  return { requests, warnings, release, recover: () => { offline = false; } };
+  await page.addInitScript(({ badStorage, localWork, userId }) => {
+    const personalWork = { ...localWork, autorId: userId };
+    localStorage.setItem(`historietas-obras:${userId}`, badStorage ? "{invalid" : JSON.stringify([personalWork]));
+    localStorage.setItem(`historietas-obras-favoritas:${userId}`, JSON.stringify([localWork.id]));
+    localStorage.setItem(`historietas-perfis-autores:${userId}`, JSON.stringify({ [userId]: { bio: "Bio local", avatar: "", avatarNome: "" } }));
+  }, { badStorage, localWork, userId: fixtureUserId });
+  return { requests, warnings, release, userId: fixtureUserId, recover: () => { offline = false; } };
 }
 
 for (const device of [
@@ -128,6 +156,6 @@ for (const device of [
     await expect(page.getByRole("heading", { name: title, exact: true, level: 1 })).toBeVisible();
     await expect(warning(page)).toBeVisible();
     await expect(page.getByRole("button", { name: "Salvo", exact: true }).first()).toBeVisible();
-    expect(await page.evaluate(USER => localStorage.getItem(`historietas-obras:${USER}`), USER)).toBe("{invalid");
+    expect(await page.evaluate(userId => localStorage.getItem(`historietas-obras:${userId}`), f.userId)).toBe("{invalid");
   });
 }
