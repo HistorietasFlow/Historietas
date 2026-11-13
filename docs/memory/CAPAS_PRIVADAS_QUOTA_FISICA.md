@@ -18,3 +18,11 @@ e integracao com a exclusao de conta. As mudancas desta PR nao liberam a
 entrada do fluxo, nao limpam dados e nao alteram a producao.
 
 Validar via CI/pgtap no Supabase descartavel. Nenhuma migration remota.
+
+## CI da composição
+
+A PR documental e de infraestrutura foi apontada para `main` apenas para acionar
+as verificações completas do GitHub (o workflow existente só executa para PRs
+baseadas em `main`). A branch contém também a composição ainda não integrada
+da #2292; **não mesclar diretamente sem resolver a ordem das PRs**.
+A migration e os testes continuam restritos ao Supabase local descartável da CI.
