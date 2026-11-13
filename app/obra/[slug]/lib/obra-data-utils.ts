@@ -87,6 +87,7 @@ export type ObraDinamica = {
   classificacaoIndicativa: string;
   avisosConteudo: AvisoConteudo18[];
   status: string;
+  statusEditorial?: "em_andamento" | "concluida" | "pausada" | null;
   views: string;
   likes: string;
   comentarios: string;

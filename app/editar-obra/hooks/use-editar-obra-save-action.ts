@@ -1,3 +1,5 @@
+import { useRef } from "react";
+import type { useEditarObraEditorial } from "./use-editar-obra-editorial";
 import type { Dispatch, FormEvent, SetStateAction } from "react";
 import type { AvisoConteudo18 } from "../../../lib/historietasAdultContent";
 import { carregarBackupArquivosObras } from "../lib/editar-obra-file-backup-storage";
@@ -24,6 +26,7 @@ type RouterEditarObra = {
 
 type UseEditarObraSaveActionProps = {
   router: RouterEditarObra;
+  editorial: ReturnType<typeof useEditarObraEditorial>;
   processando: boolean;
   titulo: string;
   autor: string;
@@ -65,6 +68,7 @@ type UseEditarObraSaveActionProps = {
 
 export function useEditarObraSaveAction({
   router,
+  editorial,
   processando,
   titulo,
   autor,
@@ -103,10 +107,12 @@ export function useEditarObraSaveAction({
   setArquivoObraArquivo,
   setArquivoObraRemovidoManualmente,
 }: UseEditarObraSaveActionProps) {
+  const envioEmAndamento = useRef(false);
   async function salvarEdicao(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (processando) {
+    const capturaEditorial = editorial.capturar();
+    if (processando || envioEmAndamento.current || !capturaEditorial.podeSalvar) {
       return;
     }
 
@@ -133,6 +139,7 @@ export function useEditarObraSaveAction({
       return;
     }
 
+    envioEmAndamento.current = true;
     setProcessando(true);
     setErro("");
 
@@ -174,6 +181,8 @@ export function useEditarObraSaveAction({
       }
 
       const { userId, nomeProfileAtualizado } = identidadeSalvamento;
+      if (!capturaEditorial.vigente() || (capturaEditorial.confirmado &&
+        (capturaEditorial.confirmado.id !== obraId || capturaEditorial.confirmado.userId !== userId))) return;
       autorFinal = nomeProfileAtualizado || autorFinal;
       setNomeAutorProfile(nomeProfileAtualizado);
 
@@ -191,6 +200,7 @@ export function useEditarObraSaveAction({
         return;
       }
 
+      if (!capturaEditorial.vigente()) return;
       const { obraLocalAtual, obraRemotaAtual } = confirmacaoPropriedade;
       let capaFinal = "";
       let capaNomeFinal = "";
@@ -237,7 +247,8 @@ export function useEditarObraSaveAction({
         throw new Error(mensagemSupabase);
       }
 
-      await atualizarObraRemotaEdicaoObra({
+      if (!capturaEditorial.vigente()) return;
+      const resultadoRemoto = await atualizarObraRemotaEdicaoObra({
         obraId,
         userId,
         tituloFinal,
@@ -253,10 +264,19 @@ export function useEditarObraSaveAction({
         arquivoObraFinal,
         agora,
         arquivosNovosEnviados,
+        vigente: capturaEditorial.vigente,
+        editorial: capturaEditorial.confirmado && capturaEditorial.escolha !== capturaEditorial.confirmado.status
+          ? { confirmado: capturaEditorial.confirmado, escolha: capturaEditorial.escolha } : undefined,
       });
+      capturaEditorial.concluir(resultadoRemoto);
+      if (resultadoRemoto.estado !== "confirmada" || !capturaEditorial.vigente()) {
+        setSalvou(false);
+        return;
+      }
 
       await removerArquivosStorageEdicaoObra(arquivosAntigosParaRemover);
 
+      if (!capturaEditorial.vigente()) return;
       const novasObrasDoUsuario = persistirObraLocalEBackupEdicaoObra({
         obras,
         obraId,
@@ -283,6 +303,7 @@ export function useEditarObraSaveAction({
         atualizadoEm: agora,
       });
 
+      if (!capturaEditorial.vigente()) return;
       setObras(novasObrasDoUsuario);
       setAutor(autorFinal);
       setCapa(capaFinal);
@@ -309,6 +330,7 @@ export function useEditarObraSaveAction({
         behavior: "smooth",
       });
     } finally {
+      envioEmAndamento.current = false;
       setProcessando(false);
     }
   }

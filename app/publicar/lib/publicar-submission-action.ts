@@ -1,5 +1,6 @@
 import type { FormEvent, MutableRefObject } from "react";
 import { supabase } from "../../../lib/supabase/client";
+import { filtroStatusEditorial } from "../../../lib/statusEditorial";
 import {
   ACESSO_CONTEUDO_18_TEMPORARIAMENTE_BLOQUEADO,
   ehClassificacao18,
@@ -32,6 +33,7 @@ import { lerStorageUsuarioPublicar } from "./publicar-user-storage-utils";
 import { calcularProgressoLeitura } from "./publicar-work-utils";
 
 export type SalvarObraPublicarParams = {
+  statusEditorial?: string;
   arquivoCapituloTexto: string;
   arquivoCapituloTitulo: string;
   arquivoObra: ArquivoObraLocal | null;
@@ -60,6 +62,7 @@ export type SalvarObraPublicarParams = {
 
 export async function salvarObraPublicar(
   {
+    statusEditorial,
     arquivoCapituloTexto,
     arquivoCapituloTitulo,
     arquivoObra,
@@ -214,6 +217,7 @@ export async function salvarObraPublicar(
         autor: autorFinalPublicacao,
         genero: generoFinal,
         formato: formatoFinal,
+        status_editorial: filtroStatusEditorial(statusEditorial) || null,
         classificacao_indicativa: classificacaoFinal,
         avisos_conteudo: avisosConteudo18Normalizados,
         sinopse: sinopse.trim(),

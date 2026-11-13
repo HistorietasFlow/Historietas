@@ -1,5 +1,9 @@
 # Status editorial — Etapa 1, contrato de banco
 
+Histórico do contrato de banco. A adoção posterior na aplicação, sua validação
+e limitações estão em [Etapa 2](STATUS_EDITORIAL_ETAPA2.md); não inferir aplicação
+das migrations em produção pelo merge.
+
 Base: `c6acd4cf` (#2281). Implementação local, sem aplicação remota ou interface.
 
 ## Contrato autorizado

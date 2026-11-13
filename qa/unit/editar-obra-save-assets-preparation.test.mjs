@@ -19,7 +19,7 @@ const saveActionSource = readFileSync(
 );
 let indiceModulo = 0;
 
-async function carregarModulo({ erroRemoverCapa = null } = {}) {
+async function carregarModulo({ erroRemoverCapa = null, semCapaRemota = false } = {}) {
   const chamadas = [];
   const dependencias = {
     supabase: {
@@ -53,7 +53,7 @@ async function carregarModulo({ erroRemoverCapa = null } = {}) {
           categoria: "documento",
           criadoEm: "atual",
         },
-        caminhoCapaRemotaAtual: "usuario/capa-atual.png",
+        caminhoCapaRemotaAtual: semCapaRemota ? "" : "usuario/capa-atual.png",
         caminhoArquivoRemotoAtual: "usuario/arquivo-atual.pdf",
       };
     },
@@ -178,42 +178,24 @@ test("prepara e envia capa e arquivo na mesma ordem, preservando rollback e arqu
   ]);
 });
 
-test("bloqueia capa de obra 18+ removendo-a imediatamente antes de qualquer upload", async () => {
+test("18+ com capa pública existente falha fechado antes de upload, remoção ou UPDATE", async () => {
   const modulo = await carregarModulo();
-  const parametros = criarParametros({
-    capaBloqueadaPorClassificacao: true,
-    capaArquivo: { name: "nao-enviar.png" },
-    arquivoObraArquivo: null,
-  });
+  await assert.rejects(() => modulo.prepararEEnviarAssetsEdicaoObra(criarParametros({
+    capaBloqueadaPorClassificacao: true, capaArquivo: {name: "nao-enviar.png"}, arquivoObraArquivo: null,
+  })), /Esta alteração 18\+ exige uma remoção segura/);
+  assert.deepEqual(modulo.chamadas, [["preparar"]]);
+});
 
-  const resultado = await modulo.prepararEEnviarAssetsEdicaoObra(parametros);
-
-  assert.deepEqual(modulo.chamadas, [
-    ["preparar"],
-    ["from", "capas-obras"],
-    ["remove", "capas-obras", ["usuario/capa-atual.png"]],
-  ]);
+test("18+ sem capa pública não envia capa nova e mantém o contrato permitido", async () => {
+  const modulo = await carregarModulo({semCapaRemota: true});
+  const resultado = await modulo.prepararEEnviarAssetsEdicaoObra(criarParametros({
+    capaBloqueadaPorClassificacao: true, capaArquivo: {name: "nao-enviar.png"}, arquivoObraArquivo: null,
+  }));
+  assert.deepEqual(modulo.chamadas, [["preparar"]]);
   assert.equal(resultado.capaFinal, "");
   assert.equal(resultado.capaNomeFinal, "");
   assert.deepEqual(resultado.arquivosNovosEnviados, []);
   assert.deepEqual(resultado.arquivosAntigosParaRemover, []);
-});
-
-test("preserva a mensagem de erro ao nao remover a capa bloqueada", async () => {
-  const modulo = await carregarModulo({
-    erroRemoverCapa: { message: "sem permissao" },
-  });
-
-  await assert.rejects(
-    () => modulo.prepararEEnviarAssetsEdicaoObra(
-      criarParametros({
-        capaBloqueadaPorClassificacao: true,
-        capaArquivo: null,
-        arquivoObraArquivo: null,
-      }),
-    ),
-    /Nao consegui remover a capa publica antes de bloquear a obra 18\+: sem permissao/,
-  );
 });
 
 test("o hook delega a preparacao e os uploads, mantendo update e rollback posterior", () => {
@@ -229,7 +211,8 @@ test("o hook delega a preparacao e os uploads, mantendo update e rollback poster
   assert.doesNotMatch(saveActionSource, /enviarArquivoStorage\(/);
   assert.doesNotMatch(saveActionSource, /identificarCategoriaArquivo\(/);
   assert.match(saveActionSource, /await atualizarObraRemotaEdicaoObra\(\{/);
-  assert.match(source, /await supabase\.storage[\s\S]*?\.from\("capas-obras"\)[\s\S]*?\.remove\(\[caminhoCapaRemotaAtual\]\)/);
+  assert.doesNotMatch(source, /supabase\.storage|\.remove\(/);
+  assert.match(source, /if \(caminhoCapaRemotaAtual \|\| assetsAtuais\.capaRemotaAtual\) \{[\s\S]*?throw new Error\(/);
   assert.match(source, /await enviarArquivoStorage\([\s\S]*?"capas-obras"/);
   assert.match(source, /await enviarArquivoStorage\([\s\S]*?"arquivos-obras"/);
   assert.doesNotMatch(source, /\.from\("obras"\)|\.update\(|removerArquivosStorageEdicaoObra|localStorage|useState|useEffect/);

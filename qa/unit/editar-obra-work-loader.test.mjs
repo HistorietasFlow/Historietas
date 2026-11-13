@@ -81,7 +81,7 @@ test("carrega a obra remota preservando seleção, filtros e limite", async () =
     ["from", "obras"],
     [
       "select",
-      "id,user_id,titulo,autor,genero,formato,classificacao_indicativa,avisos_conteudo,sinopse,tags,capa_url,capa_nome,arquivo_url,arquivo_nome,arquivo_tipo,arquivo_tamanho,arquivo_categoria,publicado,visualizacoes,slug,link,criada_em,atualizado_em",
+      "id,user_id,status_editorial,status_editorial_versao,titulo,autor,genero,formato,classificacao_indicativa,avisos_conteudo,sinopse,tags,capa_url,capa_nome,arquivo_url,arquivo_nome,arquivo_tipo,arquivo_tamanho,arquivo_categoria,publicado,visualizacoes,slug,link,criada_em,atualizado_em",
     ],
     ["eq", "id", "obra-1"],
     ["eq", "user_id", "usuario-1"],
@@ -163,7 +163,7 @@ test("Editar Obra delega somente a consulta remota da obra principal", () => {
     initialLoadSource,
     /const obraSupabase = await carregarObraSupabaseEdicaoObra\(\s*obraIdParam,\s*userId,\s*\);/,
   );
-  assert.match(initialLoadSource, /if \(!obraSupabase\) \{\s*return;\s*\}/);
+  assert.match(initialLoadSource, /if \(!obraSupabase\) \{\s*carga\.confirmar\(null\);\s*return;\s*\}/);
   assert.match(
     initialLoadSource,
     /const capitulosSupabase = await carregarCapitulosSupabaseEdicaoObra\(\s*obraIdParam,\s*userId,\s*\);/,
@@ -171,7 +171,7 @@ test("Editar Obra delega somente a consulta remota da obra principal", () => {
   assert.match(source, /\.from\("obras"\)/);
   assert.match(
     source,
-    /\.select\(\s*"id,user_id,titulo,autor,genero,formato,classificacao_indicativa,avisos_conteudo,sinopse,tags,capa_url,capa_nome,arquivo_url,arquivo_nome,arquivo_tipo,arquivo_tamanho,arquivo_categoria,publicado,visualizacoes,slug,link,criada_em,atualizado_em",/,
+    /\.select\(\s*"id,user_id,status_editorial,status_editorial_versao,titulo,autor,genero,formato,classificacao_indicativa,avisos_conteudo,sinopse,tags,capa_url,capa_nome,arquivo_url,arquivo_nome,arquivo_tipo,arquivo_tamanho,arquivo_categoria,publicado,visualizacoes,slug,link,criada_em,atualizado_em",/,
   );
   assert.match(source, /\.eq\("id", obraId\)/);
   assert.match(source, /\.eq\("user_id", userId\)/);

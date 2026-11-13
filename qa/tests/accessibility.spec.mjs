@@ -145,6 +145,13 @@ for (const dispositivo of ["desktop", "mobile"]) {
       ),
     ).toBeVisible();
     await expect(main).not.toHaveAttribute("aria-busy", "true");
+    // O conteúdo pode ficar pronto antes de React mover a metadata do streaming
+    // para head. Exigir o título desta rota, não um título anterior ou artificial.
+    const tituloEsperado = `Capítulo 1 — ${publicWorkTitle} | Historietas`;
+    await expect(page.locator("head > title")).toHaveJSProperty(
+      "textContent", tituloEsperado,
+    );
+    await expect(page).toHaveTitle(tituloEsperado);
     await esperarAxeSemViolacoesCriticas(page, rota);
   });
 }

@@ -42,6 +42,8 @@ export default function PublicarPage() {
 
   const {
     alternarAvisoConteudo18,
+    statusEditorial,
+    setStatusEditorial,
     anexarArquivoCompleto,
     arquivoCapituloErro,
     arquivoCapituloMinutos,
@@ -131,6 +133,8 @@ export default function PublicarPage() {
       >
         <section style={isDesktop ? desktopMainGridSingleStyle : mainGridStyle}>
           <PublicarPublicationForm
+            statusEditorial={statusEditorial}
+            onStatusEditorialChange={setStatusEditorial}
             arquivoCapituloErro={arquivoCapituloErro}
             arquivoCapituloMinutos={arquivoCapituloMinutos}
             arquivoCapituloNome={arquivoCapituloNome}

@@ -1,6 +1,6 @@
 "use client";
 
-import type { Dispatch, SetStateAction } from "react";
+import { useState, type Dispatch, type SetStateAction } from "react";
 import type { SalvarObraPublicarParams } from "../lib/publicar-submission-action";
 import type { ChaveTextoPublicar } from "../lib/publicar-translations";
 import { obterMetadadosFormularioPublicar } from "../lib/publicar-form-display-metadata";
@@ -26,6 +26,7 @@ export function usePublicarFormController({
   t,
 }: UsePublicarFormControllerParams) {
   const basicFields = usePublicarBasicFields({ setErro });
+  const [statusEditorial, setStatusEditorial] = useState("");
   const tags = usePublicarTags({ setErro });
   const publicationOptions = usePublicarPublicationOptions({ setErro });
   const coverUpload = usePublicarCoverUpload({ setErro });
@@ -58,6 +59,7 @@ export function usePublicarFormController({
   });
 
   const { salvarObra } = usePublicarSubmission({
+    statusEditorial,
     arquivoCapituloTexto: contentFileUpload.arquivoCapituloTexto,
     arquivoCapituloTitulo: contentFileUpload.arquivoCapituloTitulo,
     arquivoObra: contentFileUpload.arquivoObra,
@@ -81,6 +83,8 @@ export function usePublicarFormController({
   });
 
   return {
+    statusEditorial,
+    setStatusEditorial,
     ...basicFields,
     ...tags,
     ...publicationOptions,

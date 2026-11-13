@@ -232,3 +232,7 @@ test("capa assinada não entra no DTO; SSR usa snapshot e o loader legado fica d
   assert.match(client, /useObraPublicWorkLoad\(\{\s*habilitado: !snapshotInicial/);
   assert.match(client, /useObraPublicSnapshot\(/);
 });
+
+
+import "./editorial-status-application.test.mjs";
+import "./editorial-status-lifecycle.test.mjs";

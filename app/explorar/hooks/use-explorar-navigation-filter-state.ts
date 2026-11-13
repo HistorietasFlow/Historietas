@@ -16,6 +16,7 @@ export function useExplorarNavigationFilterState() {
   const [filtroTag, setFiltroTag] = useState("");
   const [tagExcluida, setTagExcluida] = useState("");
   const [generoExcluido, setGeneroExcluido] = useState("");
+  const [statusEditorial, setStatusEditorial] = useState("");
   const [notaMinima, setNotaMinima] = useState<number | null>(null);
   const [filtroClassificacao, setFiltroClassificacao] = useState("todos");
   const [filtroCapitulos, setFiltroCapitulos] = useState("todos");
@@ -36,6 +37,8 @@ export function useExplorarNavigationFilterState() {
     setFiltroTag,
     tagExcluida,
     generoExcluido,
+    statusEditorial,
+    setStatusEditorial,
     setTagExcluida,
     setGeneroExcluido,
     notaMinima,

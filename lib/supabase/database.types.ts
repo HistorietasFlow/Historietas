@@ -1303,6 +1303,8 @@ export type Database = {
       }
       obras: {
         Row: {
+          status_editorial: "em_andamento" | "concluida" | "pausada" | null
+          status_editorial_versao: string | null
           arquivo_categoria: string
           arquivo_nome: string
           arquivo_tamanho: number
@@ -1329,6 +1331,7 @@ export type Database = {
           visualizacoes: number
         }
         Insert: {
+          status_editorial?: "em_andamento" | "concluida" | "pausada" | null
           arquivo_categoria?: string
           arquivo_nome?: string
           arquivo_tamanho?: number
@@ -1354,6 +1357,7 @@ export type Database = {
           visualizacoes?: number
         }
         Update: {
+          status_editorial?: "em_andamento" | "concluida" | "pausada" | null
           arquivo_categoria?: string
           arquivo_nome?: string
           arquivo_tamanho?: number
@@ -2212,6 +2216,7 @@ export type Database = {
       }
       listar_obras_catalogo: {
         Args: {
+          p_status_editorial?: string
           p_nota_minima?: number | null
           p_genero_excluido?: string
           p_tag_excluida?: string
