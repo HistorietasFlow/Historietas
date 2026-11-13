@@ -1,7 +1,10 @@
 # Filtro por tamanho — palavras no banco e no Explorar
 
-Etapa 1: base `bb7685b3` (#2284). Etapa 2: base `a5ac96c7` (#2285).
-Sem backfill remoto, ativacao ou certificacao de capacidade fisica.
+Etapa 1: #2285, base `bb7685b3` (#2284). Etapa 2: #2286, base
+`a5ac96c7` (#2285), integrada à `main` por squash `98be8c31` em 13/11/2026.
+CI/Gitleaks aprovados e deploy Vercel de produção `READY`, ainda protegido
+por Vercel Authentication. Sem backfill remoto, ativação de serviços ou
+certificação de capacidade física.
 
 ## Etapa 2 — interface, cliente e confirmacao
 
@@ -105,22 +108,30 @@ do PostgREST; nome restaurado e reconexao comprovada antes das rodadas aprovadas
 Nao confundir essa limitacao da reproducao com a causa da CI. Lint focado e
 diff check aprovados; sem repetir Build/Playwright ou consultar producao.
 Servicos descartaveis parados sem remover volumes; containers antigos nao
-precisaram ser pausados. Draft e bloqueio de implantacao abaixo preservados.
+precisaram ser pausados. Naquela correção de QA, draft e bloqueio de implantação
+ainda estavam preservados; a decisão posterior de integração consta abaixo.
 
-### Implantacao e cobertura historica — bloqueio de merge
+### Implantação e cobertura histórica — decisão de integração #2286
 
-Conforme informado pelo responsavel, a migration #2285 ja foi instalada como
-`20261113063207`, enquanto o arquivo Git e `20261113053819`. Nao reaplicar nem
-corrigir timestamps automaticamente. Nenhuma consulta remota foi feita nesta fase.
-O preenchimento historico **nao foi executado**: NULL permanece desconhecido e
-excluido sob filtro ativo, nunca zero. PR deve permanecer em **draft**, sem merge,
-ate revisao de cobertura e autorizacao separada da estrategia de implantacao.
-O helper administrativo nao foi executado remotamente nem agendado.
+A #2286 foi integrada na `main` em 13/11/2026 (squash `98be8c31`),
+após CI e Gitleaks verdes; deploy Vercel `READY`. Não houve nova migration,
+backfill ou alteração manual de produção pela #2286.
 
-Status editorial da #2284 ja integrado; suas migrations foram informadas como
-aplicadas pelo responsavel. Isso nao altera o bloqueio da transicao 18+ com capa
-existente nem autoriza outras operacoes remotas. Uploads ilustrados e publicacao
-automatica continuam bloqueados. Nenhuma dependência, servico ou workflow novo.
+Conforme informado pelo responsável, a migration da #2285 foi aplicada em
+produção como `20261113063207`, enquanto o arquivo Git é
+`20261113053819`. Não reaplicar nem corrigir timestamps automaticamente.
+
+Auditoria Supabase **somente leitura** relatou **0 obras e 0 capítulos** em
+13/11/2026. Assim, nenhum backfill histórico era necessário naquela data,
+e nenhum foi executado. NULL permanece desconhecido e excluído quando o
+filtro está ativo; se surgirem dados legados não medidos, inventariar
+cobertura e obter autorização separada antes de qualquer preenchimento.
+O helper administrativo não foi executado remotamente nem agendado.
+
+Status editorial da #2284 integrado e migrations informadas como aplicadas.
+O bloqueio da transição 18+ com capa existente (#2287 documental), uploads
+ilustrados e publicação automática permanecem. Nada aqui autoriza ativação,
+retirada de objetos, agendamento ou alteração de produção.
 
 ## Contrato
 
@@ -257,6 +268,7 @@ Suite integral permanece obrigatoria na CI. Na Etapa 1, sem Build/Playwright:
 nenhuma UI, loader ou codigo funcional da aplicacao mudou naquela entrega.
 A Etapa 2 acima integra tipos, controles, URL e confirmacao; palavras nao implementa paginas.
 Uploads ilustrados, runner, Cron, publicacao automatica e bloqueio 18+ com capa
-existente permanecem inalterados. Sem operacao remota, merge ou deploy manual.
+existente permanecem inalterados. Na validação local destas etapas não houve operação remota nem deploy manual;
+o merge e o deploy automático posteriores da #2286 constam acima.
 Os quatro servicos do descartavel foram parados sem remover volumes; os onze
 containers antigos foram restaurados, mantendo arquivos/dados locais.
