@@ -2,6 +2,20 @@
 
 Atualizado em: 2026-11-12
 
+### Status editorial — token protegido, antes da interface
+
+Nova migration acrescenta versão UUID nullable sem backfill, gerada pelo banco
+em INSERT/recriação e mudança efetiva de status. Trigger privado invoker, sem
+grants novos, UPDATE da versão ou RPC de escrita. Contrato Data API com ID,
+proprietário e token (IS NULL no legado) preparado; testes de ABA, concorrência,
+rollback e resposta perdida. UPDATE sem CAS continua permitido e renova token:
+**adoção obrigatória na Etapa 2 ainda pendente**, sem CAS geral ou interface pronta.
+Ver [contrato e evidências](STATUS_EDITORIAL_ETAPA1.md#proteção-de-versão-editorial--base-ad9a0188-2282).
+Validação local: pgTAP 1.039/1.039, Data API/regressões 27/27, unitários 14/14,
+Lint focado, auditoria 199/199, SQL público/trigger novo e diff check aprovados.
+Lint privado global apontou cinco dependências antigas de tabelas Cron ausentes;
+não foi instalado Cron nem alterado o agendamento para contornar os apontamentos.
+
 ### Status editorial — contrato de banco, sem interface
 
 Etapa 1 adiciona persistência nullable sem inferência, UPDATE somente da nova
@@ -9,7 +23,7 @@ coluna, guard de termos, sexta variante paginada e projeção pública aditiva.
 Sem alterar RLS, interface ou agendamento. pgTAP completo 1.002/1.002,
 integrações de projeção/snapshot 16/16 e unitários 14/14 locais aprovados.
 Lint focado/SQL, Typecheck, Build, auditoria estática 199/199 e diff check passaram.
-**Etapa 2 bloqueada por CAS:** revisão pública não é acessível em drafts/18+;
+**Bloqueador identificado na Etapa 1:** revisão pública não é acessível em drafts/18+;
 timestamp e valor anterior não garantem versão/ABA. Ajuste mínimo exige aprovação
 separada. Ver [contratos, evidências e recuperação](STATUS_EDITORIAL_ETAPA1.md).
 
