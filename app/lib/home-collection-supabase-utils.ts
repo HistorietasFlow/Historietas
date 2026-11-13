@@ -7,7 +7,8 @@ type TabelaColecaoHome = "favoritos" | "concluidas";
 
 export async function carregarIdsColecaoUsuarioHome(
   tabela: TabelaColecaoHome,
-  userId: string
+  userId: string,
+  aoFalhar?: () => void,
 ) {
   const userIdLimpo = userId.trim();
 
@@ -41,6 +42,7 @@ export async function carregarIdsColecaoUsuarioHome(
         .filter(Boolean)
     );
   } catch {
+    aoFalhar?.();
     return [] as string[];
   }
 }

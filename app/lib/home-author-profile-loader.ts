@@ -6,7 +6,7 @@ import type {
 } from "./home-author-profile-utils";
 import { salvarPerfisSupabaseHomeNoStorage } from "./home-author-storage-utils";
 
-export async function carregarPerfisSupabaseHome(autorIds: string[], userId = "") {
+export async function carregarPerfisSupabaseHome(autorIds: string[], userId = "", aoFalhar?: () => void) {
   const idsUnicos = Array.from(
     new Set(
       autorIds
@@ -30,11 +30,13 @@ export async function carregarPerfisSupabaseHome(autorIds: string[], userId = ""
       .limit(1000);
 
     if (error) {
+      aoFalhar?.();
       console.warn("Não consegui carregar profiles da Home por user_id:", error.message);
     } else if (Array.isArray(data)) {
       linhas.push(...data);
     }
   } catch (error) {
+    aoFalhar?.();
     console.warn("Não consegui acessar profiles da Home por user_id:", error);
   }
 
@@ -46,11 +48,13 @@ export async function carregarPerfisSupabaseHome(autorIds: string[], userId = ""
       .limit(1000);
 
     if (error) {
+      aoFalhar?.();
       console.warn("Não consegui carregar profiles da Home por id:", error.message);
     } else if (Array.isArray(data)) {
       linhas.push(...data);
     }
   } catch (error) {
+    aoFalhar?.();
     console.warn("Não consegui acessar profiles da Home por id:", error);
   }
 
@@ -78,6 +82,7 @@ export async function carregarPerfisSupabaseHome(autorIds: string[], userId = ""
     });
   });
 
+  if (idsUnicos.some((id) => !perfisPorUsuario.has(id))) aoFalhar?.();
   salvarPerfisSupabaseHomeNoStorage(perfisNormalizados, userId);
 
   return perfisPorUsuario;
