@@ -2,6 +2,17 @@
 
 Atualizado em: 2026-11-12
 
+### Status editorial — contrato de banco, sem interface
+
+Etapa 1 adiciona persistência nullable sem inferência, UPDATE somente da nova
+coluna, guard de termos, sexta variante paginada e projeção pública aditiva.
+Sem alterar RLS, interface ou agendamento. pgTAP completo 1.002/1.002,
+integrações de projeção/snapshot 16/16 e unitários 14/14 locais aprovados.
+Lint focado/SQL, Typecheck, Build, auditoria estática 199/199 e diff check passaram.
+**Etapa 2 bloqueada por CAS:** revisão pública não é acessível em drafts/18+;
+timestamp e valor anterior não garantem versão/ABA. Ajuste mínimo exige aprovação
+separada. Ver [contratos, evidências e recuperação](STATUS_EDITORIAL_ETAPA1.md).
+
 ### QA — CI da #2281, raízes públicas durante streaming
 
 CI `43323946415`, job `131551528152`: 171 passes, uma falha definitiva em
@@ -826,8 +837,8 @@ usa `p_formato` da RPC paginada existente, inclusive ao carregar mais resultados
 Valores desconhecidos voltam para todos os formatos; formatos personalizados
 continuam aparecendo na opção geral. Não há mudança de schema ou RLS.
 
-Status editorial (em andamento, concluída ou pausada) ainda não é um dado
-persistido de obras. O booleano `publicado` não representa esse status, e a
+Na investigação original da #2213, status editorial (em andamento, concluída ou
+pausada) não era um dado persistido de obras. O booleano `publicado` não representa esse status, e a
 coleção pessoal `Concluídas` representa leitura do usuário, não conclusão da obra.
 
 ### Explorar — diversidade em publicações recentes

@@ -122,6 +122,35 @@ test("snapshot leve usa ordem canônica, whitelist e preserva remoções sem rec
   assert.ok(h.transport.every(t => t.method === "POST" && t.cache === "no-store"));
 });
 
+test("status editorial distingue legado, null remoto, valores validos e erro sem restaurar cache antigo", async () => {
+  const h = harness(), read = h.instance();
+  assert.equal(Object.hasOwn((await read("obra")).obra, "statusEditorial"), false);
+  for (const status of ["em_andamento", "concluida", "pausada", null]) {
+    h.state.projection.revisao = String(BigInt(h.state.projection.revisao) + 1n);
+    h.state.projection.obra.statusEditorial = status;
+    const snapshot = await read("obra");
+    assert.equal(Object.hasOwn(snapshot.obra, "statusEditorial"), true);
+    assert.equal(snapshot.obra.statusEditorial, status);
+  }
+  for (const value of ["", "Publicado", "nao_informado", 0, undefined]) {
+    h.state.projection.revisao = String(BigInt(h.state.projection.revisao) + 1n);
+    h.state.projection.obra.statusEditorial = value;
+    await assert.rejects(read("obra"), /Status editorial da projecao publica invalido/);
+  }
+  h.state.onRead = () => { throw new Error("Falha de carregamento"); };
+  await assert.rejects(read("obra"), /Falha de carregamento/);
+});
+
+test("cache do DTO anterior nao certifica o campo aditivo na mesma revisao", async () => {
+  const h = harness();
+  const key = ["historietas-projecao-publica-v1", "obra-leve-v1",
+    JSON.stringify([h.state.projection.obraId, h.state.projection.geracao, h.state.projection.revisao, "obra"]), "null"];
+  h.cache.set(JSON.stringify(key), { obra: { statusEditorial: "concluida" } });
+  h.state.projection.obra.statusEditorial = null;
+  assert.equal((await h.instance()("obra")).obra.statusEditorial, null);
+  assert.equal(h.calls.filter(c => c !== "barreira").length, 1);
+});
+
 test("paginação keyset ultrapassa 500 capítulos, sem perda ou duplicação e sem renumerar lacunas", async () => {
   const h = harness(); h.state.chapters = Array.from({ length: 1201 }, (_, i) => chapter(i * 3 + 2));
   const result = await h.instance()("obra");
