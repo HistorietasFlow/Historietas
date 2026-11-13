@@ -373,6 +373,15 @@ Regras importantes:
 - Testes de banco usam pgTAP contra Supabase local descartável.
 - `avatars` e `capas-obras` permanecem buckets públicos para entrega por URL conhecida, mas a listagem de `storage.objects` é limitada ao prefixo do usuário autenticado; rotinas administrativas usam service role no servidor.
 
+### Contrato privado de capas — infraestrutura sem entrega
+
+A migration `20261113190105` separa geracao/versao de capa/classificacao do
+token editorial e da projecao publica. Triggers acompanham escritores legados;
+referencias/recibos privados nao sofrem cascata. Wrappers invoker chamam nucleo
+privado autorizado por usuario/sessao/propriedade/termos e CAS sob lock. Nenhum
+upload, bucket ou acesso privado esta habilitado. O registro nao atesta bytes
+nem revoga URLs publicas; ver [contratos e limitacoes](TRANSICAO_18_COM_CAPA.md#pr-1--contrato-transacional-privado-13112026).
+
 ## Observabilidade e qualidade
 
 - Sentry para captura de erros.

@@ -12,6 +12,7 @@ import {
   erroExigeLimpezaSessaoLocal,
   obterNomesCookiesSessaoSupabase,
 } from "@/lib/supabase/session-recovery.mjs";
+import { recusarFonteLocalDinamica } from "@/lib/server/capas/proteger-otimizador";
 
 const rotasProtegidas = [
   "/aceitar-termos",
@@ -260,6 +261,9 @@ function criarCookiesAuthExpirados(request: NextRequest, supabaseUrl: string) {
 
 export async function proxy(request: NextRequest) {
   const pathname = normalizarPathname(request.nextUrl.pathname);
+  if (pathname === "/_next/image") {
+    return recusarFonteLocalDinamica(request) ?? criarRespostaContinuar(request);
+  }
   const estaNoLogin = pathname === "/login";
   const precisaLogin = rotaEstaProtegida(pathname);
 
@@ -349,6 +353,7 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
+    "/_next/image",
     "/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|manifest.json|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js|map|txt|xml|json)$).*)",
   ],
 };
