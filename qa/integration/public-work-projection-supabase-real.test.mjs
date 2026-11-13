@@ -6,6 +6,7 @@ import { randomBytes } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 import { criarInvocacaoStatusSupabase } from "../scripts/supabase-cli-invocation.mjs";
 import "./editorial-status-version-supabase-real.test.mjs";
+import "./private-cover-contract-supabase-real.test.mjs";
 
 const USER = "bf100000-0000-4000-8000-000000000001", WORK = "bf200000-0000-4000-8000-000000000001";
 const OTHER = "bf200000-0000-4000-8000-000000000002", CHAPTER = "bf300000-0000-4000-8000-000000000001";

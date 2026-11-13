@@ -2,10 +2,33 @@
 
 Atualizado em: 2026-11-13
 
+### Capas privadas — integração de código para validação, sem ativação
+
+As PRs #2290 (contrato SQL), #2291 (entrega HTTP desativada) e #2289
+(adaptadores de upload desativados) foram reunidas em uma branch de
+integração de testes, sem merge na `main`. A versão esperada do protocolo
+de upload foi alinhada ao `BIGINT` decimal do banco, sem converter para
+número JavaScript. O endpoint retorna 503; uploads retornam `disabled`.
+Ainda não há produtor de referência, adaptadores SQL/Storage, controle físico
+das quotas, validação CDN ou autorização para ativação/migration remota.
+Ver [revisão conjunta](CAPAS_PRIVADAS_REVISAO_CONJUNTA.md).
+
+### Capas privadas — PR 1, somente contrato SQL
+
+Sobre `98be8c31`, preparada migration `20261113190105` com geracao/versao
+proprias, referencias internas imutaveis e recibo UUID atomico/idempotente.
+Sem backfill, Storage novo ou interface. Escritas legadas invalidam CAS;
+vinculo gerenciado exige operacao versionada. Origem publica/incerta permanece
+marcada mesmo apos limpar URL. Transicao 18+ com capa continua bloqueada.
+Local: pgTAP 1.143/1.143, integracao focada 10/10 e unitarios 39/39; regressoes
+editoriais/publicas aprovadas. Lint SQL global limitado por cinco dependencias
+Cron ausentes em funcoes nao alteradas; nucleo novo sem erros de lint SQL.
+Contratos, validacao e limites em [TRANSICAO_18_COM_CAPA.md](TRANSICAO_18_COM_CAPA.md#pr-1--contrato-transacional-privado-13112026).
+
 ### Investigação — transição 18+ com capa existente
 
 Sobre `main` `a5ac96c7`, em branch independente da #2286: **sem solução
-comprovadamente segura nos contratos atuais**. Entrega exclusivamente documental;
+comprovadamente segura nos contratos examinados**. Entrega original exclusivamente documental;
 guard de recusa preservado. Ordem DELETE/PATCH, outbox, cópia privada e remoção
 manual prévia não comprovam atomicidade, retirada pública ou terminalidade.
 Token editorial não versiona capa/classificação; URLs públicas e cache de até
