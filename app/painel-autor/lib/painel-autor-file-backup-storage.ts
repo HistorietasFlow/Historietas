@@ -44,15 +44,8 @@ export function carregarBackupArquivosObras(userId = ""): ArquivosObrasBackup {
       }
     });
 
-    salvarJsonStorageUsuarioPainel(
-      FILE_BACKUP_STORAGE_KEY,
-      userId,
-      backupNormalizado
-    );
-
     return backupNormalizado;
   } catch {
-    salvarJsonStorageUsuarioPainel(FILE_BACKUP_STORAGE_KEY, userId, {});
     return {};
   }
 }
@@ -66,14 +59,21 @@ export function sincronizarBackupArquivosObras(
   }
 
   try {
-    const backupAtual = carregarBackupArquivosObras(userId);
+    let leituraFalhou = false;
+    const texto = lerStorageUsuarioPainel(FILE_BACKUP_STORAGE_KEY, userId, () => { leituraFalhou = true; });
+    if (leituraFalhou) return;
+    const existente: unknown = texto ? JSON.parse(texto) : {};
+    if (!existente || typeof existente !== "object" || Array.isArray(existente)) return;
+    // Preserve inclusive entradas desconhecidas: ler um backup não autoriza limpá-lo.
+    const backupAtual: Record<string, unknown> = { ...existente };
 
     obras.forEach((obra) => {
       const arquivoNormalizado = normalizarArquivoObra(obra.arquivoObra);
 
       if (arquivoNormalizado) {
         obterChavesBackupArquivoPainel(obra).forEach((chave) => {
-          backupAtual[chave] = arquivoNormalizado;
+          // Uma leitura do painel não substitui uma cópia já preservada.
+          if (!Object.hasOwn(backupAtual, chave)) backupAtual[chave] = arquivoNormalizado;
         });
       }
     });
