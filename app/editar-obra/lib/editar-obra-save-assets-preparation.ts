@@ -1,4 +1,3 @@
-import { supabase } from "../../../lib/supabase/client";
 import { identificarCategoriaArquivo } from "./editar-obra-file-validation";
 import { prepararAssetsAtuaisEdicaoObra } from "./editar-obra-current-assets-preparation";
 import {
@@ -74,16 +73,10 @@ export async function prepararEEnviarAssetsEdicaoObra({
     capaFinal = "";
     capaNomeFinal = "";
 
-    if (caminhoCapaRemotaAtual) {
-      const { error: erroRemoverCapaBloqueada } = await supabase.storage
-        .from("capas-obras")
-        .remove([caminhoCapaRemotaAtual]);
-
-      if (erroRemoverCapaBloqueada) {
-        throw new Error(
-          `Nao consegui remover a capa publica antes de bloquear a obra 18+: ${erroRemoverCapaBloqueada.message}`
-        );
-      }
+    if (caminhoCapaRemotaAtual || assetsAtuais.capaRemotaAtual) {
+      // Storage e o CAS da obra não compartilham uma transação. Não apagar a
+      // capa antes da confirmação nem confirmar 18+ deixando-a pública.
+      throw new Error("Esta alteração 18+ exige uma remoção segura da capa pública. Esta tentativa não removeu arquivos nem atualizou a obra.");
     }
   }
 

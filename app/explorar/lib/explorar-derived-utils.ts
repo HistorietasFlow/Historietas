@@ -186,6 +186,7 @@ export function filtrarObrasExplorar({
   notaMinima = null,
   tagExcluida = "",
   generoExcluido = "",
+  statusEditorial = "",
 }: {
   obrasBaseFiltradas: ObraLocal[];
   categoriaSelecionada: string;
@@ -194,6 +195,7 @@ export function filtrarObrasExplorar({
   notaMinima?: number | null;
   tagExcluida?: string;
   generoExcluido?: string;
+  statusEditorial?: string;
 }) {
     return obrasBaseFiltradas.filter((obra) => {
       const passaCategoria = categoriaSelecionada
@@ -224,6 +226,7 @@ export function filtrarObrasExplorar({
       const passaNota = notaMinima === null || Boolean(obraIdsBuscaRemota?.includes(obra.id));
       const passaExclusao = !normalizarTagCatalogo(tagExcluida) || Boolean(obraIdsBuscaRemota?.includes(obra.id));
       return passaCategoria && passaBusca && passaNota && passaExclusao &&
+        (!statusEditorial || Boolean(obraIdsBuscaRemota?.includes(obra.id))) &&
         (!generoExcluido || Boolean(obraIdsBuscaRemota?.includes(obra.id)));
     });
 }

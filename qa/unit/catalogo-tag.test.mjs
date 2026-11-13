@@ -1,3 +1,4 @@
+import {loadApplicationModule} from "../helpers/load-application-module.mjs";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
@@ -8,6 +9,7 @@ function carregar(arquivo, deps = {}) {
   const codigo = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText;
   const modulo = { exports: {} };
   new Function("module", "exports", "require", codigo)(modulo, modulo.exports, (nome) => {
+    if (nome === "./statusEditorial") return loadApplicationModule("lib/statusEditorial.ts");
     assert.ok(nome in deps, `Import inesperado: ${nome}`);
     return deps[nome];
   });

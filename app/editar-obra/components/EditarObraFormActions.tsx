@@ -5,6 +5,7 @@ import { safeTextStyle } from "../styles/editar-obra-shared-styles";
 type EditarObraFormActionsProps = {
   isDesktop: boolean;
   processando: boolean;
+  salvamentoBloqueado?: boolean;
   salvou: boolean;
   minhaObraHref: string;
   progresso: number;
@@ -13,6 +14,7 @@ type EditarObraFormActionsProps = {
 export function EditarObraFormActions({
   isDesktop,
   processando,
+  salvamentoBloqueado = false,
   salvou,
   minhaObraHref,
   progresso,
@@ -35,7 +37,7 @@ export function EditarObraFormActions({
             justifyContent: "center",
             gap: "7px",
           }}
-          disabled={processando}
+          disabled={processando || salvamentoBloqueado}
         >
           {processando ? (
             "Salvando..."

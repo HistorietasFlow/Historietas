@@ -45,16 +45,16 @@ test("página delega somente o carregamento inicial para o hook", () => {
 test("hook preserva sequência, cancelamento, auth e reconciliação inicial", () => {
   assert.match(hookSource, /useEffect\(\(\) => \{/);
   assert.match(hookSource, /let cancelado = false;/);
-  assert.match(hookSource, /const obraIdParam = obterObraIdEdicaoObra\(window\.location\.search\);/);
+  assert.match(hookSource, /const obraIdParam = obterObraIdEdicaoObra\(search\);/);
   assert.match(hookSource, /await supabase\.auth\.getUser\(\)/);
   assert.match(hookSource, /router\.replace\(criarLoginHrefEditarObra\(obraIdParam\)\)/);
   assert.match(hookSource, /carregarObrasLocalStorageEdicaoObra\(userId\)[\s\S]*?carregarObraSupabaseEdicaoObra\(/);
   assert.match(hookSource, /carregarCapitulosSupabaseEdicaoObra\([\s\S]*?normalizarObraSupabase\([\s\S]*?prepararObrasCarregadasEdicaoObra\(/);
   assert.match(hookSource, /sincronizarBackupArquivosObras\(obrasAtualizadasDoUsuario, userId\)/);
-  assert.match(hookSource, /return \(\) => \{\s*cancelado = true;\s*\};/);
+  assert.match(hookSource, /return \(\) => \{\s*cancelado = true;\s*carga\.cancelar\(\);\s*\};/);
   assert.match(
     hookSource,
-    /\}, \[\s*router,[\s\S]*?setObraId,[\s\S]*?setArquivoObraRemovidoManualmente,\s*\]\);/,
+    /\}, \[\s*search,\s*iniciarCargaEditorial,\s*router,[\s\S]*?setObraId,[\s\S]*?setArquivoObraRemovidoManualmente,\s*\]\);/,
   );
   assert.doesNotMatch(hookSource, /useState|useMemo|useCallback|useRef/);
 });

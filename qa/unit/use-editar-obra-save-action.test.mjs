@@ -106,7 +106,8 @@ test("o fluxo preserva assets, rollback, atualização, backup e Diário", () =>
   assert.match(source, /const arquivosNovosEnviados: ArquivoStorageEdicaoObra\[\] = \[\];/);
   assert.match(source, /await atualizarObraRemotaEdicaoObra\(\{/);
   assert.doesNotMatch(source, /supabase\.from\("obras"\)/);
-  assert.match(remoteUpdateSource, /await removerArquivosStorageEdicaoObra\([\s\S]*?arquivosNovosEnviados\.map/);
+  assert.doesNotMatch(remoteUpdateSource, /removerArquivosStorageEdicaoObra|\.remove\(/);
+  assert.match(source, /resultadoRemoto\.estado !== "confirmada"[\s\S]*?return;[\s\S]*?await removerArquivosStorageEdicaoObra\(arquivosAntigosParaRemover\)/);
   assert.match(source, /persistirObraLocalEBackupEdicaoObra\(\{/);
   assert.doesNotMatch(source, /atualizarObraNaListaLocalEdicao\(/);
   assert.doesNotMatch(source, /salvarObrasDoUsuarioPreservandoOutrasContas\(/);

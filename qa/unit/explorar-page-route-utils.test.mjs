@@ -1,3 +1,4 @@
+import { loadApplicationModule } from "../helpers/load-application-module.mjs";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
@@ -58,6 +59,7 @@ async function carregarModuloRota() {
     modulo,
     modulo.exports,
     (specifier) => {
+      if (specifier === "../../../lib/statusEditorial") return loadApplicationModule("lib/statusEditorial.ts");
       if (specifier === "../../../lib/catalogo-genero") return generoModulo.exports;
       if (specifier === "../../../lib/catalogo-tag") return tagModulo.exports;
       if (specifier === "../../../lib/catalogo-nota-minima") return notaModulo.exports;

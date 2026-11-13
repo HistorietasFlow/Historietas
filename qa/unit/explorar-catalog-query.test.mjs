@@ -148,7 +148,7 @@ test("memo, condição, efeito e paginação preservam o contrato atualizado", (
     "",
   );
   assert.equal(createHash("sha256").update(original).digest("hex"),
-    "2dfa0ffb9411e7a2567e3e97a9914cd6cc58a91a678ae80f61e57e5c47d52b9c");
+    "e1d58f4cc364cc280322ce481e0d9213ab3248d14fd67731007c459302a6552d");
   assert.match(pagina, /useExplorarCatalogQuery\(\{/);
   assert.doesNotMatch(pagina, /async function carregarMaisObrasCatalogo\(/);
   assert.match(pagina, /consultaCatalogoPersonalizada && catalogoTemMais/);
@@ -733,4 +733,23 @@ test("exclusão de gênero sozinha exige IDs atuais, não certifica cache em fal
   assert.deepEqual(c.estado.ObraIdsBuscaRemota, ["B"]);
   assert.deepEqual(c.estado.ObrasLocais, [{ id: "B" }]);
   assert.equal(c.render({ usuarioIdExplorar: "" }).generoExcluidoVerificado, false);
+});
+
+
+test("status editorial exige confirmação atual, combina filtros e descarta resposta antiga e de outra conta", async t => {
+  const c = preparar(t, {statusEditorial:"pausada", usuarioIdExplorar:"A", filtroTag:"base", generoExcluido:"romance"});
+  assert.equal(c.render().statusEditorialVerificado,false);
+  const antiga=adiar();c.respostas.push(antiga.promise);const pendente=c.disparar();
+  c.render({statusEditorial:"concluida", usuarioIdExplorar:"B"});
+  c.respostas.push(Promise.resolve({obras:[{id:"B"}],pagina:{obraIds:["B"],proximoCursor:null,temMais:false}}));
+  await c.disparar();antiga.resolve({obras:[{id:"A"}],pagina:{obraIds:["A"]}});await pendente;
+  assert.equal(c.render().statusEditorialVerificado,true);
+  assert.deepEqual(c.estado.ObraIdsBuscaRemota,["B"]);
+  const consulta=c.chamadas.filter(([nome])=>nome==="carregar").at(-1)[3][0];
+  assert.equal(consulta.statusEditorial,"concluida");assert.equal(consulta.tag,"base");assert.equal(consulta.generoExcluido,"romance");
+  assert.equal(c.render({usuarioIdExplorar:""}).statusEditorialVerificado,false);
+  c.respostas.push(Promise.resolve({obras:[{id:"cache"}],pagina:null,falhaTemporaria:true}));await c.disparar();
+  assert.equal(c.render().statusEditorialVerificado,false);assert.equal(c.estado.ObraIdsBuscaRemota,null);
+  c.render({modoConteudo:"autores"});await c.disparar();
+  assert.equal(c.chamadas.filter(([nome])=>nome==="carregar").at(-1)[3][0].statusEditorial,undefined);
 });

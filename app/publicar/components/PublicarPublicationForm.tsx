@@ -12,6 +12,7 @@ import {
   formPanelStyle,
 } from "../lib/publicar-form-upload-styles";
 import { PublicarBasicFields } from "./PublicarBasicFields";
+import { StoryStatusField } from "../../../components/StoryStatusField";
 import { PublicarContentFileUpload } from "./PublicarContentFileUpload";
 import { PublicarCoverUpload } from "./PublicarCoverUpload";
 import { PublicarFormActions } from "./PublicarFormActions";
@@ -21,6 +22,8 @@ import { PublicarSynopsisField } from "./PublicarSynopsisField";
 import { PublicarTagClassificationFields } from "./PublicarTagClassificationFields";
 
 type PublicarPublicationFormProps = {
+  statusEditorial: string;
+  onStatusEditorialChange: (value: string) => void;
   arquivoCapituloErro: string;
   arquivoCapituloMinutos: number;
   arquivoCapituloNome: string;
@@ -86,6 +89,8 @@ type PublicarPublicationFormProps = {
 };
 
 export function PublicarPublicationForm({
+  statusEditorial,
+  onStatusEditorialChange,
   arquivoCapituloErro,
   arquivoCapituloMinutos,
   arquivoCapituloNome,
@@ -195,6 +200,9 @@ export function PublicarPublicationForm({
         onGeneroPersonalizadoChange={onGeneroPersonalizadoChange}
         t={t}
       />
+
+      <StoryStatusField id="publicar-status-editorial" idioma={idioma} value={statusEditorial}
+        onChange={onStatusEditorialChange} disabled={processando} />
 
       <PublicarTagClassificationFields
         avisosConteudo18={avisosConteudo18}

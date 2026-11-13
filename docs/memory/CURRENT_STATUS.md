@@ -1,6 +1,16 @@
 # Estado atual
 
-Atualizado em: 2026-11-12
+Atualizado em: 2026-11-13
+
+### Status editorial — integração da aplicação em draft
+
+Criação opcional, edição com CAS real/reconciliação explícita, metadado público
+confirmado e filtro paginado compartilhável de Obras implementados sobre #2283.
+Sem migration nova ou consultas extras nos fluxos normais. Resposta perdida não
+autoriza cleanup nem sucesso. Transição 18+ com capa remota existente permanece
+**bloqueada**: falta atomicidade entre Storage e UPDATE; não declarar esse fluxo
+resolvido. Merge/deploy depende também de comprovar aplicação remota das duas
+migrations anteriores. Ver [contratos, testes e limites](STATUS_EDITORIAL_ETAPA2.md).
 
 ### Status editorial — token protegido, antes da interface
 

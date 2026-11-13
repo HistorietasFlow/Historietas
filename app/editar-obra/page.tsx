@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
+import { Suspense, useRef, useState, type CSSProperties } from "react";
+import { useEditarObraEditorial } from "./hooks/use-editar-obra-editorial";
+import { EditarObraEditorialField } from "./components/EditarObraEditorialField";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
 import { EditarObraAssetUploads } from "./components/EditarObraAssetUploads";
@@ -45,8 +47,26 @@ import { useEditarObraFormDerivedState } from "./hooks/use-editar-obra-form-deri
 import { useEditarObraSaveAction } from "./hooks/use-editar-obra-save-action";
 import type { ArquivoObraLocal, ObraLocal } from "./types";
 
-export default function EditarObraPage() {
+function EditarObraLoadingShell({ isDesktop, pageThemeStyle }: { isDesktop: boolean; pageThemeStyle: CSSProperties }) {
+  return (
+    <main data-historietas-editar-obra-root="true" style={pageThemeStyle}>
+      <style>{`${historietasThemeCss}${editarObraPageCss}`}</style>
+      <EditarObraLanguageBridge />
+      {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
+      {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
+    </main>
+  );
+}
+
+function EditarObraLoadingFallback() {
+  const isDesktop = useEditarObraDesktopMode();
+  const { pageThemeStyle } = useHistorietasTheme(pageStyle);
+  return <EditarObraLoadingShell isDesktop={isDesktop} pageThemeStyle={pageThemeStyle} />;
+}
+
+function EditarObraPageContent() {
   const router = useRouter();
+  const editorial = useEditarObraEditorial();
   const { language } = useHistorietasLanguage();
   const [obraId, setObraId] = useState("");
   const [, setUsuarioIdLogado] = useState("");
@@ -88,6 +108,7 @@ export default function EditarObraPage() {
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
 
   useEditarObraInitialLoad({
+    iniciarCargaEditorial: editorial.iniciarCarga,
     router,
     setObraId,
     setUsuarioIdLogado,
@@ -206,6 +227,7 @@ export default function EditarObraPage() {
   });
 
   const { salvarEdicao } = useEditarObraSaveAction({
+    editorial,
     router,
     processando,
     titulo,
@@ -247,14 +269,7 @@ export default function EditarObraPage() {
   });
 
   if (carregando) {
-    return (
-      <main data-historietas-editar-obra-root="true" style={pageThemeStyle}>
-        <style>{`${historietasThemeCss}${editarObraPageCss}`}</style>
-        <EditarObraLanguageBridge />
-        {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
-        {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
-      </main>
-    );
+    return <EditarObraLoadingShell isDesktop={isDesktop} pageThemeStyle={pageThemeStyle} />;
   }
 
   if (!obraEncontrada) {
@@ -316,6 +331,7 @@ export default function EditarObraPage() {
 
         <section style={isDesktop ? desktopMainGridStyle : mainGridStyle}>
           <form onSubmit={salvarEdicao} style={isDesktop ? desktopFormStyle : formStyle}>
+            <fieldset disabled={processando} style={{ display: "contents", border: 0, padding: 0, margin: 0, minWidth: 0 }}>
             <EditarObraAssetUploads
               isDesktop={isDesktop}
               capa={capa}
@@ -351,6 +367,8 @@ export default function EditarObraPage() {
               onGeneroPersonalizadoChange={alterarGeneroPersonalizado}
             />
 
+            <EditarObraEditorialField editorial={editorial} idioma={language} processando={processando} onAlterar={marcarAlteracao} />
+
             <EditarObraTagField
               usarTagPersonalizada={usarTagPersonalizada}
               tagsTratadas={tagsTratadas}
@@ -376,10 +394,12 @@ export default function EditarObraPage() {
             <EditarObraFormActions
               isDesktop={isDesktop}
               processando={processando}
+              salvamentoBloqueado={editorial.bloqueado || editorial.exigeDecisao || editorial.reconciliando}
               salvou={salvou}
               minhaObraHref={minhaObraHref}
               progresso={progresso}
             />
+            </fieldset>
           </form>
 
           <EditarObraPreview
@@ -398,4 +418,9 @@ export default function EditarObraPage() {
       </section>
     </main>
   );
+}
+
+
+export default function EditarObraPage() {
+  return <Suspense fallback={<EditarObraLoadingFallback />}><EditarObraPageContent /></Suspense>;
 }

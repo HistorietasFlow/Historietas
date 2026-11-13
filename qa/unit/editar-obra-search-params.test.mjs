@@ -41,7 +41,7 @@ test("Editar Obra delega somente a leitura de obraId dos search params", () => {
   );
   assert.match(
     initialLoadSource,
-    /const obraIdParam = obterObraIdEdicaoObra\(window\.location\.search\);/,
+    /const obraIdParam = obterObraIdEdicaoObra\(search\);/,
   );
   assert.doesNotMatch(
     initialLoadSource,

@@ -5,6 +5,7 @@ import { execFileSync, spawn } from "node:child_process";
 import { randomBytes, randomUUID } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 import { criarInvocacaoStatusSupabase } from "../scripts/supabase-cli-invocation.mjs";
+import "./editorial-status-application-supabase-real.test.mjs";
 
 const uid = n => `ea100000-0000-4000-8000-${String(n).padStart(12, "0")}`;
 const wid = n => `ea200000-0000-4000-8000-${String(n).padStart(12, "0")}`;

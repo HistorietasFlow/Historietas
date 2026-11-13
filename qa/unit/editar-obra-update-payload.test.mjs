@@ -89,17 +89,13 @@ test("Editar Obra delega somente a construção pura do payload de atualização
     remoteUpdateSource,
     /import \{ criarPayloadAtualizacaoObra \} from "\.\/editar-obra-update-payload";/,
   );
-  assert.match(remoteUpdateSource, /\.from\("obras"\)/);
-  assert.match(
-    remoteUpdateSource,
-    /\.update\(criarPayloadAtualizacaoObra\(dadosAtualizacao\)\)/,
-  );
-  assert.match(remoteUpdateSource, /\.eq\("id", obraId\)/);
-  assert.match(remoteUpdateSource, /\.eq\("user_id", userId\)/);
-  assert.match(remoteUpdateSource, /\.select\("id"\)/);
-  assert.match(remoteUpdateSource, /\.maybeSingle\(\)/);
-  assert.match(remoteUpdateSource, /erroAtualizarObra/);
-  assert.match(remoteUpdateSource, /obraAtualizadaSupabase\?\.id/);
+  assert.match(remoteUpdateSource, /return escreverMetadadosObra\(supabase, \{/);
+  assert.match(remoteUpdateSource, /id: obraId, userId, payload: criarPayloadAtualizacaoObra\(dadosAtualizacao\), editorial, vigente/);
+  const escrita = readFileSync(new URL("../../app/editar-obra/lib/editar-obra-editorial-write.ts", import.meta.url), "utf8");
+  assert.match(escrita, /\.from\("obras"\)\.update\(/);
+  assert.match(escrita, /\.eq\("id", id\)\.eq\("user_id", userId\)/);
+  assert.match(escrita, /\.select\("id,user_id,status_editorial,status_editorial_versao"\)/);
+  assert.match(escrita, /data\.length !== 1/);
   assert.match(source, /arquivoObraFinal\?\.conteudo \|\| ""/);
   assert.match(source, /arquivoObraFinal\?\.categoria \|\| "outro"/);
   assert.doesNotMatch(source, /supabase|localStorage|useState|useEffect|await|new Date/);

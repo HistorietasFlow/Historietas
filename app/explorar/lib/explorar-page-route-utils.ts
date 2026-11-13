@@ -5,6 +5,7 @@ import type { OrdenacaoExplorar } from "./explorar-derived-utils";
 import { normalizarGeneroExcluido } from "../../../lib/catalogo-genero";
 import { normalizarTagCatalogo } from "../../../lib/catalogo-tag";
 import { normalizarNotaMinimaCatalogo } from "../../../lib/catalogo-nota-minima";
+import { filtroStatusEditorial } from "../../../lib/statusEditorial";
 
 const LIMITE_BUSCA_EXPLORAR = 90;
 const ORDENACOES_COMPARTILHAVEIS_EXPLORAR = new Set<OrdenacaoExplorar>([
@@ -23,6 +24,7 @@ export type FiltrosCompartilhaveisExplorar = Readonly<{
   filtroTag?: string;
   tagExcluida?: string;
   generoExcluido?: string;
+  statusEditorial?: string;
   notaMinima?: number | null;
 }>;
 
@@ -90,6 +92,8 @@ export function lerFiltrosCompartilhaveisExplorar(
     busca: normalizarBuscaExplorar(params.get("busca")),
     ordenacao: normalizarOrdenacaoExplorar(params.get("ordenacao"), modoConteudo),
     filtroFormato: normalizarFormatoExplorar(params.get("formato")),
+    ...(modoConteudo === "obras" && filtroStatusEditorial(params.get("statusEditorial"))
+      ? { statusEditorial: filtroStatusEditorial(params.get("statusEditorial")) } : {}),
     ...(notaMinima !== null ? { notaMinima } : {}),
     ...(modoConteudo === "obras" && normalizarTagCatalogo(params.get("tagExcluida"))
       ? { tagExcluida: normalizarTagCatalogo(params.get("tagExcluida")) } : {}),
@@ -143,8 +147,9 @@ export function criarUrlExplorar(
   const notaMinima = filtros.modoConteudo === "obras"
     ? normalizarNotaMinimaCatalogo(filtros.notaMinima) : null;
   if (notaMinima !== null) params.set("notaMinima", String(notaMinima));
-  const queryComTag = params.toString();
-  return queryComTag ? `/explorar?${queryComTag}` : "/explorar";
+  const statusEditorial = filtros.modoConteudo === "obras" ? filtroStatusEditorial(filtros.statusEditorial) : "";
+  if (statusEditorial) params.set("statusEditorial", statusEditorial);
+  return params.size ? `/explorar?${params.toString()}` : "/explorar";
 }
 
 export function atualizarUrlExplorar(

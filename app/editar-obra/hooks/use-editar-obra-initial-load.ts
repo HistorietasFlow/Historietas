@@ -1,4 +1,6 @@
 import { useEffect, type Dispatch, type SetStateAction } from "react";
+import { useSearchParams } from "next/navigation";
+import type { useEditarObraEditorial } from "./use-editar-obra-editorial";
 import { supabase } from "../../../lib/supabase/client";
 import type { AvisoConteudo18 } from "../../../lib/historietasAdultContent";
 import {
@@ -35,6 +37,7 @@ type RouterEditarObra = {
 
 type UseEditarObraInitialLoadProps = {
   router: RouterEditarObra;
+  iniciarCargaEditorial: ReturnType<typeof useEditarObraEditorial>["iniciarCarga"];
   setObraId: Dispatch<SetStateAction<string>>;
   setUsuarioIdLogado: Dispatch<SetStateAction<string>>;
   setObras: Dispatch<SetStateAction<ObraLocal[]>>;
@@ -64,6 +67,7 @@ type UseEditarObraInitialLoadProps = {
 
 export function useEditarObraInitialLoad({
   router,
+  iniciarCargaEditorial,
   setObraId,
   setUsuarioIdLogado,
   setObras,
@@ -90,8 +94,10 @@ export function useEditarObraInitialLoad({
   setArquivoObraArquivo,
   setArquivoObraRemovidoManualmente,
 }: UseEditarObraInitialLoadProps) {
+  const search = useSearchParams().toString();
   useEffect(() => {
     let cancelado = false;
+    const carga = iniciarCargaEditorial(obterObraIdEdicaoObra(search));
 
     function aplicarObraNoFormulario(
       obraAtual: ObraLocal,
@@ -133,10 +139,12 @@ export function useEditarObraInitialLoad({
     }
 
     async function carregarObra() {
-      const obraIdParam = obterObraIdEdicaoObra(window.location.search);
+      setCarregando(true);
+      setObraEncontrada(false);
+      const obraIdParam = obterObraIdEdicaoObra(search);
 
       window.setTimeout(() => {
-        if (!cancelado) {
+        if (!cancelado && carga.atual()) {
           setObraId(obraIdParam);
         }
       }, 0);
@@ -150,7 +158,7 @@ export function useEditarObraInitialLoad({
         const userId = dadosUsuario.user?.id || "";
 
         if (erroUsuario || !userId) {
-          if (!cancelado) {
+          if (!cancelado && carga.atual()) {
             setUsuarioIdLogado("");
             router.replace(criarLoginHrefEditarObra(obraIdParam));
           }
@@ -158,9 +166,11 @@ export function useEditarObraInitialLoad({
           return;
         }
 
-        if (!cancelado) {
+        if (!cancelado && carga.atual()) {
           setUsuarioIdLogado(userId);
         }
+
+        if (cancelado || !carga.identificar(userId)) return;
 
         const metadataUsuario = dadosUsuario.user?.user_metadata as
           | Record<string, unknown>
@@ -174,7 +184,7 @@ export function useEditarObraInitialLoad({
           nomeMetadataUsuario
         );
 
-        if (!cancelado) {
+        if (!cancelado && carga.atual()) {
           setNomeAutorProfile(nomeProfileUsuario);
         }
 
@@ -192,7 +202,7 @@ export function useEditarObraInitialLoad({
               obraId: obraIdParam,
             });
 
-          if (!cancelado) {
+          if (!cancelado && carga.atual()) {
             setObras(obrasAutorizadas);
 
             if (obraLocal) {
@@ -202,7 +212,7 @@ export function useEditarObraInitialLoad({
         } catch {
           obrasNormalizadas = [];
 
-          if (!cancelado) {
+          if (!cancelado && carga.atual()) {
             setObras([]);
           }
         }
@@ -213,6 +223,7 @@ export function useEditarObraInitialLoad({
         );
 
         if (!obraSupabase) {
+          carga.confirmar(null);
           return;
         }
 
@@ -242,19 +253,22 @@ export function useEditarObraInitialLoad({
             obraIdParam,
           });
 
+        if (cancelado || !carga.atual()) return;
+        carga.confirmar(obraSupabase);
+
         const obrasAtualizadasDoUsuario =
           salvarObrasDoUsuarioPreservandoOutrasContas(obrasAtualizadas, userId);
 
         sincronizarBackupArquivosObras(obrasAtualizadasDoUsuario, userId);
 
-        if (!cancelado) {
+        if (!cancelado && carga.atual()) {
           setObras(obrasAtualizadasDoUsuario);
           aplicarObraNoFormulario(obraSupabaseComAutorProfile, nomeProfileUsuario);
         }
       } catch (erroSupabase) {
         console.warn("Falha ao carregar dados do Supabase:", erroSupabase);
       } finally {
-        if (!cancelado) {
+        if (!cancelado && carga.atual()) {
           setCarregando(false);
         }
       }
@@ -264,8 +278,11 @@ export function useEditarObraInitialLoad({
 
     return () => {
       cancelado = true;
+      carga.cancelar();
     };
   }, [
+    search,
+    iniciarCargaEditorial,
     router,
     setObraId,
     setUsuarioIdLogado,

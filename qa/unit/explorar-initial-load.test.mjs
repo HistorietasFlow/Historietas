@@ -73,6 +73,7 @@ function preparar(t, opcoes = {}) {
         filtroFormato: params.get("formato") || "todos",
         filtroTag: params.get("tag") || "",
         tagExcluida: params.get("tagExcluida") || "",
+        statusEditorial: params.get("statusEditorial") || "",
         notaMinima: params.has("notaMinima") ? Number(params.get("notaMinima")) : null,
         ordenacao: params.get("ordenacao") === "mais-recentes"
           ? "mais-recentes"
@@ -83,7 +84,7 @@ function preparar(t, opcoes = {}) {
   globalThis.__explorarInitialTest = deps;
   const props = { ...refs };
   for (const nome of [
-    "ModoConteudo", "CategoriaSelecionada", "Busca", "Ordenacao", "FiltroFormato", "FiltroTag", "TagExcluida", "GeneroExcluido", "NotaMinima", "UsuarioLogado", "ObrasLocais",
+    "ModoConteudo", "CategoriaSelecionada", "Busca", "Ordenacao", "FiltroFormato", "FiltroTag", "TagExcluida", "GeneroExcluido", "StatusEditorial", "NotaMinima", "UsuarioLogado", "ObrasLocais",
     "ProximoCursorCatalogo",
     "CatalogoTemMais", "ErroCatalogoExplorar", "DadosExplorarCarregados",
   ]) {
@@ -105,7 +106,7 @@ test("corpo do efeito preserva o lifecycle com a restauração do formato", () =
     "",
   );
   assert.equal(createHash("sha256").update(efeito).digest("hex"),
-    "11d05c2056c9daa84557457218f411def70409a865f621f18569a144c33b1b1b");
+    "1dc80e5518e772e1ea01a122a8592cd3b2178531cbe61c1c59c0bb752314fab4");
   assert.match(pagina, /useExplorarInitialLoad\(\{/);
   assert.doesNotMatch(pagina, /async function carregarExplorar\(/);
   for (const nome of ["obrasCacheLocalRef", "usuarioIdExplorarRef", "setDadosExplorarCarregados",

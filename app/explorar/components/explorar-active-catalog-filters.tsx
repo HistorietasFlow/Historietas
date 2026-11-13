@@ -1,3 +1,4 @@
+import { filtroStatusEditorial, textosStatusEditorial } from "../../../lib/statusEditorial";
 import { useRef } from "react";
 import type { HistorietasLanguage } from "../../../lib/i18n";
 import { normalizarTagCatalogo } from "../../../lib/catalogo-tag";
@@ -16,6 +17,8 @@ type ExplorarActiveCatalogFiltersProps = {
   filtroTag: string;
   tagExcluida: string;
   generoExcluido: string;
+  statusEditorial?: string;
+  onSelecionarStatusEditorial?: (valor: string) => void;
   notaMinima: number | null;
   onSelecionarFormato: (valor: string) => void;
   onSelecionarTag: (valor: string) => void;
@@ -28,7 +31,7 @@ type ExplorarActiveCatalogFiltersProps = {
 export function ExplorarActiveCatalogFilters({
   language, modoConteudo, filtroFormato, filtroTag, tagExcluida, generoExcluido, notaMinima,
   onSelecionarFormato, onSelecionarTag, onSelecionarTagExcluida, onSelecionarGeneroExcluido,
-  onSelecionarNotaMinima, onFocarFiltros,
+  onSelecionarNotaMinima, onFocarFiltros, statusEditorial, onSelecionarStatusEditorial,
 }: ExplorarActiveCatalogFiltersProps) {
   const grupoRef = useRef<HTMLDivElement>(null);
   const formato = normalizarFormatoExplorar(filtroFormato);
@@ -42,6 +45,9 @@ export function ExplorarActiveCatalogFilters({
   if (exclusaoTag) filtros.push({ id: "tag-excluida", rotulo: "Excluir tag", valor: exclusaoTag, remover: () => onSelecionarTagExcluida("") });
   if (exclusaoGenero) filtros.push({ id: "genero-excluido", rotulo: "Excluir gênero", valor: traduzirGeneroExplorar(categorias.find(genero => normalizarGeneroExcluido(genero) === exclusaoGenero) || exclusaoGenero, language), remover: () => onSelecionarGeneroExcluido("") });
   if (nota !== null) filtros.push({ id: "nota-minima", rotulo: "Avaliação mínima", valor: String(nota), remover: () => onSelecionarNotaMinima("") });
+
+  const editorial = modoConteudo === "obras" ? filtroStatusEditorial(statusEditorial) : "";
+  if (editorial && onSelecionarStatusEditorial) filtros.push({ id: "status-editorial", rotulo: textosStatusEditorial(language).label, valor: textosStatusEditorial(language)[editorial], remover: () => onSelecionarStatusEditorial("") });
 
   if (filtros.length === 0) return null;
 

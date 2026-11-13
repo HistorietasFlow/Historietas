@@ -68,6 +68,7 @@ import ObraSynopsisSection from "./components/obra-synopsis-section";
 import ObraChaptersSection from "./components/obra-chapters-section";
 import ArquivoObraPublico from "./components/arquivo-obra-publico";
 import ObraRatingSummary from "./components/obra-rating-summary";
+import { textosStatusEditorial } from "../../../lib/statusEditorial";
 import ObraHeroHeader from "./components/obra-hero-header";
 import ObraHeroCover from "./components/obra-hero-cover";
 import ObraHeroMetaBar from "./components/obra-hero-meta-bar";
@@ -811,6 +812,13 @@ export default function ObraDinamicaPage({ snapshotInicial }: { snapshotInicial?
                 classificacaoIndicativa={obra.classificacaoIndicativa}
                 sinopse={obra.sinopse}
               />
+
+              {snapshotInicial && publica.pronta && obra.statusEditorial !== undefined && (
+                <p data-historietas-i18n-ignore="true" style={{ fontSize: 13, overflowWrap: "anywhere" }}>
+                  {textosStatusEditorial(language).label}: {obra.statusEditorial === null
+                    ? textosStatusEditorial(language).indefinido : textosStatusEditorial(language)[obra.statusEditorial]}
+                </p>
+              )}
 
               <ObraHeroMetaBar
                 isDesktop={isDesktop}
