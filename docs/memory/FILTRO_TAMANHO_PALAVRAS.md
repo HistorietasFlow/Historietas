@@ -87,6 +87,26 @@ os dois cenarios afetados passaram apos a correcao (2/2), sem retries artificiai
 Nao afirmar estabilidade absoluta por essas rodadas. Sem backfill historico,
 homologacao remota ou medicao de capacidade fisica.
 
+### Correcao QA da CI #2286
+
+Run `43384495608`, job `131749667760`: 21 passes/uma falha no gate Data API.
+A regex do novo teste rejeitava `supabase_db_Historietas` antes de consultar
+o catalogo. Guard aceita sufixo ASCII maiusculo/minusculo, preserva prefixo
+`supabase_db_`, API/banco em loopback, porta explicita e exige exatamente um
+container retornado por `docker ps --filter publish=<porta>`.
+Nenhuma assercao de dados, aplicacao, migration, permissao ou workflow alterado.
+
+Validacao: nove casos do guard (incluindo zero/multiplos containers, prefixo
+arbitrario, remoto e porta ausente); teste completo afetado 1/1 com nome da CI
+na fronteira controlada de descoberta e SQL/Data API reais; gate completo
+`test:pagination:integration` 22/22 no descartavel 62421/62422, sem retries.
+Uma tentativa de renomear fisicamente o container interrompeu o DNS interno
+do PostgREST; nome restaurado e reconexao comprovada antes das rodadas aprovadas.
+Nao confundir essa limitacao da reproducao com a causa da CI. Lint focado e
+diff check aprovados; sem repetir Build/Playwright ou consultar producao.
+Servicos descartaveis parados sem remover volumes; containers antigos nao
+precisaram ser pausados. Draft e bloqueio de implantacao abaixo preservados.
+
 ### Implantacao e cobertura historica — bloqueio de merge
 
 Conforme informado pelo responsavel, a migration #2285 ja foi instalada como

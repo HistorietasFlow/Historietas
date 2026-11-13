@@ -11,8 +11,12 @@ test("cliente de palavras contra Data API local: paginação, zero, privacidade,
   const out=execFileSync(inv.comando,inv.argumentos,{encoding:"utf8",windowsHide:true,stdio:["ignore","pipe","pipe"]});
   const env=Object.fromEntries(out.split(/\r?\n/).filter(s=>/^[A-Z_]+=/.test(s)).map(s=>{const i=s.indexOf("=");return [s.slice(0,i),JSON.parse(s.slice(i+1))];}));
   for(const url of [env.API_URL,env.DB_URL]) assert.ok(["127.0.0.1","localhost"].includes(new URL(url).hostname));
-  const container=execFileSync("docker",["ps","--filter",`publish=${new URL(env.DB_URL).port}`,"--format","{{.Names}}"],{encoding:"utf8",windowsHide:true}).trim();
-  assert.match(container,/^supabase_db_[a-z0-9-]+$/);
+  const porta=new URL(env.DB_URL).port;
+  assert.ok(Number(porta)>0,"O banco local deve informar uma porta explícita.");
+  const containers=execFileSync("docker",["ps","--filter",`publish=${porta}`,"--format","{{.Names}}"],{encoding:"utf8",windowsHide:true}).trim().split(/\r?\n/).filter(Boolean);
+  assert.equal(containers.length,1,"Esperado exatamente um container de banco na porta local.");
+  const [container]=containers;
+  assert.match(container,/^supabase_db_[a-zA-Z0-9-]+$/);
   const sql=q=>execFileSync("docker",["exec","-i",container,"psql","-U","postgres","-d","postgres","-XqAt","-v","ON_ERROR_STOP=1"],{input:q,encoding:"utf8",windowsHide:true,stdio:["pipe","pipe","pipe"]}).trim();
   const quote=s=>`'${String(s).replaceAll("'","''")}'`;
   const author=randomUUID(),works=Array.from({length:52},()=>randomUUID()),tag=`qa-client-${randomUUID()}`;
