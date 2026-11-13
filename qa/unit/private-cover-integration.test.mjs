@@ -195,12 +195,23 @@ test("inventário incompleto/ambíguo ou tamanho inválido falha fechado", () =>
 });
 
 test("não há consumidor ativo dos módulos preparados nem writer/cleanup concreto", () => {
+  const leitorIsolado = "lib/server/capas/storage-privado.ts";
   function walk(path) {
     for (const item of readdirSync(new URL(path, root), { withFileTypes: true })) {
       const next = `${path}/${item.name}`;
       if (item.isDirectory()) walk(next);
       else if (/\.(ts|tsx|mjs)$/.test(next) && !next.startsWith("lib/private-covers/")) {
-        assert.doesNotMatch(source(next), /(?:from\s*|import\s*\()["'][^"']*private-covers\//, next);
+        const codigo = source(next);
+        if (next === leitorIsolado) {
+          // Única exceção: o leitor server-only, ainda sem consumidor ativo,
+          // reutiliza somente a validação pura de UUID da referência.
+          const imports = [...codigo.matchAll(/(?:from\s*|import\s*\()["']([^"']*private-covers\/[^"']+)["']/g)]
+            .map(([, modulo]) => modulo);
+          assert.deepEqual(imports, ["../../private-covers/reference"], next);
+        } else {
+          assert.doesNotMatch(codigo, /(?:from\s*|import\s*\()["'][^"']*private-covers\//, next);
+          assert.doesNotMatch(codigo, /(?:from\s*|import\s*\()["'][^"']*storage-privado(?:["']|\/)/, next);
+        }
       }
     }
   }
