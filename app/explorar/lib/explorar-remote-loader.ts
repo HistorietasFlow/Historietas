@@ -334,6 +334,11 @@ export async function carregarObrasPublicadasSupabase(
       obraIdsCatalogo = selecao.obraIds;
       paginaCatalogo = selecao.paginas.length === 1 ? selecao.paginas[0] : null;
     } catch (error) {
+      if (consultasCatalogo.some(consulta => consulta.palavrasMinimas != null || consulta.palavrasMaximas != null)) {
+        // Cache is preserved but cannot certify a measured range. Never retry
+        // this failed bounded request with an unbounded table sample.
+        return { obras: obrasLocais, pagina: null, falhaTemporaria: true };
+      }
       if (filtroColecao) {
         const obraIdsColecao = new Set(filtroColecao.obraIds);
         const obrasFallback = acumularObrasLocais

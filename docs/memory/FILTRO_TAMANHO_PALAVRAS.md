@@ -1,7 +1,126 @@
-# Filtro por tamanho — Etapa 1, banco
+# Filtro por tamanho — palavras no banco e no Explorar
 
-Base `bb7685b3` (#2284). Somente infraestrutura local; sem interface,
-backfill remoto, ativacao ou certificacao de capacidade fisica.
+Etapa 1: base `bb7685b3` (#2284). Etapa 2: base `a5ac96c7` (#2285).
+Sem backfill remoto, ativacao ou certificacao de capacidade fisica.
+
+## Etapa 2 — interface, cliente e confirmacao
+
+Somente Obras: intervalo opcional “Palavras disponíveis”, minimo/maximo inclusivos,
+0..9007199254740991. Vazio nao e zero. Parser compartilhado rejeita negativos,
+fracao, expoentes, NaN/infinito, excesso, whitespace e intervalo invertido;
+nao arredonda/trunca nem converte erro em neutro. RPC aceita somente numeros
+seguros/null/undefined; strings pertencem apenas ao parser de UI/URL.
+
+Inputs mantem rascunho de edicao local, labels, ajuda e erro associado/anunciado,
+teclado numerico e aplicacao atomica por botao. Nenhuma RPC durante digitacao.
+Texto explicativo PT/EN/ES informa a exclusao de anexos, mistos e contagens
+desconhecidas; nao promete cobertura completa, paginas ou tempo exato.
+
+URL: `palavrasMinimas`/`palavrasMaximas`, normalizacao decimal canonica valida.
+Valores invalidos recebidos permanecem corrigiveis, bloqueiam consulta/resultados
+amplos e nao viram ausencia silenciosa do filtro. Historico usa push para aplicar/
+remover; handlers existentes de busca/tags preservam o intervalo. Autores neutraliza
+limites, controles e indicador. Um chip removivel representa o par e conta uma vez;
+remocao limpa somente o par e reutiliza o comportamento de foco da #2281.
+
+`listarPaginaCatalogo` envia os 17 argumentos somente quando algum limite esta
+ativo, incluindo status, filtros e cursor com NULL explicito. Neutro preserva
+variantes 10–15. Sem mudanca de SQL, schema, RLS ou grants. Filtragem anterior
+ao cursor/limite continua exclusivamente na RPC da Etapa 1, nao no navegador.
+
+O hook paginado inclui limites na identidade memoizada, invalida cursor/respostas
+antigas e exige confirmacao remota da consulta/usuario atuais. Cache nao certifica
+palavras; troca de conta/logout invalida confirmacao. Falha mostra indisponibilidade/
+retry, nao lista ampla nem vazio confirmado. O loader preserva cache sem consultar
+uma amostra sem limites apos falha. Intervalo confirmado vazio usa “Nenhuma obra
+encontrada”, mesmo sem amostra local; nao “Publique sua historia”.
+
+Consultas: modo neutro mantem as seis RPCs iniciais. Link com intervalo pula a
+selecao ampla e faz uma RPC filtrada pelo hook existente; aplicar/remover com
+outros filtros ativos faz uma consulta normal, nao uma por limite. Renderizar,
+digitar ou traduzir controles/chips nao consulta. Limpar para neutro reutiliza
+as seis selecoes; paginacao explicita continua uma RPC por pagina solicitada.
+Colecoes pessoais preservam seu percurso paginado anterior quando necessario.
+
+### Validacao local da Etapa 2
+
+Node 22.23.4/CLI 2.116.0; mesmo Supabase descartavel 62421/62422 da Etapa 1,
+Database/Auth/Data API. Fixtures existentes preparadas pelo script local, com
+config/credenciais geradas fora do commit. Nenhuma operacao remota.
+
+- Unitarios/regressoes focados: **130/130**. Parser/URL (inclusive newline e
+  valores malformados), argumentos exatos/variantes, renderizacao PT/EN/ES,
+  contagem unica, guards de cache/identidade, resposta antiga, debounce, cursor,
+  retry, carregamento inicial e ausencia de fallback amplo. Hashes estruturais
+  afetados foram atualizados junto das regressoes executaveis, sem remover gates.
+- pgTAP existente de palavras: **44/44**, transacoes revertidas. Inclui NULL
+  legado/parcial, zero, limites, privacidade e contrato antes da paginacao.
+- Novo teste do cliente real contra Data API: **1/1**, fixture propria com
+  52 obras, cleanup somente dos proprios IDs/usuario. Alvo antigo fora da primeira
+  pagina; 47 resultados em paginas de sete, sem duplicacao e com ordem exata;
+  [0,0], inclusao, combinacoes/status, anon, draft, 18+, anexo e erro real 22023
+  propagado sem repetir chamada ampla. Ligado ao gate de integracao existente.
+- Playwright: **12 cenarios distintos aprovados**, desktop/mobile, next build +
+  next start, workers=1/retries=0. Oito novos (quatro por dispositivo) e quatro
+  regressoes dos indicadores/nota da #2281. HTTP controlado para UI/rede/corridas;
+  dois casos de catalogo com RPC local real. Dois casos adicionais usam login,
+  logout e troca autor/leitor reais em outra aba, com respostas de catalogo
+  controladas e distinguiveis para comprovar descarte da identidade anterior.
+  Cache de autor apos reload nao certifica erro. Sem registrar credenciais.
+- Historico/reload, aplicacao/remocao/limpeza, Autores, traducao sem RPC, pares
+  invalidos, paginacao/retry e respostas atrasadas. Teclado/foco restaurado,
+  Tab/Shift+Tab, axe do dialogo sem violacoes graves/criticas e sem overflow.
+  Uma RPC para link com intervalo; uma por aplicacao combinada; zero por
+  digitacao/render/traducao; seis ao limpar para a selecao neutra existente.
+- Lint focado, Typecheck, Build de producao e diff check aprovados. Suite completa
+  permanece obrigatoria na CI; nao se repetiram suites amplas de Storage/agendamento.
+
+Falhas iniciais foram diagnosticadas: preparo antes da API ficar saudavel;
+fixture 18+ sem aviso exigido pela constraint; detector QA confundindo RPCs de
+leitura/HEAD com mutacoes. O primeiro caso real vazio revelou a mensagem de
+catalogo geral inadequada ao novo filtro: ajustada somente para palavras ativas.
+O caminho inicial foi reduzido a uma consulta filtrada, sem aguardar seis selecoes
+amplas antes dela. A assercao nova da limpeza aguardava apenas a primeira das
+seis respostas e contou cinco no mobile; agora espera todas individualmente,
+mantendo a exigencia exata de seis. Rodada de 12 teve 11 passes e essa falha;
+os dois cenarios afetados passaram apos a correcao (2/2), sem retries artificiais.
+Nao afirmar estabilidade absoluta por essas rodadas. Sem backfill historico,
+homologacao remota ou medicao de capacidade fisica.
+
+### Correcao QA da CI #2286
+
+Run `43384495608`, job `131749667760`: 21 passes/uma falha no gate Data API.
+A regex do novo teste rejeitava `supabase_db_Historietas` antes de consultar
+o catalogo. Guard aceita sufixo ASCII maiusculo/minusculo, preserva prefixo
+`supabase_db_`, API/banco em loopback, porta explicita e exige exatamente um
+container retornado por `docker ps --filter publish=<porta>`.
+Nenhuma assercao de dados, aplicacao, migration, permissao ou workflow alterado.
+
+Validacao: nove casos do guard (incluindo zero/multiplos containers, prefixo
+arbitrario, remoto e porta ausente); teste completo afetado 1/1 com nome da CI
+na fronteira controlada de descoberta e SQL/Data API reais; gate completo
+`test:pagination:integration` 22/22 no descartavel 62421/62422, sem retries.
+Uma tentativa de renomear fisicamente o container interrompeu o DNS interno
+do PostgREST; nome restaurado e reconexao comprovada antes das rodadas aprovadas.
+Nao confundir essa limitacao da reproducao com a causa da CI. Lint focado e
+diff check aprovados; sem repetir Build/Playwright ou consultar producao.
+Servicos descartaveis parados sem remover volumes; containers antigos nao
+precisaram ser pausados. Draft e bloqueio de implantacao abaixo preservados.
+
+### Implantacao e cobertura historica — bloqueio de merge
+
+Conforme informado pelo responsavel, a migration #2285 ja foi instalada como
+`20261113063207`, enquanto o arquivo Git e `20261113053819`. Nao reaplicar nem
+corrigir timestamps automaticamente. Nenhuma consulta remota foi feita nesta fase.
+O preenchimento historico **nao foi executado**: NULL permanece desconhecido e
+excluido sob filtro ativo, nunca zero. PR deve permanecer em **draft**, sem merge,
+ate revisao de cobertura e autorizacao separada da estrategia de implantacao.
+O helper administrativo nao foi executado remotamente nem agendado.
+
+Status editorial da #2284 ja integrado; suas migrations foram informadas como
+aplicadas pelo responsavel. Isso nao altera o bloqueio da transicao 18+ com capa
+existente nem autoriza outras operacoes remotas. Uploads ilustrados e publicacao
+automatica continuam bloqueados. Nenhuma dependência, servico ou workflow novo.
 
 ## Contrato
 
@@ -134,10 +253,9 @@ a partir do status local, depois de preparar o seed existente. Sem alterar
 aquele contrato ou imprimir credenciais. A falha anterior permanece explicada,
 nao atribuida a regressao do banco. Config/helper ACL/cli-latest nao versionados.
 
-Suite integral permanece obrigatoria na CI. Sem Build/Playwright: nenhuma UI,
-loader ou codigo funcional da aplicacao mudou. Etapa 2 pendente: tipos do cliente,
-controles PT/EN/ES, URL, chips, foco, debounce, confirmacao por identidade, cache
-seguro, retry, desktop/mobile e axe. Palavras nao implementa paginas.
+Suite integral permanece obrigatoria na CI. Na Etapa 1, sem Build/Playwright:
+nenhuma UI, loader ou codigo funcional da aplicacao mudou naquela entrega.
+A Etapa 2 acima integra tipos, controles, URL e confirmacao; palavras nao implementa paginas.
 Uploads ilustrados, runner, Cron, publicacao automatica e bloqueio 18+ com capa
 existente permanecem inalterados. Sem operacao remota, merge ou deploy manual.
 Os quatro servicos do descartavel foram parados sem remover volumes; os onze

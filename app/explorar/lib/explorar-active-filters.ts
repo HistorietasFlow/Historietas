@@ -12,6 +12,7 @@ export function possuiFiltrosAtivosExplorar({
   generoExcluido = "",
   statusEditorial = "",
   notaMinima = null,
+  palavrasAtivas = false,
   filtroClassificacao,
   filtroCapitulos,
   usuarioLogado,
@@ -26,6 +27,7 @@ export function possuiFiltrosAtivosExplorar({
   generoExcluido?: string;
   statusEditorial?: string;
   notaMinima?: number | null;
+  palavrasAtivas?: boolean;
   filtroClassificacao: string;
   filtroCapitulos: string;
   usuarioLogado: boolean;
@@ -41,6 +43,7 @@ export function possuiFiltrosAtivosExplorar({
       generoExcluido ||
       statusEditorial ||
       notaMinima !== null ||
+      palavrasAtivas ||
       filtroClassificacao !== "todos" ||
       filtroCapitulos !== "todos" ||
       (usuarioLogado && filtroColecao !== "todos") ||

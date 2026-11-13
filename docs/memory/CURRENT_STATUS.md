@@ -17,6 +17,25 @@ e Playwright não executados: sem Supabase local preparado, sem autorização
 para iniciar Docker/Supabase ou instalar navegador. Sem migrations, backfill,
 remoção de arquivos, ativação, merge ou alteração de produção.
 
+### Explorar — intervalo de palavras disponiveis (Etapa 2)
+
+UI somente Obras, minimo/maximo inclusivos seguros, zero distinto de vazio,
+aplicacao atomica, PT/EN/ES, URL, chip unico removivel e confirmacao remota por
+consulta/identidade. Falha nao busca amostra ampla nem certifica cache. Neutro
+preserva seis RPCs/variantes antigas; link com intervalo faz uma RPC filtrada.
+Sem SQL/migration nova. Historico **sem backfill**, NULL nao e zero: manter PR
+em draft ate revisao de cobertura e autorizacao separada de implantacao.
+Instalacao remota/timestamps distintos foram informados pelo responsavel, nao
+consultados nesta tarefa. Ver [contratos e evidencias](FILTRO_TAMANHO_PALAVRAS.md).
+
+Validacao local: unitarios/regressoes 130/130, pgTAP palavras 44/44, cliente real
+Data API 1/1 (52 obras, alvo fora da primeira pagina) e 12 cenarios distintos
+Playwright aprovados apos ajustes diagnosticados de QA, workers=1/retries=0,
+desktop/mobile. Inclui sessao real entre abas, falha/retry, cache, paginacao,
+historico, foco/axe e contagem de consultas. Lint focado, Typecheck, Build e diff
+check aprovados; cobertura completa permanece na CI. Detalhes das falhas iniciais
+e limites no documento acima; nenhuma garantia de producao/capacidade fisica.
+
 ### Tamanho da obra — Etapa 1, palavras no banco
 
 Contador nullable protegido por trigger, variante paginada de 17 argumentos e
@@ -25,15 +44,16 @@ backfill remoto, mudancas de RLS ou ativacoes. Anexos/mistos/medicao parcial
 nao certificam tamanho; seis variantes antigas preservadas. Evidencias, custos
 locais e procedimento em [FILTRO_TAMANHO_PALAVRAS.md](FILTRO_TAMANHO_PALAVRAS.md).
 
-### Status editorial — integração da aplicação em draft
+### Status editorial — integração da aplicação concluída na #2284
 
 Criação opcional, edição com CAS real/reconciliação explícita, metadado público
 confirmado e filtro paginado compartilhável de Obras implementados sobre #2283.
 Sem migration nova ou consultas extras nos fluxos normais. Resposta perdida não
 autoriza cleanup nem sucesso. Transição 18+ com capa remota existente permanece
 **bloqueada**: falta atomicidade entre Storage e UPDATE; não declarar esse fluxo
-resolvido. Merge/deploy depende também de comprovar aplicação remota das duas
-migrations anteriores. Ver [contratos, testes e limites](STATUS_EDITORIAL_ETAPA2.md).
+resolvido. As duas migrations anteriores foram informadas como aplicadas pelo
+responsável; nenhuma nova consulta remota foi feita nesta etapa de palavras.
+Ver [contratos, testes e limites](STATUS_EDITORIAL_ETAPA2.md).
 
 ### Status editorial — token protegido, antes da interface
 
@@ -42,7 +62,7 @@ em INSERT/recriação e mudança efetiva de status. Trigger privado invoker, sem
 grants novos, UPDATE da versão ou RPC de escrita. Contrato Data API com ID,
 proprietário e token (IS NULL no legado) preparado; testes de ABA, concorrência,
 rollback e resposta perdida. UPDATE sem CAS continua permitido e renova token:
-**adoção obrigatória na Etapa 2 ainda pendente**, sem CAS geral ou interface pronta.
+adoção na interface foi concluída na #2284; não representa CAS geral para clientes antigos.
 Ver [contrato e evidências](STATUS_EDITORIAL_ETAPA1.md#proteção-de-versão-editorial--base-ad9a0188-2282).
 Validação local: pgTAP 1.039/1.039, Data API/regressões 27/27, unitários 14/14,
 Lint focado, auditoria 199/199, SQL público/trigger novo e diff check aprovados.
@@ -56,9 +76,9 @@ coluna, guard de termos, sexta variante paginada e projeção pública aditiva.
 Sem alterar RLS, interface ou agendamento. pgTAP completo 1.002/1.002,
 integrações de projeção/snapshot 16/16 e unitários 14/14 locais aprovados.
 Lint focado/SQL, Typecheck, Build, auditoria estática 199/199 e diff check passaram.
-**Bloqueador identificado na Etapa 1:** revisão pública não é acessível em drafts/18+;
-timestamp e valor anterior não garantem versão/ABA. Ajuste mínimo exige aprovação
-separada. Ver [contratos, evidências e recuperação](STATUS_EDITORIAL_ETAPA1.md).
+**Histórico da Etapa 1:** revisão pública não é acessível em drafts/18+; timestamp
+e valor anterior não garantiam versão/ABA. Token/CAS próprios foram concluídos
+nas #2283/#2284. Ver [contratos, evidências e recuperação](STATUS_EDITORIAL_ETAPA1.md).
 
 ### QA — CI da #2281, raízes públicas durante streaming
 

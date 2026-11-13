@@ -3,6 +3,7 @@ import { normalizarTagCatalogo } from "./catalogo-tag";
 import { normalizarGeneroExcluido } from "./catalogo-genero";
 import { normalizarNotaMinimaCatalogo } from "./catalogo-nota-minima";
 import { filtroStatusEditorial } from "./statusEditorial";
+import { lerIntervaloPalavras } from "./catalogo-palavras";
 
 export type OrdenacaoCatalogo =
   | "relevancia"
@@ -39,6 +40,8 @@ export type ConsultaCatalogo = Readonly<{
   generoExcluido?: string;
   statusEditorial?: string;
   notaMinima?: number | null;
+  palavrasMinimas?: number | null;
+  palavrasMaximas?: number | null;
   classificacao?: string;
   filtroCapitulos?: FiltroCapitulosCatalogo;
   ordenacao?: OrdenacaoCatalogo;
@@ -108,6 +111,7 @@ export async function listarPaginaCatalogo(
   consulta: ConsultaCatalogo = {},
 ): Promise<PaginaCatalogo> {
   const cursor = consulta.cursor || null;
+  const { palavrasMinimas, palavrasMaximas } = lerIntervaloPalavras(consulta.palavrasMinimas, consulta.palavrasMaximas);
   const tag = normalizarTagCatalogo(consulta.tag);
   const tagExcluida = normalizarTagCatalogo(consulta.tagExcluida);
   const generoExcluido = normalizarGeneroExcluido(consulta.generoExcluido);
@@ -125,7 +129,14 @@ export async function listarPaginaCatalogo(
     p_cursor_data: cursor?.data,
     p_cursor_id: cursor?.id,
   };
-  const { data, error } = await supabase.rpc("listar_obras_catalogo", statusEditorial ? {
+  const { data, error } = await supabase.rpc("listar_obras_catalogo", palavrasMinimas !== null || palavrasMaximas !== null ? {
+    ...parametros, p_tag: tag, p_nota_minima: notaMinima, p_tag_excluida: tagExcluida,
+    p_genero_excluido: generoExcluido, p_status_editorial: statusEditorial,
+    p_palavras_minimas: palavrasMinimas, p_palavras_maximas: palavrasMaximas,
+    p_cursor_valor: cursor?.valor ?? null,
+    p_cursor_data: cursor?.data ?? null,
+    p_cursor_id: cursor?.id ?? null,
+  } : statusEditorial ? {
     ...parametros, p_tag: tag, p_nota_minima: notaMinima, p_tag_excluida: tagExcluida,
     p_genero_excluido: generoExcluido, p_status_editorial: statusEditorial,
     p_cursor_valor: cursor?.valor ?? null,

@@ -117,7 +117,7 @@ test("os oito corpos derivados preservam o contrato atualizado e as dependência
     return codigo.slice(corpo, fim);
   });
   assert.equal(createHash("sha256").update(corpos.join("\n---\n")).digest("hex"),
-    "e67ba1e0a813b9a90a01439e46a5fb6f154020287e4541807ce6a618ae2b87e9");
+    "039936a36e16ced3b9a71f8deb5600f572b09b32bb25c0382fbcad64f4948354");
   for (const nome of funcoes) assert.match(pagina, new RegExp(`return ${nome}\\(\\{`));
   const nomesMemo = [
     "obrasBaseFiltradas", "obrasLocaisFiltradas", "autoresExplorar",
@@ -134,10 +134,10 @@ test("os oito corpos derivados preservam o contrato atualizado e as dependência
   });
   assert.match(dependencias[0], /filtroTag/);
   assert.equal(createHash("sha256").update(dependencias.join("\n---\n").replace(/    filtroTag,\n/, "")).digest("hex"),
-    "52293bf96c7aa6751b8e3d7563d2c692c98085d64322054654f98aa39747cee7");
+    "636a19952ed53f9d5cbca4600bf77887260d0d3226d48bfcfaea980e3e384524");
   assert.match(
     pagina,
-    /\[\s*obrasBaseFiltradas,\s*categoriaSelecionada,\s*termoBusca,\s*obraIdsBuscaRemota,\s*notaMinimaVerificada,\s*notaMinima,\s*tagExcluidaVerificada,\s*generoExcluidoVerificado,\s*statusEditorialVerificado,\s*tagExcluida,\s*generoExcluido,\s*statusEditorial,\s*modoConteudo,\s*\]/,
+    /\[\s*obrasBaseFiltradas,\s*categoriaSelecionada,\s*termoBusca,\s*obraIdsBuscaRemota,\s*notaMinimaVerificada,\s*notaMinima,\s*tagExcluidaVerificada,\s*generoExcluidoVerificado,\s*statusEditorialVerificado,\s*palavrasAtivas,\s*palavrasVerificadas,\s*tagExcluida,\s*generoExcluido,\s*statusEditorial,\s*modoConteudo,\s*\]/,
   );
   assert.match(pagina, /\[autoresExplorar, categoriaSelecionada, termoBusca\]/);
   assert.match(pagina, /obrasLocais,\s*filtroFormato,\s*filtroTag,\s*tagExcluida,\s*generoExcluido,\s*modoConteudo,\s*filtroClassificacao,\s*filtroCapitulos,\s*filtroColecao,\s*usuarioLogado,\s*ordenacao,\s*obrasFavoritas,\s*obrasConcluidas,/);

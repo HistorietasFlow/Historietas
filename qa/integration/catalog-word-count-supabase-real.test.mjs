@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import "./catalog-word-count-client-supabase-real.test.mjs";
 import test from "node:test";
 import { readFileSync } from "node:fs";
 import { execFileSync, spawn } from "node:child_process";

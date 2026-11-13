@@ -1,5 +1,7 @@
 import { filtroStatusEditorial, textosStatusEditorial } from "../../../lib/statusEditorial";
 import { useRef } from "react";
+import { INTERVALO_PALAVRAS_VAZIO, validarIntervaloPalavras, type IntervaloPalavrasTexto } from "../../../lib/catalogo-palavras";
+import { descreverIntervaloPalavras, textosFiltroPalavras } from "../lib/explorar-word-filter-text";
 import type { HistorietasLanguage } from "../../../lib/i18n";
 import { normalizarTagCatalogo } from "../../../lib/catalogo-tag";
 import { normalizarGeneroExcluido } from "../../../lib/catalogo-genero";
@@ -20,6 +22,8 @@ type ExplorarActiveCatalogFiltersProps = {
   statusEditorial?: string;
   onSelecionarStatusEditorial?: (valor: string) => void;
   notaMinima: number | null;
+  intervaloPalavras?: IntervaloPalavrasTexto;
+  onAplicarPalavras?: (intervalo: IntervaloPalavrasTexto) => void;
   onSelecionarFormato: (valor: string) => void;
   onSelecionarTag: (valor: string) => void;
   onSelecionarTagExcluida: (valor: string) => void;
@@ -32,6 +36,7 @@ export function ExplorarActiveCatalogFilters({
   language, modoConteudo, filtroFormato, filtroTag, tagExcluida, generoExcluido, notaMinima,
   onSelecionarFormato, onSelecionarTag, onSelecionarTagExcluida, onSelecionarGeneroExcluido,
   onSelecionarNotaMinima, onFocarFiltros, statusEditorial, onSelecionarStatusEditorial,
+  intervaloPalavras = INTERVALO_PALAVRAS_VAZIO, onAplicarPalavras,
 }: ExplorarActiveCatalogFiltersProps) {
   const grupoRef = useRef<HTMLDivElement>(null);
   const formato = normalizarFormatoExplorar(filtroFormato);
@@ -48,6 +53,13 @@ export function ExplorarActiveCatalogFilters({
 
   const editorial = modoConteudo === "obras" ? filtroStatusEditorial(statusEditorial) : "";
   if (editorial && onSelecionarStatusEditorial) filtros.push({ id: "status-editorial", rotulo: textosStatusEditorial(language).label, valor: textosStatusEditorial(language)[editorial], remover: () => onSelecionarStatusEditorial("") });
+  const intervalo = validarIntervaloPalavras(intervaloPalavras);
+  if (modoConteudo === "obras" && intervalo.valido && onAplicarPalavras &&
+      (intervalo.palavrasMinimas !== null || intervalo.palavrasMaximas !== null)) {
+    filtros.push({ id: "palavras", rotulo: textosFiltroPalavras(language).palavras,
+      valor: descreverIntervaloPalavras(intervalo.palavrasMinimas, intervalo.palavrasMaximas, language),
+      remover: () => onAplicarPalavras(INTERVALO_PALAVRAS_VAZIO) });
+  }
 
   if (filtros.length === 0) return null;
 

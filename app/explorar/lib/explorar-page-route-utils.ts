@@ -6,6 +6,7 @@ import { normalizarGeneroExcluido } from "../../../lib/catalogo-genero";
 import { normalizarTagCatalogo } from "../../../lib/catalogo-tag";
 import { normalizarNotaMinimaCatalogo } from "../../../lib/catalogo-nota-minima";
 import { filtroStatusEditorial } from "../../../lib/statusEditorial";
+import { canonizarPalavrasUrl } from "../../../lib/catalogo-palavras";
 
 const LIMITE_BUSCA_EXPLORAR = 90;
 const ORDENACOES_COMPARTILHAVEIS_EXPLORAR = new Set<OrdenacaoExplorar>([
@@ -26,6 +27,8 @@ export type FiltrosCompartilhaveisExplorar = Readonly<{
   generoExcluido?: string;
   statusEditorial?: string;
   notaMinima?: number | null;
+  palavrasMinimas?: string;
+  palavrasMaximas?: string;
 }>;
 
 export const FILTROS_COMPARTILHAVEIS_EXPLORAR_PADRAO = {
@@ -86,6 +89,10 @@ export function lerFiltrosCompartilhaveisExplorar(
 
   return {
     modoConteudo,
+    ...(modoConteudo === "obras" && params.has("palavrasMinimas")
+      ? { palavrasMinimas: canonizarPalavrasUrl(params.get("palavrasMinimas")) } : {}),
+    ...(modoConteudo === "obras" && params.has("palavrasMaximas")
+      ? { palavrasMaximas: canonizarPalavrasUrl(params.get("palavrasMaximas")) } : {}),
     categoriaSelecionada: normalizarCategoriaExplorar(
       params.get("categoria"),
     ),
@@ -149,6 +156,12 @@ export function criarUrlExplorar(
   if (notaMinima !== null) params.set("notaMinima", String(notaMinima));
   const statusEditorial = filtros.modoConteudo === "obras" ? filtroStatusEditorial(filtros.statusEditorial) : "";
   if (statusEditorial) params.set("statusEditorial", statusEditorial);
+  if (filtros.modoConteudo === "obras") {
+    for (const nome of ["palavrasMinimas", "palavrasMaximas"] as const) {
+      const valor = canonizarPalavrasUrl(filtros[nome]);
+      if (valor !== "") params.set(nome, valor);
+    }
+  }
   return params.size ? `/explorar?${params.toString()}` : "/explorar";
 }
 

@@ -158,6 +158,13 @@ function preparar() {
   return configuracao;
 }
 
+test("falha com palavras mantém cache sem amostra ampla, consultas adicionais ou persistência",async()=>{
+  const c=preparar(); c.falhas.catalogo=new Error("indisponível");const cache=[obra("cache")];
+  const result=await modulo.carregarObrasPublicadasSupabase(cache,"A",[{palavrasMinimas:0,palavrasMaximas:10}]);
+  assert.deepEqual(result,{obras:cache,pagina:null,falhaTemporaria:true});
+  assert.deepEqual(c.chamadas,[]);assert.deepEqual(c.gravacoes,[]);assert.deepEqual(c.eventos,[]);
+});
+
 test("os três loaders fora do paralelismo permanecem literalmente idênticos à base", () => {
   const corpo = codigo
     .slice(codigo.indexOf("export async function carregarIdsColecaoUsuarioExplorar("),
