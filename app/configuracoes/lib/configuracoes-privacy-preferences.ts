@@ -243,7 +243,7 @@ function salvarPreferenciasPrivacidadeLocal(
 
 export async function carregarPreferenciasPrivacidade(
   userId: string,
-  opcoes: { usarFallbackLocal?: boolean } = {},
+  opcoes: { usarFallbackLocal?: boolean; exigirConfirmacao?: boolean; execucaoEstaAtual?: () => boolean } = {},
 ): Promise<PreferenciasPrivacidadeHistorietas> {
   const userIdLimpo = userId.trim();
   const usarFallbackLocal = opcoes.usarFallbackLocal !== false;
@@ -256,6 +256,13 @@ export async function carregarPreferenciasPrivacidade(
   }
 
   try {
+    if (opcoes.exigirConfirmacao) {
+      // Ao retornar à mesma conta, confirme depois de suas escritas em voo.
+      await filasPrivacidade.get(userIdLimpo)?.catch(() => {});
+      if (opcoes.execucaoEstaAtual && !opcoes.execucaoEstaAtual()) {
+        throw new Error("Conta alterada.");
+      }
+    }
     let resultado = await supabase
       .from("preferencias_privacidade")
       .select(
@@ -274,25 +281,33 @@ export async function carregarPreferenciasPrivacidade(
         .maybeSingle();
     }
 
-    if (resultado.error || !resultado.data) {
+    if (resultado.error) {
+      if (opcoes.exigirConfirmacao) throw new Error(resultado.error.message);
       return fallback;
+    }
+    if (!resultado.data) {
+      return opcoes.exigirConfirmacao ? { ...preferenciasPrivacidadePadrao } : fallback;
     }
 
     const preferencias = normalizarPreferenciasPrivacidade(resultado.data);
 
-    if (usarFallbackLocal) {
+    if (usarFallbackLocal && (opcoes.execucaoEstaAtual?.() ?? true)) {
       salvarPreferenciasPrivacidadeLocal(preferencias, userIdLimpo);
     }
 
     return preferencias;
-  } catch {
+  } catch (error) {
+    if (opcoes.exigirConfirmacao) throw error;
     return fallback;
   }
 }
 
+const filasPrivacidade = new Map<string, Promise<unknown>>();
+
 export async function salvarPreferenciasPrivacidade(
   preferencias: PreferenciasPrivacidadeHistorietas,
   userId: string,
+  opcoes: { execucaoEstaAtual?: () => boolean } = {},
 ) {
   const userIdLimpo = userId.trim();
   const preferenciasSeguras = normalizarPreferenciasPrivacidade(preferencias);
@@ -301,8 +316,27 @@ export async function salvarPreferenciasPrivacidade(
     return { ok: false, erro: "Usuário inválido." };
   }
 
-  salvarPreferenciasPrivacidadeLocal(preferenciasSeguras, userIdLimpo);
+  // Todas as gravações desta tela compartilham a ordem por conta.
+  const anterior = filasPrivacidade.get(userIdLimpo) ?? Promise.resolve();
+  const tarefa = anterior.catch(() => {}).then(async () => {
+    if (opcoes.execucaoEstaAtual && !opcoes.execucaoEstaAtual()) {
+      return { ok: false, erro: "Conta alterada." };
+    }
+    return persistirPrivacidadeConfirmada(preferenciasSeguras, userIdLimpo, opcoes);
+  });
+  filasPrivacidade.set(userIdLimpo, tarefa);
+  try {
+    return await tarefa;
+  } finally {
+    if (filasPrivacidade.get(userIdLimpo) === tarefa) filasPrivacidade.delete(userIdLimpo);
+  }
+}
 
+async function persistirPrivacidadeConfirmada(
+  preferenciasSeguras: PreferenciasPrivacidadeHistorietas,
+  userIdLimpo: string,
+  opcoes: { execucaoEstaAtual?: () => boolean },
+) {
   const payloadLegado = {
     user_id: userIdLimpo,
     perfil_privado: preferenciasSeguras.perfilPrivado,
@@ -333,20 +367,34 @@ export async function salvarPreferenciasPrivacidade(
           preferenciasSeguras.visibilidadeAvaliacaoDiario,
       },
       { onConflict: "user_id" },
-    );
+    ).select().single();
 
-    if (resultado.error) {
+    // Compatibilidade somente com a coluna ausente; falhas de rede/RLS não
+    // autorizam uma segunda escrita nem a perda silenciosa de granularidade.
+    if (resultado.error && ["PGRST204", "42703"].includes(resultado.error.code) &&
+        resultado.error.message.includes("visibilidade_avaliacao_diario") &&
+        ["publico", "somente_eu"].includes(preferenciasSeguras.visibilidadeAvaliacaoDiario) &&
+        (opcoes.execucaoEstaAtual?.() ?? true)) {
       resultado = await supabase.from("preferencias_privacidade").upsert(
         payloadLegado,
         { onConflict: "user_id" },
-      );
+      ).select().single();
     }
 
     if (resultado.error) {
       return { ok: false, erro: resultado.error.message };
     }
 
-    return { ok: true, erro: "" };
+    if (!resultado.data || resultado.data.user_id !== userIdLimpo) {
+      return { ok: false, erro: "Não foi possível confirmar a privacidade salva." };
+    }
+    const confirmadas = normalizarPreferenciasPrivacidade(resultado.data);
+    if (opcoes.execucaoEstaAtual?.() ?? true) {
+      salvarPreferenciasPrivacidadeLocal(confirmadas, userIdLimpo);
+    }
+    const ok = (Object.keys(preferenciasSeguras) as (keyof PreferenciasPrivacidadeHistorietas)[])
+      .every(campo => preferenciasSeguras[campo] === confirmadas[campo]);
+    return { ok, erro: ok ? "" : "O servidor não confirmou a alteração solicitada.", preferencias: confirmadas };
   } catch (error) {
     return {
       ok: false,

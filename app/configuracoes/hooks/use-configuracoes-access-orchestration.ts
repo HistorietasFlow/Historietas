@@ -18,6 +18,8 @@ type UseConfiguracoesAccessOrchestrationArgs = Omit<
 export function useConfiguracoesAccessOrchestration({
   router,
   setVerificandoAcesso,
+  setSalvando,
+  setErroUsername,
   setUsuario,
   setPreferencias,
   setPrivacidade,
@@ -32,9 +34,11 @@ export function useConfiguracoesAccessOrchestration({
     mostrarMensagemAcao,
   });
 
-  useConfiguracoesInitialAccess({
+  const preferenciasConta = useConfiguracoesInitialAccess({
     router,
     setVerificandoAcesso,
+    setSalvando,
+    setErroUsername,
     setUsuario,
     setPreferencias,
     setPrivacidade,
@@ -47,5 +51,5 @@ export function useConfiguracoesAccessOrchestration({
     setAdminLiberado,
   });
 
-  return blockedUsers;
+  return { ...blockedUsers, ...preferenciasConta };
 }
