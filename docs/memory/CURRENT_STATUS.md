@@ -2,6 +2,14 @@
 
 Atualizado em: 2026-11-13
 
+### Tamanho da obra — Etapa 1, palavras no banco
+
+Contador nullable protegido por trigger, variante paginada de 17 argumentos e
+preenchimento administrativo limitado preparados sobre #2284. Sem interface,
+backfill remoto, mudancas de RLS ou ativacoes. Anexos/mistos/medicao parcial
+nao certificam tamanho; seis variantes antigas preservadas. Evidencias, custos
+locais e procedimento em [FILTRO_TAMANHO_PALAVRAS.md](FILTRO_TAMANHO_PALAVRAS.md).
+
 ### Status editorial — integração da aplicação em draft
 
 Criação opcional, edição com CAS real/reconciliação explícita, metadado público
