@@ -3111,3 +3111,12 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Performance — Fase 1: filtros avançados do Explorar
 
 - A composição visual dos filtros avançados de `/explorar` passou a ser carregada em um chunk sob demanda, preservando na página os estados, regras de negócio, body lock e callbacks existentes.
+
+## Capas privadas — base HTTP desativada
+
+- Route Handler com autenticação SSR por requisição e callbacks internos para
+  autorização, leitura limitada e revalidação antes de responder. Gate fixo false
+  e adaptador transacional ausente; nenhuma RPC/schema/bucket presumido da PR 1.
+- GET/HEAD/erros sem cache; recusa de fontes locais dinâmicas no Proxy antes do
+  cache de `/_next/image`, além de `localPatterns`. UI/legado preservados.
+- Evidências, limites e dependências: `docs/memory/ENTREGA_PRIVADA_CAPAS_BASE.md`.
