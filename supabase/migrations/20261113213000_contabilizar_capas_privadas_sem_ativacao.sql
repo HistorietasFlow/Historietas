@@ -56,7 +56,7 @@ language sql volatile security invoker set search_path = '' as $$
     jsonb_build_object('size',p.tamanho_reservado)
   from capas p where not exists (select 1 from storage.objects o
     where o.bucket_id='capas-obras-privadas' and o.name=p.storage_path);
-$;
+$$;
 
 -- O helper existente conserva a admissao dos 3 buckets; contas globais e
 -- teto compartilhado de 60 capas agora consideram tambem o bucket privado.
