@@ -158,7 +158,15 @@ export function filtrarNotificacoesApagadas(
   }
 
   return notificacoesParaFiltrar.filter(
-    (notificacao) => !idsApagados.has(notificacao.id)
+    (notificacao) => {
+      if (idsApagados.has(notificacao.id)) return false;
+      // As duas representações de um capítulo compartilham o mesmo evento.
+      if (notificacao.tipo === "novo-capitulo" && notificacao.capituloId) {
+        return !idsApagados.has(`novo-capitulo:${notificacao.capituloId}`) &&
+          !(notificacao.obraId && idsApagados.has(`capitulo-${notificacao.obraId}-${notificacao.capituloId}`));
+      }
+      return true;
+    }
   );
 }
 

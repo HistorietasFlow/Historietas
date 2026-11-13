@@ -67,7 +67,7 @@ test("hook inicial delega o loader direto sem reter a implementacao", () => {
   );
   assert.match(
     hookInicial,
-    /carregarEstadoSupabaseNotificacoes\(\s*carregarNotificacoesDiretasSupabase\s*\)/,
+    /carregarEstadoSupabaseNotificacoes\(\s*carregarNotificacoesDiretasSupabase,\s*usuarioAtualId\s*\)/,
   );
   assert.match(pagina, /useNotificacoesInitialLoad\(/);
   assert.doesNotMatch(pagina, /async function carregarNotificacoesDiretasSupabase\(/);
