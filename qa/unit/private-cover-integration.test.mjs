@@ -23,6 +23,20 @@ const id = (n) => `00000000-0000-0000-0000-${String(n).padStart(12, "0")}`;
 const intent = Object.freeze({ key: id(1), workId: id(2), generation: id(3), expectedVersion: "4" });
 const ref = `private-cover:v1:${intent.workId}:${intent.generation}:${id(5)}`;
 const file = new Blob(["fixture"], { type: "image/png" });
+test("GIF rejeitado pelo protocolo consistente com caminho SQL", async () => {
+  const result = await run(intent, new Blob(["fixture"], { type: "image/gif" }), {
+    isCurrent: () => true,
+    reserve: async () => { throw new Error("nao deve reservar"); },
+    store: async () => { throw new Error("nao deve enviar"); },
+    commit: async () => { throw new Error("nao deve gravar"); },
+  });
+  assert.equal(result.status, "invalid");
+});
+test("leitor SDK continua isolado, sem upload/URL publica", () => {
+  const codigo = source("lib/server/capas/storage-privado.ts");
+  assert.match(codigo, /\.storage\.from\(BUCKET\)\.download\(input\.caminho\)/);
+  assert.doesNotMatch(codigo, /\.upload\(|\.remove\(|getPublicUrl\(|createSignedUrl\(/);
+});
 function harness(overrides = {}) {
   const calls = [];
   const ports = {

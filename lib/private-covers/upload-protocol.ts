@@ -48,7 +48,7 @@ export async function runPrivateCoverUploadProtocol(
   const key = intent.key;
   if (![key, intent.workId, intent.generation].every(isCoverUuid) || !isCoverVersion(intent.expectedVersion)
     || file.size <= 0 || file.size > 2 * 1024 * 1024
-    || !["image/png", "image/jpeg", "image/webp", "image/gif"].includes(file.type)) {
+    || !["image/png", "image/jpeg", "image/webp"].includes(file.type)) {
     return { status: "invalid", key };
   }
   if (!ports.isCurrent()) return { status: "obsolete", key };
