@@ -57,6 +57,12 @@ o conflito ou apresentar a transição como resolvida. É uma limitação funcio
 explícita da entrega, a avaliar antes de aprovar merge/deploy; retomada desse
 caso exige contrato separado de remoção/recuperação, fora desta etapa.
 
+Investigação posterior sobre `main` `a5ac96c7`, independente da #2286:
+[`TRANSICAO_18_COM_CAPA.md`](TRANSICAO_18_COM_CAPA.md) detalha as corridas,
+os limites do token editorial e da entrega pública/cache, a proposta técnica
+e os testes ainda necessários. Entrega documental; não libera a transição
+nem substitui as evidências históricas desta etapa por uma nova homologação.
+
 Uploads de tentativas não confirmadas podem ficar retidos consumindo a quota
 existente. Não há limpeza automática, recibo novo, prova de ausência por timeout
 ou reenvio automático. Bytes/URLs públicas já entregues não são revogáveis pelo

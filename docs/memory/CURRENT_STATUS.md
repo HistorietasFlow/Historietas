@@ -2,6 +2,21 @@
 
 Atualizado em: 2026-11-13
 
+### Investigação — transição 18+ com capa existente
+
+Sobre `main` `a5ac96c7`, em branch independente da #2286: **sem solução
+comprovadamente segura nos contratos atuais**. Entrega exclusivamente documental;
+guard de recusa preservado. Ordem DELETE/PATCH, outbox, cópia privada e remoção
+manual prévia não comprovam atomicidade, retirada pública ou terminalidade.
+Token editorial não versiona capa/classificação; URLs públicas e cache de até
+um ano exigem análise própria. O guard do formulário não é garantia global
+contra DML direto ou escritores concorrentes.
+Ver [evidências, proposta e critérios de aceitação](TRANSICAO_18_COM_CAPA.md).
+Regressões locais existentes: 39/39 no Node 22.23.5. pgTAP, Data API/Storage
+e Playwright não executados: sem Supabase local preparado, sem autorização
+para iniciar Docker/Supabase ou instalar navegador. Sem migrations, backfill,
+remoção de arquivos, ativação, merge ou alteração de produção.
+
 ### Explorar — intervalo de palavras disponiveis (Etapa 2)
 
 UI somente Obras, minimo/maximo inclusivos seguros, zero distinto de vazio,
