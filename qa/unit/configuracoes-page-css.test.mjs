@@ -61,7 +61,7 @@ test("configuracoesPageCss preserva as regras globais de Configurações", () =>
   assert.match(css, /::-webkit-search-cancel-button/);
 });
 
-test("Configurações mantém os dois consumidores e suas fronteiras", () => {
+test("Configurações mantém estilos nos estados carregado, erro e carregando", () => {
   assert.match(
     pagina,
     /import \{ configuracoesPageCss \} from "\.\/lib\/configuracoes-page-css";/,
@@ -71,7 +71,7 @@ test("Configurações mantém os dois consumidores e suas fronteiras", () => {
   const consumidores = pagina.match(
     /<style>\{`\$\{historietasThemeCss\}\$\{configuracoesPageCss\}`\}<\/style>/g,
   );
-  assert.equal(consumidores?.length, 1);
+  assert.equal(consumidores?.length, 2);
   assert.match(
     loadingState,
     /<style>\{`\$\{themeCss\}\$\{pageCss\}`\}<\/style>/,
