@@ -2,6 +2,17 @@
 
 Atualizado em: 2026-11-13
 
+### Capas privadas — integração de código para validação, sem ativação
+
+As PRs #2290 (contrato SQL), #2291 (entrega HTTP desativada) e #2289
+(adaptadores de upload desativados) foram reunidas em uma branch de
+integração de testes, sem merge na `main`. A versão esperada do protocolo
+de upload foi alinhada ao `BIGINT` decimal do banco, sem converter para
+número JavaScript. O endpoint retorna 503; uploads retornam `disabled`.
+Ainda não há produtor de referência, adaptadores SQL/Storage, controle físico
+das quotas, validação CDN ou autorização para ativação/migration remota.
+Ver [revisão conjunta](CAPAS_PRIVADAS_REVISAO_CONJUNTA.md).
+
 ### Capas privadas — PR 1, somente contrato SQL
 
 Sobre `98be8c31`, preparada migration `20261113190105` com geracao/versao
