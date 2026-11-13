@@ -143,3 +143,41 @@ volumes. Na conferência final, dez serviços estavam ativos (os que têm health
 saudáveis) e `supabase_vector_historietas` estava em `Restarting`; não foi alterado
 nem investigado esse serviço independente nesta etapa. Checks finais: consultar uma vez
 após o push, informar estado conhecido e parar, sem polling.
+
+## Correção QA da CI da #2284
+
+CI `43361919558`, job `131677189748`, artefato `14009656015`: 186 aprovados,
+uma falha definitiva e uma recuperada no retry. Banco, integrações e preparo
+passaram; Lighthouse, k6 e ZAP posteriores não executaram nessa rodada.
+
+- `author-workflow`: as três tentativas pararam em `selects.nth(3)`, resolvido
+  como `select#publicar-tag`, que não contém a opção Livre. O campo editorial
+  tornou inválida a dependência posicional. QA usa os IDs existentes de formato,
+  gênero e classificação e confirma seus valores; também exige status editorial
+  neutro. Preserva criação, edição/exclusão do capítulo, exclusão da obra e cleanup.
+  O mesmo cenário completo agora cobre desktop e mobile.
+- Axe do Leitor desktop: `document-title` encontrou documento sem título naquele
+  instante. O artefato contém trace somente da tentativa recuperada, não da falha
+  original; portanto não permite reconstruir a causa exata daquela ocorrência.
+  A RPC/barreira não foi alterada. A metadata canônica existente fornece
+  `Capítulo 1 — Obra Pública E2E | Historietas`; inspeção local via MutationObserver
+  no build da PR capturou título no body aos 92 ms, Leitor presente aos 93 ms e
+  título movido ao head aos 428 ms. São observações de uma navegação, não SLA.
+  Isso demonstra que conteúdo pronto não confirma metadata no head. QA agora
+  exige o texto exato no `head > title` e no documento antes do axe, como já faz
+  o teste da Obra. Título ausente, incorreto ou antigo continua falhando; axe
+  permanece na página inteira, incluindo document-title. Não declarar uma execução
+  verde como prova de ausência absoluta de instabilidade ou da causa da CI.
+
+Validação econômica no descartável existente `editorial-status-application`
+(API 61421), reutilizando next build/next start da aplicação no commit `88359587`:
+**4/4** afetados (autor completo e axe canônico, desktop/mobile), workers=1 e
+retries=0, em 29,5 s; **3/3** regressões relacionadas (termos transitórios, HTML
+inicial com metadata e hidratação canônica), mesmas condições, em 5,0 s.
+Lint focado dos dois arquivos e `git diff --check` aprovados. Somente QA e este
+registro mudaram; não repetidos banco, Storage, Build ou cenários editoriais
+já aprovados. A suíte completa continua obrigatória na CI, sem gates alterados.
+
+Permanecem os pré-requisitos administrativos de comprovação das migrations
+em produção na ordem indicada acima e o bloqueio 18+ com capa existente.
+Esta correção não consulta produção nem comprova instalação remota.
