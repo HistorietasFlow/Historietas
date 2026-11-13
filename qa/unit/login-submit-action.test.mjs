@@ -17,8 +17,8 @@ function indice(texto) {
 test("a página delega somente o submit e preserva salvarProfile compartilhado", () => {
   assert.match(pageSource, /import \{ useLoginSubmitAction \} from "\.\/hooks\/useLoginSubmitAction";/);
   assert.match(pageSource, /const salvarProfile = useCallback/);
-  assert.match(pageSource, /useLoginExistingSessionRedirect\(\{ router, salvarProfile, t, setErro \}\)/);
-  assert.match(pageSource, /const \{ enviarFormulario \} = useLoginSubmitAction\(\{/);
+  assert.match(pageSource, /useLoginExistingSessionRedirect\(\{\s*capturarNavegacao, finalizarLogin, prepararContinuacao, salvarProfile, t, setErro,/);
+  assert.match(pageSource, /const \{ enviarFormulario,[^}]*\} = useLoginSubmitAction\(\{/);
   assert.match(pageSource, /salvarProfile,/);
   assert.match(pageSource, /<form onSubmit=\{enviarFormulario\} style=\{formStyle\}>/);
   assert.doesNotMatch(pageSource, /async function enviarFormulario/);
@@ -27,14 +27,14 @@ test("a página delega somente o submit e preserva salvarProfile compartilhado",
 
 test("a action preserva preparação, validação e ordem inicial", () => {
   assert.match(source, /export function useLoginSubmitAction/);
-  assert.match(source, /return \{ enviarFormulario \}/);
+  assert.match(source, /return \{ enviarFormulario,/);
   assert.match(source, /async function enviarFormulario\(event: FormEvent<HTMLFormElement>\)/);
   assert.ok(indice("event.preventDefault();") < indice("if (carregando)"));
   assert.ok(indice("if (carregando)") < indice('setErro("");'));
   assert.ok(indice('setErro("");') < indice("prepararFormularioLogin(email, nome)"));
   assert.ok(indice("prepararFormularioLogin(email, nome)") < indice("validarFormularioLogin({"));
   assert.ok(indice("validarFormularioLogin({") < indice("setCarregando(true);"));
-  assert.match(source, /if \(chaveErro\) \{[\s\S]*?setErro\(t\(chaveErro\)\);[\s\S]*?return;[\s\S]*?\}\s*\n\s*setCarregando\(true\);/);
+  assert.match(source, /if \(chaveErro\) \{[\s\S]*?setErro\(t\(chaveErro\)\);[\s\S]*?return;[\s\S]*?\}\s*const versao = \+\+fluxo\.current\.versao;[\s\S]*?fluxo\.current\.enviando = true;\s*setCarregando\(true\);/);
 });
 
 test("a action preserva a recuperação, cadastro, login e finalização", () => {
@@ -49,14 +49,14 @@ test("a action preserva a recuperação, cadastro, login e finalização", () =>
   assert.match(source, /criarContaLogin\(\{[\s\S]*?emailFinal,[\s\S]*?senha,[\s\S]*?nomeFinal,/);
   assert.match(source, /setModo\("entrar"\);[\s\S]*?setSenha\(""\);[\s\S]*?setAceitouTermos\(false\);[\s\S]*?setCientePrivacidade\(false\);[\s\S]*?setAviso\(t\("accountCreatedNotice"\)\);/);
   assert.match(source, /entrarComSenhaLogin\(\{\s*emailFinal,\s*senha,/);
-  assert.equal((source.match(/finalizarAutenticacaoLogin\(\{ userId: data\.user\.id, router \}\)/g) || []).length, 2);
+  assert.equal((source.match(/finalizarLogin\(data\.user\.id\)/g) || []).length, 2);
 });
 
 test("a action preserva profile, aceite, catch e finally", () => {
   const sincronizacaoCadastro = indice("const resultadoPerfil = await salvarProfile(");
   const aceite = indice("await registrarAceiteTermosPublicacao()");
   const finalizacaoCadastro = source.indexOf(
-    "finalizarAutenticacaoLogin({ userId: data.user.id, router });",
+    "finalizarLogin(data.user.id);",
     sincronizacaoCadastro,
   );
   const sincronizacaoLogin = source.indexOf(
@@ -64,7 +64,7 @@ test("a action preserva profile, aceite, catch e finally", () => {
     sincronizacaoCadastro + 1,
   );
   const finalizacaoLogin = source.indexOf(
-    "finalizarAutenticacaoLogin({ userId: data.user.id, router });",
+    "finalizarLogin(data.user.id);",
     finalizacaoCadastro + 1,
   );
 
@@ -72,6 +72,7 @@ test("a action preserva profile, aceite, catch e finally", () => {
   assert.ok(aceite < finalizacaoCadastro);
   assert.ok(sincronizacaoLogin < finalizacaoLogin);
   assert.match(source, /resultadoAceite\.erro \|\|\s*"Nao foi possivel registrar o aceite dos termos\."/);
-  assert.match(source, /catch \(error\) \{\s*setErro\(formatarErroAuth\(error, language\)\);\s*\} finally \{\s*setCarregando\(false\);/);
-  assert.doesNotMatch(source, /useState|useEffect|localStorage|supabase|<(?:div|p|form|button|input)\b/i);
+  assert.match(source, /catch \(error\) \{\s*if \(vigente\(\)\) setErro\(formatarErroAuth\(error, language\)\);/);
+  assert.match(source, /finally \{\s*if \(vigente\(\)\) \{\s*fluxo\.current\.enviando = false;\s*setCarregando\(false\);/);
+  assert.doesNotMatch(source, /localStorage|supabase|<(?:div|p|form|button|input)\b/i);
 });
