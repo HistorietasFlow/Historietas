@@ -14,7 +14,7 @@ import type {
 
 const AUTHOR_PROFILE_STORAGE_KEY = "historietas-perfis-autores";
 
-export function carregarPerfisAutoresHomeSalvos(userId = "") {
+export function carregarPerfisAutoresHomeSalvos(userId = "", aoFalhar?: () => void) {
   const userIdLimpo = userId.trim();
 
   if (!userIdLimpo) {
@@ -24,14 +24,19 @@ export function carregarPerfisAutoresHomeSalvos(userId = "") {
   try {
     const perfisAutoresTexto = lerStorageUsuarioHome(
       AUTHOR_PROFILE_STORAGE_KEY,
-      userIdLimpo
+      userIdLimpo,
+      aoFalhar,
     );
     const perfisAutoresJson: unknown = perfisAutoresTexto
       ? JSON.parse(perfisAutoresTexto)
       : {};
+    if (!perfisAutoresJson || typeof perfisAutoresJson !== "object" || Array.isArray(perfisAutoresJson)) {
+      throw new Error("Storage de perfis inválido");
+    }
 
     return normalizarPerfisAutoresSalvos(perfisAutoresJson);
   } catch {
+    aoFalhar?.();
     return {};
   }
 }

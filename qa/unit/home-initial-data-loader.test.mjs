@@ -132,7 +132,7 @@ function resetarEstado() {
   });
 }
 
-async function carregar(usuarioIdLogado) {
+async function carregar(usuarioIdLogado, options = {}) {
   return carregarSnapshotInicialHome({
     usuarioIdLogado,
     storageKey: "obras",
@@ -141,6 +141,7 @@ async function carregar(usuarioIdLogado) {
     aoNormalizarObras: (obras) => {
       estado.eventos.push(["cache", obras]);
     },
+    ...options,
   });
 }
 
@@ -222,20 +223,84 @@ test("home-initial-data-loader converte storage vazio em lista vazia e carrega p
   assert.deepEqual(estado.storageChamadas, [["obras", "visitante"]]);
 });
 
-test("home-initial-data-loader estabelece a fronteira do snapshot inicial", () => {
-  assert.match(modulo, /export async function carregarSnapshotInicialHome\b/);
-  assert.match(modulo, /let userIdHome = usuarioIdLogado\.trim\(\);/);
-  assert.match(modulo, /supabase\.auth\.getUser\(\)/);
-  assert.match(modulo, /aoNormalizarObras\(obrasNormalizadas\);[\s\S]*?salvarJsonStorageUsuarioHome/);
-  assert.match(modulo, /carregarIdsColecaoUsuarioHome\("favoritos", userIdHome\)/);
-  assert.match(modulo, /carregarIdsColecaoUsuarioHome\("concluidas", userIdHome\)/);
-  assert.match(modulo, /return \{[\s\S]*?userIdHome,[\s\S]*?obrasNormalizadas,[\s\S]*?obrasFavoritasNormalizadas,[\s\S]*?perfisAutoresNormalizados,/);
-  assert.doesNotMatch(modulo, /useEffect|useState|from "react"/);
-  assert.match(pagina, /useHomeInitialData\(usuarioIdLogado, obrasCacheLocalHomeRef\)/);
-  assert.doesNotMatch(pagina, /carregarSnapshotInicialHome/);
-  assert.match(hook, /import \{ carregarSnapshotInicialHome \} from "\.\.\/lib\/home-initial-data-loader";/);
-  assert.match(hook, /const reiniciarCarregamentoTimer = window\.setTimeout/);
-  assert.match(hook, /const obrasComSupabase = await carregarObrasSupabaseHome\(/);
-  assert.match(hook, /setPerfisAutores\(carregarPerfisAutoresHomeSalvos\(userIdHome\)\);/);
-  assert.match(hook, /setObrasLocais\(\[\]\);[\s\S]*?setObrasFavoritas\(\[\]\);[\s\S]*?setPerfisAutores\(\{\}\);/);
+test("home-initial-data-loader mantém fronteira do snapshot sem escritas remotas", () => {
+  assert.match(modulo, /export async function carregarSnapshotInicialHome/);
+  assert.match(modulo, /aoNormalizarObras\(obrasNormalizadas, userIdHome\)/);
+  assert.doesNotMatch(modulo, /\.insert\(|\.update\(|\.delete\(/);
+  assert.match(pagina, /useHomeInitialData/);
+  assert.match(hook, /estaAtivo: \(\) => !cancelado/);
+});
+
+for (const raw of ["{invalid", "null", "{}", '"texto"']) {
+  test(`storage inválido ${raw} não apaga coleções/perfis nem impede continuação`, async () => {
+    resetarEstado();
+    estado.storage["obras:usuario"] = raw;
+    estado.listasLocais["favoritas:usuario"] = ["fav"];
+    estado.perfis.usuario = { ana: { bio: "bio" } };
+    let errors = 0;
+    const value = await carregar("usuario", { aoFalhar: () => errors++ });
+    assert.equal(errors, 2, "JSON inválido e favorito local não reconfirmado");
+    assert.deepEqual(value.obrasFavoritasNormalizadas, ["fav"]);
+    assert.deepEqual(value.perfisAutoresNormalizados, { ana: { bio: "bio" } });
+    assert.equal(estado.savesJson.length, 0);
+    assert.equal(estado.supabaseChamadas.length, 2);
+  });
+}
+
+test("snapshot anterior só é fallback na mesma identidade e não consulta auth redundante", async () => {
+  resetarEstado();
+  estado.storage["obras:A"] = "invalid";
+  const snapshotAnterior = { userIdHome: "A", obrasNormalizadas: [{ id: "old" }], obrasFavoritasNormalizadas: [], perfisAutoresNormalizados: { ana: { bio: "old" } } };
+  const same = await carregar("A", { snapshotAnterior });
+  assert.deepEqual(same.obrasNormalizadas, snapshotAnterior.obrasNormalizadas);
+  assert.deepEqual(same.perfisAutoresNormalizados, snapshotAnterior.perfisAutoresNormalizados);
+  const other = await carregar("B", { snapshotAnterior });
+  assert.deepEqual(other.obrasNormalizadas, []);
+  assert.deepEqual(other.perfisAutoresNormalizados, {});
+  await carregar("", { resolverUsuario: false });
+  assert.equal(estado.getUserChamadas, 0);
+});
+
+test("snapshot cancelado antes da leitura não chama callback, coleções nem persistência", async () => {
+  resetarEstado();
+  await carregar("A", { estaAtivo: () => false });
+  assert.deepEqual(estado.eventos, []);
+  assert.deepEqual(estado.storageChamadas, []);
+  assert.deepEqual(estado.supabaseChamadas, []);
+  assert.deepEqual(estado.savesJson, []);
+  assert.deepEqual(estado.savesListas, []);
+});
+
+test("falha parcial em favoritos preserva locais e não descarta concluídas bem-sucedidas", async () => {
+  resetarEstado();
+  estado.listasLocais["favoritas:A"] = ["old"];
+  estado.listasRemotas.favoritos = Promise.reject(Error("offline"));
+  estado.listasRemotas.concluidas = ["done"];
+  let falhas = 0;
+  const value = await carregar("A", { aoFalhar: () => falhas++ });
+  assert.equal(falhas, 2, "falha remota e favorito local não reconfirmado");
+  assert.deepEqual(value.obrasFavoritasNormalizadas, ["old"]);
+  assert.deepEqual(estado.savesListas, [["favoritas", "A", ["old"]], ["concluidas", "A", ["done"]]]);
+});
+
+test("cancelamento durante coleções não persiste nem relê perfis após a resposta", async () => {
+  resetarEstado();
+  let resolver;
+  estado.listasRemotas.favoritos = new Promise(resolve => { resolver = resolve; });
+  let ativo = true;
+  const pending = carregar("A", { estaAtivo: () => ativo });
+  const anteriores = estado.savesJson.length;
+  ativo = false; resolver([]); await pending;
+  assert.equal(estado.savesJson.length, anteriores);
+  assert.deepEqual(estado.savesListas, []);
+  assert.deepEqual(estado.perfisChamadas, []);
+});
+
+test("favoritos locais ausentes do resultado remoto são preservados sem confirmação", async () => {
+  resetarEstado();
+  estado.listasLocais["favoritas:A"] = ["local-only"];
+  let incompleto = false;
+  const value = await carregar("A", { aoFalhar: () => { incompleto = true; } });
+  assert.deepEqual(value.obrasFavoritasNormalizadas, ["local-only"]);
+  assert.equal(incompleto, true);
 });
