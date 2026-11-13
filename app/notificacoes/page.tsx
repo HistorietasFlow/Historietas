@@ -61,13 +61,15 @@ export default function NotificacoesPage() {
   const { definirNotificacoesNaoLidas } = useNotificacoes();
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
   const isDesktop = useNotificacoesDesktopMode();
-  useNotificacoesInitialLoad({
+  const criarVerificadorUsuarioVigente = useNotificacoesInitialLoad({
     definirNotificacoesNaoLidas,
     setCarregando,
     setNotificacoes,
     setObras,
     setUsuarioNotificacoesId,
+    setSolicitacaoRespondendoId,
   });
+  const usuarioVigente = criarVerificadorUsuarioVigente(usuarioNotificacoesId);
 
   const {
     totalNotificacoes,
@@ -92,6 +94,7 @@ export default function NotificacoesPage() {
     setNotificacoes,
     definirNotificacoesNaoLidas,
     usuarioNotificacoesId,
+    usuarioVigente,
   });
 
   const {
@@ -108,6 +111,7 @@ export default function NotificacoesPage() {
     notificacoes,
     notificacoesFiltradas,
     usuarioNotificacoesId,
+    usuarioVigente,
     solicitacaoRespondendoId,
     atualizarNotificacoes,
     fecharMenuNotificacao,

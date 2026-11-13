@@ -9,14 +9,17 @@ type CriarAtualizadorNotificacoesParametros = {
   setNotificacoes: (notificacoes: NotificacaoLocal[]) => void;
   definirNotificacoesNaoLidas: (total: number) => void;
   usuarioNotificacoesId: string;
+  usuarioVigente: () => boolean;
 };
 
 export function criarAtualizadorNotificacoes({
   setNotificacoes,
   definirNotificacoesNaoLidas,
   usuarioNotificacoesId,
+  usuarioVigente,
 }: CriarAtualizadorNotificacoesParametros) {
   return function atualizarNotificacoes(novasNotificacoes: NotificacaoLocal[]) {
+    if (!usuarioVigente()) return;
     const notificacoesNormalizadas = mesclarNotificacoes(
       [],
       novasNotificacoes
