@@ -2,6 +2,20 @@
 
 Atualizado em: 2026-11-13
 
+### Capas privadas — base HTTP, endpoint desativado
+
+Branch `feat/private-cover-authorized-delivery`, base `98be8c31`: Route Handler
+com gate fixo false, autenticação SSR por requisição, callbacks internos de
+autorização/leitura/revalidação e recusa de cache/otimizador. Nenhuma RPC, campo
+ou bucket da PR 1 em desenvolvimento foi presumido. Adaptador ausente também
+falha fechado; não basta alterar o gate para servir bytes. UI/legado intactos.
+Ver [contratos internos, evidências e dependências](ENTREGA_PRIVADA_CAPAS_BASE.md).
+14/14 unidades novas, 31/31 regressões relacionadas, 4/4 Playwright HTTP sem
+navegador, Lint focado, Typecheck, Build e auditoria estática 199/199 aprovados.
+pgTAP/Data API/Storage e integração real da PR 1 continuam pendentes; não há
+homologação de sessão ativa, vínculo imutável ou cache gerenciado. Sem ativação,
+produção, migration, mudança de buckets, backfill ou merge.
+
 ### Investigação — transição 18+ com capa existente
 
 Sobre `main` `a5ac96c7`, em branch independente da #2286: **sem solução

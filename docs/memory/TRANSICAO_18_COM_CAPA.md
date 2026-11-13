@@ -8,6 +8,11 @@ Esta entrega é documental. O bloqueio existente permanece; não foi implementad
 uma transição, migration, serviço, limpeza ou ativação. As evidências abaixo
 descrevem o código versionado, não o estado de produção.
 
+Escopo posterior autorizado: a [base HTTP de entrega privada](ENTREGA_PRIVADA_CAPAS_BASE.md)
+implementa um endpoint fixamente desativado e proteções de cache/otimizador,
+sem consumir contratos transacionais ainda em desenvolvimento. Não altera a
+conclusão desta investigação nem libera a transição de obras com capa legada.
+
 ## Contrato que precisa ser preservado
 
 - Uma tentativa recusada, conflitante ou incerta não pode destruir a capa que
