@@ -59,7 +59,10 @@ export async function buscarUsuariosParaSeguirSupabase(termo: string) {
     return [] as UsuarioBuscaSeguindo[];
   }
 
-  const termoSeguro = termoLimpo.replace(/[%_]/g, "");
+  const termoSeguro = termoLimpo.replace(/[%_]/g, "").trim();
+  if (termoSeguro.length < 2) {
+    return [] as UsuarioBuscaSeguindo[];
+  }
   const padraoBusca = `%${termoSeguro}%`;
   const consultas = [
     {
@@ -106,7 +109,7 @@ export async function buscarUsuariosParaSeguirSupabase(termo: string) {
     }
   });
 
-  const termoNormalizado = normalizarTexto(termoLimpo);
+  const termoNormalizado = normalizarTexto(termoSeguro);
 
   return Array.from(usuariosPorId.values())
     .filter((usuarioEncontrado) => {

@@ -35,13 +35,24 @@ export function useSeguindoUserSearchSync({
   useEffect(() => {
     let cancelado = false;
 
+    // O debounce adia a consulta, mas não deve manter sugestões do termo ou
+    // da conta anterior visíveis enquanto a nova busca está pendente.
+    const timerEstado = window.setTimeout(() => {
+      if (!cancelado) {
+        setUsuariosSugestoesBusca([]);
+        setCarregandoUsuariosSugestoes(
+          buscaSugestoesUsuariosAtiva && Boolean(usuarioLogadoId),
+        );
+      }
+    }, 0);
+
     const timerBusca = window.setTimeout(
       () => {
         if (cancelado) {
           return;
         }
 
-        if (!buscaSugestoesUsuariosAtiva) {
+        if (!buscaSugestoesUsuariosAtiva || !usuarioLogadoId) {
           setUsuariosSugestoesBusca([]);
           setCarregandoUsuariosSugestoes(false);
           return;
@@ -68,6 +79,11 @@ export function useSeguindoUserSearchSync({
               }),
             );
           })
+          .catch(() => {
+            if (!cancelado) {
+              setUsuariosSugestoesBusca([]);
+            }
+          })
           .finally(() => {
             if (!cancelado) {
               setCarregandoUsuariosSugestoes(false);
@@ -79,6 +95,7 @@ export function useSeguindoUserSearchSync({
 
     return () => {
       cancelado = true;
+      window.clearTimeout(timerEstado);
       window.clearTimeout(timerBusca);
     };
   }, [
