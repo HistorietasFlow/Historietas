@@ -58,6 +58,7 @@ select is((select count(*)::integer from storage.buckets
 insert into storage.buckets(id,name,public,file_size_limit,allowed_mime_types)
  values('capas-obras-privadas','capas-obras-privadas',false,2097152,
  array['image/jpeg','image/png','image/webp']::text[]);
+savepoint objeto_privado_sintetico;
 insert into storage.objects(bucket_id,name,metadata)
  values('capas-obras-privadas',
  '33333333-3333-4333-8333-333333333333/33333333-3333-4333-8333-333333333334/33333333-3333-4333-8333-333333333335.jpg',
@@ -68,7 +69,8 @@ select is((select count(*)::bigint from historietas_privado.objetos_storage_com_
 select is((select (metadata->>'size')::bigint from historietas_privado.objetos_storage_com_reservas()
  where bucket_id='capas-obras-privadas'),2097152::bigint,
  'a retencao domina metadata fisica menor');
-delete from storage.objects where bucket_id='capas-obras-privadas';
+-- Retira apenas a fixture transacional; nunca apaga metadados do Storage.
+rollback to objeto_privado_sintetico;
 select is((select count(*)::bigint from historietas_privado.objetos_storage_com_reservas()
  where bucket_id='capas-obras-privadas'),1::bigint,
  'retencao incerta sobrevive a ausencia de objeto no inventario');

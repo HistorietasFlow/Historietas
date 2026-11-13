@@ -81,20 +81,17 @@ select throws_ok(format($q$select public.aplicar_operacao_capa('ca150000-0000-40
 select lives_ok($qa$
  update public.obras set titulo='Publica renomeada' where slug='qa-capa-publica'
 $qa$,'writer legado ainda atualiza metadado comum');
-select is((select versao from historietas_privado.obra_capas_estado
- where obra_id='ca130000-0000-4000-8000-000000000002'),1::bigint,
+select is(public.consultar_contrato_capa('ca130000-0000-4000-8000-000000000002')->>'versao','1',
  'titulo nao regrava estado da capa');
 select lives_ok($qa$
  update public.obras set capa_nome='Capa antiga revisada' where slug='qa-capa-publica'
 $qa$,'writer legado ainda edita capa publica sem migracao');
-select is((select versao from historietas_privado.obra_capas_estado
- where obra_id='ca130000-0000-4000-8000-000000000002'),2::bigint,
+select is(public.consultar_contrato_capa('ca130000-0000-4000-8000-000000000002')->>'versao','2',
  'edicao da capa publica renova uma versao');
 select lives_ok($qa$
  update public.obras set capa_nome=capa_nome where slug='qa-capa-publica'
 $qa$,'UPDATE idempotente legado continua permitido');
-select is((select versao from historietas_privado.obra_capas_estado
- where obra_id='ca130000-0000-4000-8000-000000000002'),2::bigint,
+select is(public.consultar_contrato_capa('ca130000-0000-4000-8000-000000000002')->>'versao','2',
  'UPDATE sem alteracao nao amplifica revisao');
 select lives_ok($$update public.obras set capa_url='' where slug='qa-capa-publica'$$,'remocao logica legada preservada');
 select throws_ok($$update public.obras set classificacao_indicativa='18+',avisos_conteudo=array['terror'] where slug='qa-capa-publica'$$,
