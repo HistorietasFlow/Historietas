@@ -77,6 +77,25 @@ select is(public.consultar_contrato_capa('ca130000-0000-4000-8000-000000000001')
 select throws_ok(format($q$select public.aplicar_operacao_capa('ca150000-0000-4000-8000-000000000002',
  'ca130000-0000-4000-8000-000000000001',%L,2,'ca140000-0000-4000-8000-000000000001','18+',array['terror'])$q$,(select s->>'geracao' from qa_capa_snapshot)),
  '23514','TRANSICAO_18_CAPA_BLOQUEADA','contrato nao libera 18+ privado');
+-- Protecao instalada globalmente nao pode quebrar edicao de obras legadas.
+select lives_ok($qa$
+ update public.obras set titulo='Publica renomeada' where slug='qa-capa-publica'
+$qa$,'writer legado ainda atualiza metadado comum');
+select is((select versao from historietas_privado.obra_capas_estado
+ where obra_id='ca130000-0000-4000-8000-000000000002'),1::bigint,
+ 'titulo nao regrava estado da capa');
+select lives_ok($qa$
+ update public.obras set capa_nome='Capa antiga revisada' where slug='qa-capa-publica'
+$qa$,'writer legado ainda edita capa publica sem migracao');
+select is((select versao from historietas_privado.obra_capas_estado
+ where obra_id='ca130000-0000-4000-8000-000000000002'),2::bigint,
+ 'edicao da capa publica renova uma versao');
+select lives_ok($qa$
+ update public.obras set capa_nome=capa_nome where slug='qa-capa-publica'
+$qa$,'UPDATE idempotente legado continua permitido');
+select is((select versao from historietas_privado.obra_capas_estado
+ where obra_id='ca130000-0000-4000-8000-000000000002'),2::bigint,
+ 'UPDATE sem alteracao nao amplifica revisao');
 select lives_ok($$update public.obras set capa_url='' where slug='qa-capa-publica'$$,'remocao logica legada preservada');
 select throws_ok($$update public.obras set classificacao_indicativa='18+',avisos_conteudo=array['terror'] where slug='qa-capa-publica'$$,
  '23514','TRANSICAO_18_CAPA_BLOQUEADA','limpar URL nao prova retirada publica');
