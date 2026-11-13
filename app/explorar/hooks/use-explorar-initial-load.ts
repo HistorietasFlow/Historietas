@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import type { IntervaloPalavrasTexto } from "../../../lib/catalogo-palavras";
 import type { Dispatch, RefObject, SetStateAction } from "react";
 import { supabase } from "../../../lib/supabase/client";
 import type { CursorCatalogo } from "../../../lib/catalogo";
@@ -21,6 +22,7 @@ import { lerFiltrosCompartilhaveisExplorar } from "../lib/explorar-page-route-ut
 import type { ErroCatalogoExplorar } from "./use-explorar-catalog-pagination-state";
 
 type OpcoesCarregamentoInicialExplorar = {
+  setIntervaloPalavras: Dispatch<SetStateAction<IntervaloPalavrasTexto>>;
   obrasCacheLocalRef: RefObject<ObraLocal[]>;
   usuarioIdExplorarRef: RefObject<string>;
   setModoConteudo: Dispatch<SetStateAction<"obras" | "autores">>;
@@ -47,6 +49,7 @@ export function useExplorarInitialLoad(opcoes: OpcoesCarregamentoInicialExplorar
 
   useEffect(() => {
     const {
+      setIntervaloPalavras,
       obrasCacheLocalRef,
       usuarioIdExplorarRef,
       setModoConteudo,
@@ -75,6 +78,8 @@ export function useExplorarInitialLoad(opcoes: OpcoesCarregamentoInicialExplorar
       );
 
       setModoConteudo(filtrosCompartilhaveis.modoConteudo);
+      const intervalo = { minimo: filtrosCompartilhaveis.palavrasMinimas ?? "", maximo: filtrosCompartilhaveis.palavrasMaximas ?? "" };
+      setIntervaloPalavras(intervalo);
       setCategoriaSelecionada(filtrosCompartilhaveis.categoriaSelecionada);
       setBusca(filtrosCompartilhaveis.busca);
       setOrdenacao(filtrosCompartilhaveis.ordenacao);
@@ -123,6 +128,9 @@ export function useExplorarInitialLoad(opcoes: OpcoesCarregamentoInicialExplorar
           setObrasLocais(obrasNormalizadas);
         }
 
+        // The query hook owns the filtered request. Do not fetch the broad initial
+        // selection first (nor any selection for an invalid shared interval).
+        if (intervalo.minimo !== "" || intervalo.maximo !== "") return;
         const resultadoCatalogo = await carregarObrasPublicadasSupabase(
           obrasNormalizadas,
           userIdAtual

@@ -5,6 +5,8 @@ import test from "node:test";
 import typescript from "typescript";
 // Mantém o novo contrato RPC na lista de sessão já executada pela CI.
 import "./catalogo-tag.test.mjs";
+import "./catalogo-palavras-ui.test.mjs";
+import { loadApplicationModule } from "../helpers/load-application-module.mjs";
 
 const ler = (caminho) =>
   readFileSync(new URL(caminho, import.meta.url), "utf8").replace(/\r\n/g, "\n");
@@ -16,6 +18,7 @@ const migrationBuscaAutores = ler(
 );
 const codigoExecutavel = codigo.replace(/^import[\s\S]*?from "[^"]+";\n/gm, "");
 const injecao = `
+const validarIntervaloPalavras = (...args) => globalThis.__catalogQueryTest.validarIntervaloPalavras(...args);
 const useRef = (...args) => globalThis.__catalogQueryTest.useRef(...args);
 const useState = (...args) => globalThis.__catalogQueryTest.useState(...args);
 const useMemo = (...args) => globalThis.__catalogQueryTest.useMemo(...args);
@@ -75,6 +78,7 @@ function preparar(t, overrides = {}) {
     delete globalThis.__catalogQueryTest;
   });
   const deps = {
+    validarIntervaloPalavras: loadApplicationModule("lib/catalogo-palavras.ts").validarIntervaloPalavras,
     useState(valor) {
       const i = indice++;
       if (!slots[i]) slots[i] = { value: valor };
@@ -148,7 +152,7 @@ test("memo, condição, efeito e paginação preservam o contrato atualizado", (
     "",
   );
   assert.equal(createHash("sha256").update(original).digest("hex"),
-    "e1d58f4cc364cc280322ce481e0d9213ab3248d14fd67731007c459302a6552d");
+    "b3e6d28b3fea86a1c04cc5ff4cb3d9651f24a21da22191ddf0d31ab3efa1f829");
   assert.match(pagina, /useExplorarCatalogQuery\(\{/);
   assert.doesNotMatch(pagina, /async function carregarMaisObrasCatalogo\(/);
   assert.match(pagina, /consultaCatalogoPersonalizada && catalogoTemMais/);
@@ -752,4 +756,36 @@ test("status editorial exige confirmação atual, combina filtros e descarta res
   assert.equal(c.render().statusEditorialVerificado,false);assert.equal(c.estado.ObraIdsBuscaRemota,null);
   c.render({modoConteudo:"autores"});await c.disparar();
   assert.equal(c.chamadas.filter(([nome])=>nome==="carregar").at(-1)[3][0].statusEditorial,undefined);
+});
+
+test("palavras: par atômico, cursor invalidado, confirmação por consulta e identidade, sem requests extras", async t => {
+  const c = preparar(t,{palavrasMinimas:"0",palavrasMaximas:"100",usuarioIdExplorar:"A",statusEditorial:"concluida"});
+  assert.equal(c.render().palavrasVerificadas,false); assert.equal(c.estado.ProximoCursorCatalogo,null);
+  const cursor={valor:1,data:"2026-01-01",id:"next"};
+  const antiga=adiar(); c.respostas.push(antiga.promise); const pendente=c.disparar();
+  c.render({palavrasMinimas:"10",palavrasMaximas:"200"});
+  c.respostas.push(Promise.resolve({obras:[{id:"certa"}],pagina:{obraIds:["certa"],proximoCursor:cursor,temMais:true}}));
+  await c.disparar(); antiga.resolve({obras:[{id:"antiga"}],pagina:{obraIds:["antiga"]}}); await pendente;
+  assert.equal(c.render().palavrasVerificadas,true); assert.deepEqual(c.estado.ObraIdsBuscaRemota,["certa"]);
+  const calls=c.chamadas.filter(([nome])=>nome==="carregar"); assert.equal(calls.length,2);
+  assert.deepEqual([calls[1][3][0].palavrasMinimas,calls[1][3][0].palavrasMaximas],[10,200]);
+  assert.equal(calls[1][3][0].statusEditorial,"concluida");
+  c.render(); assert.equal(c.timers.size,0);
+  assert.equal(c.render({usuarioIdExplorar:"B"}).palavrasVerificadas,false);
+  c.respostas.push(Promise.resolve({obras:[{id:"cache"}],pagina:null,falhaTemporaria:true})); await c.disparar();
+  assert.equal(c.render().palavrasVerificadas,false); assert.equal(c.estado.ObraIdsBuscaRemota,null);
+  assert.equal(c.estado.ErroCatalogoExplorar,"consulta");
+  c.render({versaoRetryCatalogo:1});
+  c.respostas.push(Promise.resolve({obras:[],pagina:{obraIds:[],proximoCursor:null,temMais:false}})); await c.disparar();
+  assert.equal(c.render().palavrasVerificadas,true); assert.deepEqual(c.estado.ObraIdsBuscaRemota,[]);
+  assert.equal(c.render({usuarioIdExplorar:""}).palavrasVerificadas,false);
+});
+
+test("palavras inválidas bloqueiam RPC/paginação e Autores não envia limites", async t => {
+  const c=preparar(t,{palavrasMinimas:"1e3",proximoCursorCatalogo:{valor:1,data:"2026-01-01",id:"antigo"}});
+  let r=c.render(); assert.equal(r.palavrasVerificadas,false); assert.equal(c.timers.size,0);
+  await r.carregarMaisObrasCatalogo(); assert.equal(c.chamadas.filter(([n])=>n==="carregar").length,0);
+  c.render({modoConteudo:"autores"}); c.respostas.push(Promise.resolve({obras:[],pagina:{obraIds:[]}})); await c.disparar();
+  const q=c.chamadas.filter(([n])=>n==="carregar").at(-1)[3][0];
+  assert.equal(q.palavrasMinimas,undefined); assert.equal(q.palavrasMaximas,undefined);
 });

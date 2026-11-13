@@ -10,6 +10,7 @@ function carregar(arquivo, deps = {}) {
   const modulo = { exports: {} };
   new Function("module", "exports", "require", codigo)(modulo, modulo.exports, (nome) => {
     if (nome === "./statusEditorial") return loadApplicationModule("lib/statusEditorial.ts");
+    if (nome === "./catalogo-palavras") return loadApplicationModule("lib/catalogo-palavras.ts");
     assert.ok(nome in deps, `Import inesperado: ${nome}`);
     return deps[nome];
   });

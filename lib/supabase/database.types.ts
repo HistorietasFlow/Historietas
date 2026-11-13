@@ -2216,6 +2216,8 @@ export type Database = {
       }
       listar_obras_catalogo: {
         Args: {
+          p_palavras_minimas?: number | null
+          p_palavras_maximas?: number | null
           p_status_editorial?: string
           p_nota_minima?: number | null
           p_genero_excluido?: string

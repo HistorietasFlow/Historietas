@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { validarIntervaloPalavras } from "../../../lib/catalogo-palavras";
 import type { Dispatch, RefObject, SetStateAction } from "react";
 import type { ConsultaCatalogo, CursorCatalogo } from "../../../lib/catalogo";
 import type { ObraLocal } from "../lib/explorar-work-normalizers";
@@ -25,6 +26,8 @@ type OpcoesConsultaCatalogoExplorar = {
   generoExcluido?: string;
   statusEditorial?: string;
   notaMinima?: number | null;
+  palavrasMinimas?: string;
+  palavrasMaximas?: string;
   usuarioIdExplorar?: string;
   filtroClassificacao: string;
   filtroCapitulos: string;
@@ -60,6 +63,8 @@ export function useExplorarCatalogQuery({
   generoExcluido = "",
   statusEditorial = "",
   notaMinima = null,
+  palavrasMinimas = "",
+  palavrasMaximas = "",
   usuarioIdExplorar = "",
   filtroClassificacao,
   filtroCapitulos,
@@ -101,7 +106,12 @@ export function useExplorarCatalogQuery({
     consulta: ConsultaCatalogo; usuarioId: string;
   } | null>(null);
   // Cache não comprova nota nem ausência de tag/gênero; confirme a consulta/identidade atuais.
-  const exigeConfirmacao = notaMinima !== null || (modoConteudo === "obras" && Boolean(tagExcluida || generoExcluido || statusEditorial));
+  const palavrasAtivas = modoConteudo === "obras" && (palavrasMinimas !== "" || palavrasMaximas !== "");
+  const intervalo = validarIntervaloPalavras({ minimo: palavrasMinimas, maximo: palavrasMaximas });
+  const intervaloInvalido = palavrasAtivas && !intervalo.valido;
+  const minimo = palavrasAtivas && intervalo.valido ? intervalo.palavrasMinimas : null;
+  const maximo = palavrasAtivas && intervalo.valido ? intervalo.palavrasMaximas : null;
+  const exigeConfirmacao = palavrasAtivas || notaMinima !== null || (modoConteudo === "obras" && Boolean(tagExcluida || generoExcluido || statusEditorial));
   const identidadeConsultaFiltros = exigeConfirmacao ? usuarioIdExplorar : "";
 
   const buscaCatalogo = busca.trim();
@@ -136,6 +146,7 @@ export function useExplorarCatalogQuery({
     ...(modoConteudo === "obras" && generoExcluido ? { generoExcluido } : {}),
     ...(modoConteudo === "obras" && statusEditorial ? { statusEditorial } : {}),
     ...(notaMinima !== null ? { notaMinima } : {}),
+    ...(palavrasAtivas ? { palavrasMinimas: minimo, palavrasMaximas: maximo } : {}),
     classificacao:
       filtroClassificacao === "todos" ? "" : filtroClassificacao,
     filtroCapitulos:
@@ -158,9 +169,13 @@ export function useExplorarCatalogQuery({
     modoConteudo,
     notaMinima,
     ordenacao,
+    palavrasAtivas,
+    minimo,
+    maximo,
   ]);
   const consultaCatalogoPersonalizada = Boolean(
     modoConteudo === "autores" ||
+      palavrasAtivas ||
       termoBusca ||
       categoriaSelecionada ||
       filtroFormato !== "todos" ||
@@ -212,6 +227,14 @@ export function useExplorarCatalogQuery({
     setObraIdsBuscaRemota(null);
     const numeroConsulta = consultaCatalogoRef.current + 1;
     consultaCatalogoRef.current = numeroConsulta;
+    if (palavrasAtivas) {
+      setProximoCursorCatalogo(null);
+      setCatalogoTemMais(false);
+    }
+    if (intervaloInvalido) {
+      setCarregandoMaisCatalogo(false);
+      return;
+    }
     let cancelado = false;
     const timer = window.setTimeout(async () => {
       setCarregandoMaisCatalogo(true);
@@ -270,6 +293,8 @@ export function useExplorarCatalogQuery({
     colecoesCarregadas,
     identidadeConsultaFiltros,
     exigeConfirmacao,
+    intervaloInvalido,
+    palavrasAtivas,
   ]);
 
   async function carregarMaisObrasCatalogo() {
@@ -285,6 +310,9 @@ export function useExplorarCatalogQuery({
 
     if (
       !consultaCatalogoPersonalizada ||
+      intervaloInvalido ||
+      (palavrasAtivas && (consultaFiltrosConfirmada?.consulta !== consultaCatalogoAtual ||
+        consultaFiltrosConfirmada.usuarioId !== identidadeConsultaFiltros)) ||
       !proximoCursorCatalogo ||
       carregandoMaisCatalogo
     ) {
@@ -338,6 +366,9 @@ export function useExplorarCatalogQuery({
   }
 
   return { consultaCatalogoPersonalizada, carregarMaisObrasCatalogo,
+    palavrasVerificadas: !palavrasAtivas || (!intervaloInvalido &&
+      consultaFiltrosConfirmada?.consulta === consultaCatalogoAtual &&
+      consultaFiltrosConfirmada.usuarioId === identidadeConsultaFiltros),
     statusEditorialVerificado: !statusEditorial || modoConteudo !== "obras" || Boolean(
       consultaFiltrosConfirmada?.consulta === consultaCatalogoAtual &&
       consultaFiltrosConfirmada.usuarioId === identidadeConsultaFiltros
