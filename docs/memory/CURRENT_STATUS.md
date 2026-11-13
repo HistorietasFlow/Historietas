@@ -4,8 +4,9 @@ Atualizado em: 2026-11-13
 
 ### Investigação — transição 18+ com capa existente
 
-Sobre `main` `a5ac96c7`, em branch independente da #2286: **sem solução
-comprovadamente segura nos contratos atuais**. Entrega exclusivamente documental;
+Investigação documental integrada à `main` pela #2287 (squash `132a2b32`),
+baseada na antiga `main` `a5ac96c7`: **sem solução comprovadamente segura
+nos contratos atuais**. Entrega exclusivamente documental;
 guard de recusa preservado. Ordem DELETE/PATCH, outbox, cópia privada e remoção
 manual prévia não comprovam atomicidade, retirada pública ou terminalidade.
 Token editorial não versiona capa/classificação; URLs públicas e cache de até
@@ -17,16 +18,27 @@ e Playwright não executados: sem Supabase local preparado, sem autorização
 para iniciar Docker/Supabase ou instalar navegador. Sem migrations, backfill,
 remoção de arquivos, ativação, merge ou alteração de produção.
 
-### Explorar — intervalo de palavras disponiveis (Etapa 2)
+### Explorar — intervalo de palavras disponíveis (Etapa 2, #2286 integrada)
 
-UI somente Obras, minimo/maximo inclusivos seguros, zero distinto de vazio,
-aplicacao atomica, PT/EN/ES, URL, chip unico removivel e confirmacao remota por
-consulta/identidade. Falha nao busca amostra ampla nem certifica cache. Neutro
+A #2286 foi integrada à `main` em 13/11/2026 por squash `98be8c31`,
+com CI e Gitleaks aprovados. Deploy Vercel de produção `READY` para esse
+commit, mantendo Vercel Authentication:
+https://vercel.com/historietas/historietas/HUBBioVjr7T4gcT6aHMUuT131afk
+
+UI somente Obras, mínimo/máximo inclusivos seguros, zero distinto de vazio,
+aplicação atômica, PT/EN/ES, URL, chip único removível e confirmação remota por
+consulta/identidade. Falha não busca amostra ampla nem certifica cache. Neutro
 preserva seis RPCs/variantes antigas; link com intervalo faz uma RPC filtrada.
-Sem SQL/migration nova. Historico **sem backfill**, NULL nao e zero: manter PR
-em draft ate revisao de cobertura e autorizacao separada de implantacao.
-Instalacao remota/timestamps distintos foram informados pelo responsavel, nao
-consultados nesta tarefa. Ver [contratos e evidencias](FILTRO_TAMANHO_PALAVRAS.md).
+Sem SQL/migration nova na #2286. A migration da #2285 foi informada como
+aplicada remotamente com timestamp diferente do arquivo Git; não reaplicar ou
+reconciliar automaticamente.
+
+Auditoria Supabase somente de leitura, informada pelo responsável em
+13/11/2026: **0 obras e 0 capítulos**, portanto não havia backfill histórico
+a executar naquele momento. Nenhum preenchimento foi realizado. NULL segue
+desconhecido e excluído do filtro ativo; novos dados/legado exigem reavaliação
+antes de qualquer backfill autorizado. Ver
+[contratos e evidências](FILTRO_TAMANHO_PALAVRAS.md).
 
 Validacao local: unitarios/regressoes 130/130, pgTAP palavras 44/44, cliente real
 Data API 1/1 (52 obras, alvo fora da primeira pagina) e 12 cenarios distintos
@@ -38,9 +50,10 @@ e limites no documento acima; nenhuma garantia de producao/capacidade fisica.
 
 ### Tamanho da obra — Etapa 1, palavras no banco
 
-Contador nullable protegido por trigger, variante paginada de 17 argumentos e
-preenchimento administrativo limitado preparados sobre #2284. Sem interface,
-backfill remoto, mudancas de RLS ou ativacoes. Anexos/mistos/medicao parcial
+A #2285 integrou contador nullable protegido por trigger, variante paginada
+de 17 argumentos e preenchimento administrativo limitado, sobre #2284.
+A interface foi integrada depois pela #2286. Sem backfill remoto,
+mudanças de RLS ou ativações. Anexos/mistos/medicao parcial
 nao certificam tamanho; seis variantes antigas preservadas. Evidencias, custos
 locais e procedimento em [FILTRO_TAMANHO_PALAVRAS.md](FILTRO_TAMANHO_PALAVRAS.md).
 
