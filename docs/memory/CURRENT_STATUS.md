@@ -15,8 +15,9 @@ contra DML direto ou escritores concorrentes.
 Ver [evidências, proposta e critérios de aceitação](TRANSICAO_18_COM_CAPA.md).
 Regressões locais existentes: 39/39 no Node 22.23.5. pgTAP, Data API/Storage
 e Playwright não executados: sem Supabase local preparado, sem autorização
-para iniciar Docker/Supabase ou instalar navegador. Sem migrations, backfill,
-remoção de arquivos, ativação, merge ou alteração de produção.
+para iniciar Docker/Supabase ou instalar navegador. Na investigação, sem
+migrations, backfill, remoção de arquivos, ativação ou alteração de produção;
+o merge documental da #2287 ocorreu posteriormente.
 
 ### Explorar — intervalo de palavras disponíveis (Etapa 2, #2286 integrada)
 
