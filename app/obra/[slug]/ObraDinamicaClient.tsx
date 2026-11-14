@@ -226,6 +226,8 @@ export default function ObraDinamicaPage({ snapshotInicial }: { snapshotInicial?
 
   const {
     usuarioIdLogado,
+    erroAutenticacao,
+    tentarAutenticacaoNovamente,
     autenticacaoCarregada,
     identidadeAutenticadaObraRef,
     versaoIdentidade,
@@ -676,6 +678,17 @@ export default function ObraDinamicaPage({ snapshotInicial }: { snapshotInicial?
           />
         )
       : null;
+
+  if (erroAutenticacao) {
+    return (
+      <main data-historietas-obra-dinamica-root="true" style={pageThemeStyle}>
+        <style>{`${historietasThemeCss}${obraPageCss}`}</style>
+        <ObraDinamicaLanguageBridge />
+        <p role="alert">Não foi possível confirmar sua sessão agora.</p>
+        <button type="button" onClick={tentarAutenticacaoNovamente}>Tentar novamente</button>
+      </main>
+    );
+  }
 
   if ((snapshotInicial ? publica.carregando : carregandoObras) && !obra) {
     return (
