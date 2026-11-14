@@ -25,6 +25,34 @@ const TRADUCOES_ADICIONAR_CAPITULO: Record<
   Record<string, string>
 > = {
   en: {
+    "O capítulo já foi confirmado. Não envie novamente. Use Verificar criação para recuperar a atualização local; seu texto foi mantido.":
+      "The chapter has already been confirmed. Do not submit again. Use Verify creation to restore the local update; your text was kept.",
+    "Verificar criação":
+      "Verify creation",
+    "Novo capítulo":
+      "New chapter",
+    "Criação verificada":
+      "Creation verified",
+    "Painel do Autor":
+      "Author dashboard",
+    "Há uma tentativa registrada. Verifique a criação antes de enviar outro capítulo.":
+      "An attempt is recorded. Verify its creation before submitting another chapter.",
+    "A criação ainda não foi confirmada. Seu texto foi preservado. Use Verificar criação; não tente criar novamente nem repita o envio em outra aba.":
+      "Creation has not been confirmed yet. Your text has been preserved. Use Verify creation; do not create again or resubmit in another tab.",
+    "A conta ou a obra mudou. Reabra esta página pelo Painel do Autor. A tentativa enviada foi preservada para a conta original.":
+      "The account or work has changed. Reopen this page from the Author dashboard. The submitted attempt was preserved for the original account.",
+    "Capítulo confirmado. O rascunho foi mantido. Diário e notificações não são reenviados na recuperação.":
+      "Chapter confirmed. The draft was kept. Diary activity and notifications are not resent during recovery.",
+    "Outra criação ocupou esta ordem. Seu texto foi preservado. Uma nova tentativa explícita recalculará a posição.":
+      "Another creation took this position. Your text was preserved. A new explicit attempt will recalculate the position.",
+    "Não foi possível ler o registro da tentativa. Preserve o texto e confira o Painel do Autor.":
+      "The attempt record could not be read. Keep your text and check the Author dashboard.",
+    "Não foi possível guardar as alterações do rascunho neste navegador. Copie o texto antes de sair da página.":
+      "Draft changes could not be saved in this browser. Copy the text before leaving this page.",
+    "Não foi possível guardar a tentativa de criação neste navegador.":
+      "The creation attempt could not be saved in this browser.",
+    "Não consegui salvar esse capítulo. Seu texto foi preservado.":
+      "I could not save this chapter. Your text was preserved.",
     "ADICIONAR CAPÍTULO": "ADD CHAPTER",
     "Obra não encontrada": "Work not found",
     "Voltar para a Home": "Back to Home",
@@ -74,6 +102,34 @@ const TRADUCOES_ADICIONAR_CAPITULO: Record<
       "I couldn't save this chapter. Refresh the page and try creating it again.",
   },
   es: {
+    "O capítulo já foi confirmado. Não envie novamente. Use Verificar criação para recuperar a atualização local; seu texto foi mantido.":
+      "El capítulo ya se confirmó. No vuelvas a enviarlo. Usa Verificar creación para recuperar la actualización local; tu texto se conservó.",
+    "Verificar criação":
+      "Verificar creación",
+    "Novo capítulo":
+      "Nuevo capítulo",
+    "Criação verificada":
+      "Creación verificada",
+    "Painel do Autor":
+      "Panel del autor",
+    "Há uma tentativa registrada. Verifique a criação antes de enviar outro capítulo.":
+      "Hay un intento registrado. Verifica su creación antes de enviar otro capítulo.",
+    "A criação ainda não foi confirmada. Seu texto foi preservado. Use Verificar criação; não tente criar novamente nem repita o envio em outra aba.":
+      "La creación aún no se ha confirmado. Tu texto se ha conservado. Usa Verificar creación; no vuelvas a crear ni repitas el envío en otra pestaña.",
+    "A conta ou a obra mudou. Reabra esta página pelo Painel do Autor. A tentativa enviada foi preservada para a conta original.":
+      "La cuenta o la obra cambió. Abre esta página desde el Panel del autor. El intento enviado se conservó para la cuenta original.",
+    "Capítulo confirmado. O rascunho foi mantido. Diário e notificações não são reenviados na recuperação.":
+      "Capítulo confirmado. Se conservó el borrador. La actividad del Diario y las notificaciones no se reenvían durante la recuperación.",
+    "Outra criação ocupou esta ordem. Seu texto foi preservado. Uma nova tentativa explícita recalculará a posição.":
+      "Otra creación ocupó esta posición. Tu texto se conservó. Un nuevo intento explícito recalculará la posición.",
+    "Não foi possível ler o registro da tentativa. Preserve o texto e confira o Painel do Autor.":
+      "No se pudo leer el registro del intento. Conserva el texto y revisa el Panel del autor.",
+    "Não foi possível guardar as alterações do rascunho neste navegador. Copie o texto antes de sair da página.":
+      "No se pudieron guardar los cambios del borrador en este navegador. Copia el texto antes de salir de la página.",
+    "Não foi possível guardar a tentativa de criação neste navegador.":
+      "No se pudo guardar el intento de creación en este navegador.",
+    "Não consegui salvar esse capítulo. Seu texto foi preservado.":
+      "No pude guardar este capítulo. Tu texto se conservó.",
     "ADICIONAR CAPÍTULO": "AÑADIR CAPÍTULO",
     "Obra não encontrada": "Obra no encontrada",
     "Voltar para a Home": "Volver al inicio",
