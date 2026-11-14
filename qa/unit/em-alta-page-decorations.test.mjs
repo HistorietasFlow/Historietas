@@ -53,5 +53,5 @@ test("Em Alta delega somente a camada decorativa estática", () => {
   assert.doesNotMatch(pagina, /mobileTopWaterFadeStyle/);
   assert.doesNotMatch(pagina, /pageDecorationLayerStyle/);
   assert.match(pagina, /useEmAltaRankingLoader\(/);
-  assert.match(rankingLoaderFase891, /supabase\.auth\.getUser\(\)/);
+  assert.doesNotMatch(rankingLoaderFase891, /supabase\.auth\.getUser\(\)/);
 });

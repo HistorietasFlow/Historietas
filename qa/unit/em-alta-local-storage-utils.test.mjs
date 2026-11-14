@@ -309,7 +309,7 @@ test("Em Alta delega a persistência local sem manter implementações duplicada
     rankingLoaderFase891,
     /import \{ carregarColecoesRankingEmAlta \} from "\.\.\/lib\/em-alta-ranking-collections-loader";/,
   );
-  assert.match(rankingLoaderFase891, /carregarColecoesRankingEmAlta\(userIdAtual\)/);
+  assert.match(rankingLoaderFase891, /carregarColecoesRankingEmAlta\(usuarioLogadoId, atual\)/);
   assert.match(
     loaderObrasSupabase,
     /import \{ carregarAvataresAutoresLocaisEmAlta \} from "\.\/em-alta-local-storage-utils";/,

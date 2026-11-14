@@ -34,18 +34,18 @@ test("RankingCard preserva props, navegação e acessibilidade", () => {
   ]) {
     assert.match(componente, new RegExp(prop.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   }
-  assert.match(componente, /void favorita;/);
-  assert.match(componente, /void concluida;/);
+  assert.match(componente, /aria-pressed=\{favorita\}/);
+  assert.match(componente, /aria-pressed=\{concluida\}/);
   assert.match(componente, /const router = useRouter\(\);/);
   assert.match(
     componente,
     /function abrirObra\(\) \{\s*router\.push\(obra\.href\);\s*\}/,
   );
-  assert.match(componente, /role="link"/);
-  assert.match(componente, /tabIndex=\{0\}/);
+  assert.match(componente, /href=\{obra\.href\}/);
+  assert.doesNotMatch(componente, /role="link"/);
   assert.match(componente, /aria-label=\{`Abrir página da obra \$\{obra\.titulo\}`\}/);
-  assert.match(componente, /event\.key === "Enter" \|\| event\.key === " "/);
-  assert.match(componente, /event\.preventDefault\(\);\s*abrirObra\(\);/);
+  assert.match(componente, /onAlternarFavorito\(obra\.storageId\)/);
+  assert.match(componente, /onAlternarConcluido\(obra\.storageId\)/);
 });
 
 test("RankingCard preserva metadata, destaque, autor, métricas e capa", () => {
