@@ -22,7 +22,7 @@ test("ação de salvar preserva validações locais antes do processamento", () 
   assert.match(actionSource, /event\.preventDefault\(\);/);
   assert.match(
     actionSource,
-    /if \(salvando \|\| estadoLink !== "valido"\) \{\s*return;/,
+    /controle\.ocupado \|\| salvando \|\| estadoLink !== "valido"/,
   );
   assert.match(actionSource, /setErro\(""\);/);
   assert.match(
@@ -49,40 +49,20 @@ test("ação de salvar preserva validações locais antes do processamento", () 
 });
 
 test("ação preserva a sequência de autenticação, atualização, logout e navegação", () => {
-  const getUserIndex = actionSource.indexOf("supabase.auth.getUser()");
-  const recoveryIndex = actionSource.indexOf(
-    "await sessaoEhRecuperacao()",
-  );
-  const updateIndex = actionSource.indexOf("supabase.auth.updateUser");
-  const signOutIndex = actionSource.indexOf("supabase.auth.signOut()");
-  const replaceIndex = actionSource.indexOf(
-    'router.replace("/login?senhaRedefinida=1")',
-  );
-  const refreshIndex = actionSource.indexOf("router.refresh()");
-
-  assert.ok(getUserIndex >= 0);
-  assert.ok(recoveryIndex > getUserIndex);
+  const recoveryIndex = actionSource.indexOf("await obterSessaoRecuperacao()");
+  const updateIndex = actionSource.indexOf("await atualizarSenhaNaSessaoRecuperacao(");
+  const signOutIndex = actionSource.indexOf("await supabase.auth.signOut()");
+  const finalIndex = actionSource.indexOf("await supabase.auth.getSession()");
+  const replaceIndex = actionSource.indexOf('router.replace("/login?senhaRedefinida=1")');
+  assert.ok(recoveryIndex >= 0);
   assert.ok(updateIndex > recoveryIndex);
   assert.ok(signOutIndex > updateIndex);
-  assert.ok(replaceIndex > signOutIndex);
-  assert.ok(refreshIndex > replaceIndex);
-  assert.match(
-    actionSource,
-    /if \(erroUsuario \|\| !usuarioAtual\.user\) \{/,
-  );
-  assert.match(
-    actionSource,
-    /setEstadoLink\("invalido"\);\s*setErro\(t\("sessionInvalid"\)\);\s*return;/,
-  );
-  assert.match(
-    actionSource,
-    /await supabase\.auth\.updateUser\(\{\s*password: novaSenha,\s*\}\)/,
-  );
-  assert.match(
-    actionSource,
-    /obterMensagemErro\(error, t\("genericError"\)\)/,
-  );
-  assert.match(actionSource, /finally \{\s*setSalvando\(false\);\s*\}/);
+  assert.ok(finalIndex > signOutIndex);
+  assert.ok(replaceIndex > finalIndex);
+  assert.match(actionSource, /data\.user\?\.id !== sessaoEsperada\.usuarioId/);
+  assert.match(actionSource, /contexto\.consumido = true/);
+  assert.match(actionSource, /obterMensagemErro\(error, t\("genericError"\)\)/);
+  assert.match(actionSource, /if \(controle\.ativo\) setSalvando\(false\)/);
 });
 
 test("página delega apenas o submit e preserva o formulário", () => {
