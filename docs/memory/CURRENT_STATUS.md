@@ -1080,3 +1080,14 @@ O ciclo funcional iniciado pelas melhorias de Explorar, continuidade de leitura,
 gestão de comentários para autores, proteção contra spoilers e histórico de
 moderação está concluído no código. Novas melhorias devem partir de uma nova
 priorização, sem reabrir essas frentes sem evidência de regressão.
+
+### Diário de edição — dependência da #2307 em preparação
+
+Migration revisável independente prepara `editou_capitulo`, mantendo gate desligado,
+sem backfill ou registro automático. RPC idempotente por versão, tombstones e RLS
+atual impedem duplicação/snapshots privados. A #2307 não foi alterada; seu helper
+legado ainda requer adoção separada após homologação. Implantação, rollback e limites
+em `docs/diario-edicao-evento-seguro.md`. Local: 52/52 pgTAP focados, 1.132/1.132
+na rodada completa, duas conexões com lock real, rollback e reaplicação aprovados.
+Advisor sem problemas, auditoria 199/199; seis apontamentos SQL antigos comprovados
+antes/depois. REST/Playwright e integração do save pendentes. Não inferir ativação/aplicação remota.
