@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
+import "./em-breve-resiliencia.test.mjs";
 
 const hookPath = new URL(
   "../../app/em-breve/hooks/use-em-breve-salvar-lancamento.ts",
@@ -19,8 +20,8 @@ test("Em Breve delega somente a ação de salvar lançamento ao hook", async () 
   assert.match(hook, /import \{ supabase \} from "\.\.\/\.\.\/\.\.\/lib\/supabase\/client";/);
   assert.match(hook, /sincronizarAvisoLancamentoSupabaseEmBreve/);
   assert.match(hook, /criarLoginHrefEmBreve/);
-  assert.match(hook, /SAVED_RELEASES_STORAGE_KEY/);
-  assert.match(hook, /salvarJsonUsuarioEmBreve/);
+  assert.match(hook, /contexto.current !== atual/);
+  assert.match(hook, /setObrasSalvas\(anteriores =>/);
   assert.match(hook, /type ObraEmBreveCard/);
   assert.match(hook, /adicionarObraNaListaEmBreve/);
   assert.match(hook, /listaTemObraEmBreve/);
@@ -32,7 +33,7 @@ test("Em Breve delega somente a ação de salvar lançamento ao hook", async () 
   assert.match(hook, /const \[obraProcessandoId, setObraProcessandoId\] = useState\(""\);/);
   assert.match(hook, /async function salvarLancamento\(obra: ObraEmBreveCard\)/);
   assert.match(hook, /obterIdentificadoresObraEmBreve\(obra\)/);
-  assert.match(hook, /identificadoresObra\.length === 0 \|\| obraProcessandoId/);
+  assert.match(hook, /identificadoresObra\.length === 0 \|\| ocupado\.current/);
   assert.match(hook, /supabase\.auth\.getUser\(\)/);
   assert.match(hook, /router\.push\(criarLoginHrefEmBreve\(\)\)/);
   assert.match(hook, /Entre na sua conta para ativar aviso de lançamento\./);

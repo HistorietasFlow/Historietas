@@ -76,9 +76,10 @@ export function normalizarLancamentosSalvosComObrasEmBreve(
     });
   });
 
+  const ids = new Set(obras.map(obra => obra.id.trim()));
   return normalizarListaIdsEmBreve(
     normalizarListaIdsEmBreve(lista).map(
-      (identificador) => obraIdPorIdentificador.get(identificador) || identificador
+      (identificador) => ids.has(identificador) ? identificador : obraIdPorIdentificador.get(identificador) || identificador
     )
   );
 }
@@ -89,7 +90,7 @@ export function removerObrasDuplicadasEmBreve(
   const obrasVistas = new Set<string>();
 
   return obrasParaMostrar.filter((obra) => {
-    const chave = normalizarTexto(obra.titulo) || obra.id;
+    const chave = obra.id || normalizarTexto(obra.titulo);
 
     if (!chave || obrasVistas.has(chave)) {
       return false;

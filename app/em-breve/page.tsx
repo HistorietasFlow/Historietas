@@ -56,6 +56,7 @@ export default function EmBrevePage() {
     salvarLancamento,
   } = useEmBreveSalvarLancamento({
     router,
+    usuarioIdLogado,
     obrasSalvasNormalizadas,
     obrasReaisEmBreve,
     setUsuarioIdLogado,
