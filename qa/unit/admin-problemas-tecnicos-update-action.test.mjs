@@ -24,6 +24,8 @@ test("action preserva a mutation isolada do chamado tecnico", () => {
   assert.match(source, /\.eq\("id", id\)/);
   assert.match(source, new RegExp(`\\.select\\(\\s*"${fields}"`));
   assert.match(source, /\.maybeSingle\(\)/);
+  assert.match(source, /\.eq\("atualizado_em", atualizadoEmEsperado\)/);
+  assert.match(source, /usuario\.user\?\.id !== usuarioIdEsperado/);
   assert.doesNotMatch(
     source,
     /useState|useEffect|router|localStorage|set[A-Z]|fetch\(|<\w/,
@@ -39,10 +41,10 @@ test("hook preserva orquestracao e estado da atualizacao", () => {
   );
   assert.match(hook, /alteracoes\.observacaoAdmin\.trim\(\)/);
   assert.match(hook, /id: problema\.id,\s*payload,/);
-  assert.match(hook, /if \(error\) \{\s*throw error;/);
+  assert.match(hook, /if \(error\) throw error;/);
   assert.match(
     hook,
-    /if \(!data\) \{\s*throw new Error\(\s*"O chamado não foi encontrado ou não pôde ser atualizado\."/,
+    /if \(!data \|\| data\.id !== problema\.id\) \{\s*throw new Error\(\s*"O chamado não foi encontrado ou não pôde ser atualizado\."/,
   );
   assert.match(hook, /setProblemas/);
   assert.match(hook, /setObservacoes/);
