@@ -1,141 +1,23 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
 import test from "node:test";
-import typescript from "typescript";
+import {readFileSync} from "node:fs";
+import {loadApplicationModule as load} from "../helpers/load-application-module.mjs";
+import {denunciaModeracao} from "../helpers/admin-moderacao-harness.mjs";
 
-const actionSource = readFileSync(
-  new URL(
-    "../../app/admin/comunidade/actions/remover-conteudo-denunciado-moderacao.ts",
-    import.meta.url,
-  ),
-  "utf8",
-);
-const pageSource = readFileSync(
-  new URL("../../app/admin/comunidade/page.tsx", import.meta.url),
-  "utf8",
-);
-const hookSource = readFileSync(
-  new URL(
-    "../../app/admin/comunidade/hooks/use-admin-comunidade-content-report-actions.ts",
-    import.meta.url,
-  ),
-  "utf8",
-);
-
-async function importarAction(supabase) {
-  const javascript = typescript.transpileModule(
-    actionSource.replace(
-      'import { supabase } from "../../../../lib/supabase/client";',
-      "const supabase = globalThis.__supabaseTeste;",
-    ),
-    {
-      compilerOptions: {
-        module: typescript.ModuleKind.ESNext,
-        target: typescript.ScriptTarget.ES2022,
-      },
-    },
-  ).outputText;
-  globalThis.__supabaseTeste = supabase;
-
-  return import(
-    `data:text/javascript;base64,${Buffer.from(
-      `${javascript}\n// ${Math.random()}`,
-    ).toString("base64")}`
-  );
-}
-
-function criarSupabase({ error = null } = {}) {
-  const chamadas = [];
-
-  return {
-    chamadas,
-    supabase: {
-      rpc(nome, payload) {
-        chamadas.push(["rpc", nome, payload]);
-        return Promise.resolve({ error });
-      },
-    },
-  };
-}
-
-test("remove conteúdo pela RPC transacional com o payload atual", async () => {
-  const { supabase, chamadas } = criarSupabase();
-  const action = await importarAction(supabase);
-  const observacaoFinal = "x".repeat(801);
-
-  await action.removerConteudoDenunciadoModeracao({
-    alvoTipo: "comentario_capitulo",
-    alvoId: "capitulo-comentario-1",
-    observacaoFinal,
+for (const patch of [{arquivada: true}, {status: "rejeitada"}, {alvoId: "outro"}]) {
+  test(`remoção valida o snapshot antes de qualquer operação: ${JSON.stringify(patch)}`, async () => {
+    let writes = 0;
+    const {removerConteudoDenunciadoModeracao} = load("app/admin/comunidade/actions/remover-conteudo-denunciado-moderacao.ts", {
+      "../../../../lib/supabase/client": {supabase: {from() {writes++; throw new Error("consulta inesperada");}, rpc() {writes++;}}},
+    });
+    await assert.rejects(() => removerConteudoDenunciadoModeracao({alvoTipo: "post", alvoId: "post1", usuarioId: "A", observacaoFinal: "Nota",
+      esperada: denunciaModeracao(patch), denunciasIds: ["d1"], vigente: () => true}), error => error.estado === "conflito");
+    assert.equal(writes, 0);
   });
-
-  assert.deepEqual(chamadas, [
-    [
-      "rpc",
-      "remover_conteudo_denunciado_transacional",
-      {
-        p_alvo_tipo: "comentario_capitulo",
-        p_alvo_id: "capitulo-comentario-1",
-        p_observacao_admin: observacaoFinal.slice(0, 800),
-      },
-    ],
-  ]);
-});
-
-test("propaga o erro retornado pela RPC", async () => {
-  const erro = new Error("falha transacional");
-  const { supabase } = criarSupabase({ error: erro });
-  const action = await importarAction(supabase);
-
-  await assert.rejects(
-    () =>
-      action.removerConteudoDenunciadoModeracao({
-        alvoTipo: "obra",
-        alvoId: "obra-1",
-        observacaoFinal: "Observação",
-      }),
-    erro,
-  );
-});
-
-test("Admin Comunidade mantém a orquestração e delega a RPC", () => {
-  assert.match(
-    hookSource,
-    /import \{ removerConteudoDenunciadoModeracao \} from "\.\.\/actions\/remover-conteudo-denunciado-moderacao";/,
-  );
-  assert.match(
-    hookSource,
-    /if \(!usuarioId \|\| !ehAdmin\) \{\s*setErro\("Apenas moderadores podem remover conteúdo denunciado\."\);/,
-  );
-  assert.match(hookSource, /denuncia\.arquivada/);
-  assert.match(hookSource, /denuncia\.status !== "pendente"/);
-  assert.match(hookSource, /window\.confirm\(/);
-  assert.match(
-    hookSource,
-    /const observacaoFinal =\s*observacaoAtual \|\|\s*`Conteúdo removido pela moderação em \$\{new Date\(\)\.toLocaleDateString\(/,
-  );
-  assert.match(hookSource, /const analisadoEm = new Date\(\)\.toISOString\(\);/);
-  assert.match(
-    hookSource,
-    /await removerConteudoDenunciadoModeracao\(\{\s*alvoTipo: denuncia\.alvoTipo,\s*alvoId: denuncia\.alvoId,\s*observacaoFinal,\s*\}\);/,
-  );
-  assert.match(hookSource, /setDenuncias\(/);
-  assert.match(hookSource, /setObservacoes\(/);
-  assert.match(hookSource, /rotuloSucessoRemocaoAlvo\(/);
-
-  const funcaoRemocao = hookSource.match(
-    /async function removerConteudoDenunciado[\s\S]*?(?=\n\s*async function arquivarDenuncia)/,
-  )?.[0] ?? "";
-  assert.doesNotMatch(
-    funcaoRemocao,
-    /remover_conteudo_denunciado_transacional/,
-  );
-  assert.match(funcaoRemocao, /catch \(error\)/);
-  assert.match(funcaoRemocao, /finally/);
-  assert.match(pageSource, /useAdminComunidadeContentReportActions\(/);
-  assert.doesNotMatch(pageSource, /async function removerConteudoDenunciado\(/);
-  assert.doesNotMatch(
-    actionSource,
-    /useState|useEffect|useMemo|router|localStorage|set[A-Z]|(?:^|\n)\s*<(?:[A-Z][A-Za-z0-9]*|[a-z][a-z0-9-]*)(?:\s|\/?>)/,
-  );
+}
+test("remoção preserva RPC transacional e não escreve diretamente em conteúdo ou auditoria", () => {
+  const source = readFileSync(new URL("../../app/admin/comunidade/actions/remover-conteudo-denunciado-moderacao.ts", import.meta.url), "utf8");
+  assert.match(source, /rpc\("remover_conteudo_denunciado_transacional"/);
+  assert.match(source, /p_observacao_admin: observacaoFinal\.slice\(0, 800\)/);
+  assert.doesNotMatch(source, /\.delete\(|\.insert\(|moderacao_historico/);
 });

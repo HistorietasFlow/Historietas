@@ -95,7 +95,7 @@ test("Admin Comunidade mantém a orquestração de reincidências na página", (
   assert.doesNotMatch(hookSource, /supabase\.rpc\(\s*"listar_reincidencias_moderacao"/);
   assert.match(
     hookSource,
-    /async function carregarReincidenciasModeracao\(\) \{\s*const proximoMapa = await buscarReincidenciasModeracao\(\);\s*setReincidenciasPorUsuario\(proximoMapa\);\s*\}/,
+    /async function carregarReincidenciasModeracao\(\) \{\s*const proximoMapa = await buscarReincidenciasModeracao\(\);\s*if \(vigente\(ctx, leitura\)\) setReincidenciasPorUsuario\(proximoMapa\);\s*\}/,
   );
   assert.match(hookSource, /Promise\.all\([\s\S]*?carregarReincidenciasModeracao\(\)/);
   assert.match(pageSource, /useAdminComunidadeInitialData\(/);
