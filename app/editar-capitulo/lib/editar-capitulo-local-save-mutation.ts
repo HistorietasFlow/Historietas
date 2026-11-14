@@ -12,6 +12,8 @@ type ParametrosAplicarEdicaoCapituloNasObrasLocais = {
   numeroCapituloFinal: number;
   autorFinalObra: string;
   userId: string;
+  capituloEsperado?: { titulo: string; texto: string; ordem?: number; publicado?: boolean };
+  capituloRemotoEsperado?: { titulo: string | null; texto: string | null; ordem: number; publicado: boolean } | null;
 };
 
 export function aplicarEdicaoCapituloNasObrasLocais({
@@ -23,6 +25,8 @@ export function aplicarEdicaoCapituloNasObrasLocais({
   numeroCapituloFinal,
   autorFinalObra,
   userId,
+  capituloEsperado,
+  capituloRemotoEsperado,
 }: ParametrosAplicarEdicaoCapituloNasObrasLocais) {
   let obraAtualizadaParaAcoes: ObraNormalizada | null = null;
 
@@ -32,6 +36,18 @@ export function aplicarEdicaoCapituloNasObrasLocais({
     if (obraNormalizada.id !== obraId) {
       return obraNormalizada;
     }
+
+    const alvo = obraNormalizada.capitulos.find(capitulo => capitulo.id === capituloId);
+    const jaAplicado = alvo && alvo.titulo === tituloFinal && alvo.texto === textoFinal &&
+      alvo.ordem === numeroCapituloFinal && alvo.publicado === capituloEsperado?.publicado;
+    const correspondeAoRemoto = alvo && capituloRemotoEsperado && alvo.titulo === capituloRemotoEsperado.titulo &&
+      alvo.texto === capituloRemotoEsperado.texto && alvo.ordem === capituloRemotoEsperado.ordem &&
+      alvo.publicado === capituloRemotoEsperado.publicado;
+    if (!alvo || (capituloEsperado && (
+      (obraNormalizada.autorId && obraNormalizada.autorId !== userId) ||
+      (!jaAplicado && !correspondeAoRemoto && (alvo.titulo !== capituloEsperado.titulo || alvo.texto !== capituloEsperado.texto ||
+        alvo.ordem !== capituloEsperado.ordem || alvo.publicado !== capituloEsperado.publicado))
+    ))) return obraNormalizada;
 
     const capitulosAtualizados = obraNormalizada.capitulos.map((capitulo) => {
       if (capitulo.id !== capituloId) {

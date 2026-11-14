@@ -98,6 +98,14 @@ const parametros = {
   atualizadoEm: "2026-10-25T00:00:00.000Z",
 };
 
+test("Diário não repete INSERT com resultado incerto, mesmo quando a resposta traz erro", async () => {
+  for (const code of ["", "503", "08007", "40003"]) {
+    const modulo = await carregarModulo([{error: {code, message: "Resposta perdida após commit"}}]);
+    await modulo.registrarDiarioEdicaoCapitulo(parametros);
+    assert.equal(modulo.chamadas.filter(call => call[0] === "insert").length, 1);
+  }
+});
+
 test("Diário de Editar Capítulo ignora usuário ou IDs inválidos sem acessar Supabase", async () => {
   const modulo = await carregarModulo();
 
@@ -143,7 +151,7 @@ test("Diário de Editar Capítulo insere payload público completo e não usa fa
 });
 
 test("Diário de Editar Capítulo mantém visibilidade privada e fallback simplificado", async () => {
-  const modulo = await carregarModulo([{ error: { message: "metadata indisponível" } }]);
+  const modulo = await carregarModulo([{ error: { code: "42703", message: "metadata indisponível" } }]);
 
   await modulo.registrarDiarioEdicaoCapitulo({
     ...parametros,
@@ -201,6 +209,6 @@ test("Editar Capítulo delega somente a ação de Diário antes da notificação
   );
   assert.match(
     saveActionSource,
-    /await registrarDiarioEdicaoCapitulo\([\s\S]*?\);\s*\n\s*await atualizarNotificacaoCapituloSupabase\(/,
+    /await registrarDiarioEdicaoCapitulo\([\s\S]*?\);\s*\n\s*if \(!vigente\(\)\) return;\s*\n\s*await atualizarNotificacaoCapituloSupabase\(/,
   );
 });

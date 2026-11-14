@@ -66,6 +66,10 @@ export async function registrarDiarioEdicaoCapitulo({
       return;
     }
 
+    // A compatibilidade sem metadata só é segura quando o servidor comprova
+    // que a coluna foi rejeitada. Transporte incerto pode ocorrer após commit.
+    if (error.code !== "42703" && error.code !== "PGRST204") return;
+
     await supabase.from("diario_atividades").insert({
       user_id: usuarioId,
       tipo: "editou_capitulo",

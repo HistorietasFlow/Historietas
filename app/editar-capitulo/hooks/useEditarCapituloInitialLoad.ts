@@ -9,6 +9,8 @@ import {
   salvarObrasEditarCapituloStorage,
 } from "../lib/editar-capitulo-local-work-storage";
 import { mapearObraSupabase } from "../lib/editar-capitulo-supabase-mappers";
+import { lerStorageUsuarioEditarCapitulo } from "../lib/editar-capitulo-storage-utils";
+import { lerRecuperacaoTexto, referenciaTextoCapitulo, type ReferenciaTextoCapitulo } from "../lib/editar-capitulo-save-recovery";
 
 type CapituloSupabaseRow = {
   id: string;
@@ -20,6 +22,7 @@ type CapituloSupabaseRow = {
   publicado: boolean | null;
   criado_em: string | null;
   atualizado_em: string | null;
+  tipo_conteudo: string;
 };
 
 type ObraLocalEditarCapitulo =
@@ -41,6 +44,8 @@ export function useEditarCapituloInitialLoad({
   const [obras, setObras] = useState<ObraLocalEditarCapitulo[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [verificandoAcesso, setVerificandoAcesso] = useState(true);
+  const [usuarioEdicaoId, setUsuarioEdicaoId] = useState("");
+  const [referenciaRemota, setReferenciaRemota] = useState<ReferenciaTextoCapitulo | null>(null);
 
   useEffect(() => {
     let cancelado = false;
@@ -55,6 +60,7 @@ export function useEditarCapituloInitialLoad({
     }, 0);
 
     async function carregarCapitulo() {
+      let usuarioCarregado = "";
       try {
         const { data: dadosUsuario, error: erroUsuario } =
           await supabase.auth.getUser();
@@ -77,6 +83,9 @@ export function useEditarCapituloInitialLoad({
         }
 
         const nomeProfileAutor = await carregarNomeProfileEditarCapitulo(userId);
+        if (cancelado) return;
+        setUsuarioEdicaoId(userId);
+        usuarioCarregado = userId;
         const obrasLocais = aplicarNomeAutorProfileEditarCapitulo(
           carregarObrasLocaisNormalizadas(userId).filter((obra) => {
             const autorId = obra.autorId?.trim() || "";
@@ -87,6 +96,7 @@ export function useEditarCapituloInitialLoad({
           nomeProfileAutor
         );
         let obrasAtualizadas = obrasLocais;
+        const cacheLido = lerStorageUsuarioEditarCapitulo("historietas-obras", userId);
         const obraLocal = obrasLocais.find((obra) => obra.id === obraIdParam);
         const capituloLocal =
           obraLocal?.capitulos.find(
@@ -124,12 +134,13 @@ export function useEditarCapituloInitialLoad({
                   buscarPagina: async (inicio, fim) =>
                     supabase
                       .from("capitulos")
-                      .select("id,obra_id,user_id,titulo,texto,ordem,publicado,criado_em,atualizado_em")
+                      .select("id,obra_id,user_id,titulo,texto,ordem,publicado,criado_em,atualizado_em,tipo_conteudo")
                       .eq("obra_id", obraIdParam)
                       .eq("user_id", userId)
                       .order("ordem", { ascending: true })
                       .order("id", { ascending: true })
-                      .range(inicio, fim),
+                      .range(inicio, fim)
+                      .overrideTypes<CapituloSupabaseRow[], { merge: false }>(),
                 });
             } catch (error) {
               console.warn(
@@ -143,6 +154,10 @@ export function useEditarCapituloInitialLoad({
 
               return;
             }
+
+            if (cancelado) return;
+            const referencia = referenciaTextoCapitulo(capitulosSupabase.find(capitulo => capitulo.id === capituloIdParam));
+            setReferenciaRemota(referencia);
 
             const obraNormalizadaSupabase = mapearObraSupabase(
               obraSupabase,
@@ -174,10 +189,14 @@ export function useEditarCapituloInitialLoad({
                 .eq("user_id", userId);
             }
 
-            obrasAtualizadas = salvarObrasEditarCapituloStorage(
-              obrasAtualizadas,
-              userId
-            );
+            // Uma edição ocorrida enquanto a leitura estava em voo não pode
+            // ser apagada por este snapshot inicial, inclusive em outra obra.
+            if (lerStorageUsuarioEditarCapitulo("historietas-obras", userId) === cacheLido) {
+              obrasAtualizadas = salvarObrasEditarCapituloStorage(
+                obrasAtualizadas,
+                userId
+              );
+            }
 
             const capituloSupabase =
               obraNormalizadaSupabase.capitulos.find(
@@ -201,6 +220,16 @@ export function useEditarCapituloInitialLoad({
         }
       } finally {
         if (!cancelado) {
+          try {
+            const recuperacao = usuarioCarregado ? lerRecuperacaoTexto(usuarioCarregado, obraIdParam, capituloIdParam) : null;
+            if (recuperacao) {
+              setTitulo(recuperacao.titulo);
+              setTexto(recuperacao.texto);
+            }
+          } catch {
+            // Uma cópia ilegível não apaga o capítulo já disponível. O save
+            // bloqueia o envio antes de substituir esse registro de recuperação.
+          }
           setCarregando(false);
         }
       }
@@ -223,5 +252,7 @@ export function useEditarCapituloInitialLoad({
     setObras,
     carregando,
     verificandoAcesso,
+    usuarioEdicaoId,
+    referenciaRemota,
   };
 }
