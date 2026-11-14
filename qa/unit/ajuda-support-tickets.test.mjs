@@ -22,7 +22,11 @@ test("os chamados recentes preservam carregamento, lista, status, nota e data", 
   assert.match(componente, /pt: "Carregando\.\.\."/);
   assert.match(componente, /en: "Loading\.\.\."/);
   assert.match(componente, /es: "Cargando\.\.\."/);
-  assert.match(componente, /\{!carregando \? \(/);
+  assert.match(componente, /\{chamados\.length > 0 \? \(/);
+  assert.match(componente, /carregados && !carregando && !erro && chamados\.length === 0/);
+  assert.match(componente, /role="alert"/);
+  assert.match(componente, /onClick=\{onRecarregar\}/);
+  assert.match(componente, /última consulta confirmada/);
   assert.match(componente, /chamados\.map\(\(chamado\) => \(/);
   assert.match(componente, /key=\{chamado\.id\}/);
   assert.match(componente, /chamado\.titulo/);
@@ -35,14 +39,14 @@ test("os chamados recentes preservam carregamento, lista, status, nota e data", 
   assert.doesNotMatch(componente, /supabase|useEffect|useState/);
 });
 
-test("a página mantém a condição externa de autenticação e loading", () => {
+test("a página exibe loading e falha sem inferir autenticação ou vazio", () => {
   assert.match(
     pagina,
     /import \{\s*AjudaSupportTickets,\s*\} from "\.\/components\/ajuda-support-tickets";/,
   );
   assert.match(
     pagina,
-    /usuarioAutenticado &&\s*\(carregandoChamados \|\| chamadosTecnicos\.length > 0\) \? \(\s*<AjudaSupportTickets[\s\S]*?carregando=\{carregandoChamados\}[\s\S]*?chamados=\{chamadosTecnicos\}/,
+    /usuarioAutenticado \|\| carregandoChamados \|\| erroChamados \? \(\s*<AjudaSupportTickets[\s\S]*?carregando=\{carregandoChamados\}[\s\S]*?chamados=\{sessaoConfirmada \? chamadosTecnicos : \[\]\}/,
   );
   assert.doesNotMatch(pagina, /supportTicketsSectionStyle/);
   assert.doesNotMatch(pagina, /chamadosTecnicos\.map/);

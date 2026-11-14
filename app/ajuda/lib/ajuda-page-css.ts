@@ -241,8 +241,8 @@ export const ajudaPageCss = `
     border: 0;
     border-radius: 13px;
     padding: 10px 16px;
-    background: var(--historietas-secondary, #7C3AED);
-    color: #FFFFFF;
+    background: var(--historietas-secondary, #A1A1AA);
+    color: #000000;
     font: inherit;
     font-size: 13px;
     font-weight: 850;
@@ -252,6 +252,22 @@ export const ajudaPageCss = `
   [data-historietas-ajuda-root="true"] .ajuda-submit-ticket-button:disabled {
     opacity: 0.52;
     cursor: not-allowed;
+  }
+
+  [data-historietas-ajuda-root="true"] .ajuda-refresh-tickets-button {
+    min-height: 44px;
+    padding: 8px 12px;
+    border: 1px solid var(--ajuda-border);
+    border-radius: 10px;
+    background: var(--ajuda-control);
+    color: var(--historietas-text-primary, #FFFFFF);
+    font: inherit;
+    cursor: pointer;
+  }
+
+  [data-historietas-ajuda-root="true"] .ajuda-refresh-tickets-button:focus-visible {
+    outline: 2px solid var(--historietas-text-primary, #FFFFFF);
+    outline-offset: 2px;
   }
 
   html[data-historietas-tema-visual="foco"] [data-historietas-ajuda-root="true"] {
