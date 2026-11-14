@@ -15,13 +15,13 @@ test("Em Breve delega somente estado e ciclo inicial de lançamentos salvos ao h
   ]);
 
   assert.match(hook, /^"use client";/);
-  assert.match(hook, /import \{ useEffect, useState \} from "react";/);
+  assert.match(hook, /import \{ useEffect, useRef, useState, type SetStateAction \} from "react";/);
   assert.match(hook, /import \{ supabase \} from "\.\.\/\.\.\/\.\.\/lib\/supabase\/client";/);
   assert.match(hook, /encontrarLinkObraComConteudoEmBreve/);
   assert.match(hook, /pegarParametro/);
   assert.match(hook, /SAVED_RELEASES_STORAGE_KEY/);
   assert.match(hook, /carregarJsonUsuarioEmBreve/);
-  assert.match(hook, /salvarJsonUsuarioEmBreve/);
+  assert.match(hook, /for \(const alterar of alteracoes\)/);
   assert.match(hook, /normalizarListaIdsEmBreve/);
   assert.match(hook, /carregarLancamentosSalvosSupabaseEmBreve/);
   assert.match(hook, /export function useEmBreveLancamentosSalvosIniciais/);
@@ -34,12 +34,12 @@ test("Em Breve delega somente estado e ciclo inicial de lançamentos salvos ao h
   assert.match(hook, /parametros\.get\("obra"\)/);
   assert.match(hook, /router\.replace\(linkObraComConteudo\)/);
   assert.match(hook, /supabase\.auth\.getUser\(\)/);
-  assert.equal((hook.match(/window\.setTimeout/g) || []).length, 5);
+  assert.match(hook, /subscription.unsubscribe/);
   assert.match(hook, /componenteAtivo = false/);
   assert.match(hook, /\}, \[router\]\);/);
   assert.match(
     hook,
-    /return \{\s*nomeObra,\s*obraIdConsultada,\s*obrasSalvas,\s*setObrasSalvas,\s*usuarioIdLogado,\s*setUsuarioIdLogado,\s*\};/s,
+    /return \{\s*nomeObra,\s*obraIdConsultada,\s*obrasSalvas,\s*setObrasSalvas: atualizarObrasSalvas,\s*usuarioIdLogado,\s*setUsuarioIdLogado,\s*\};/s,
   );
 
   assert.match(
@@ -54,8 +54,5 @@ test("Em Breve delega somente estado e ciclo inicial de lançamentos salvos ao h
   assert.doesNotMatch(page, /carregarJsonUsuarioEmBreve/);
   assert.doesNotMatch(page, /carregarLancamentosSalvosSupabaseEmBreve/);
   assert.doesNotMatch(page, /normalizarListaIdsEmBreve/);
-  assert.match(page, /import \{ supabase \} from "\.\.\/\.\.\/lib\/supabase\/client";/);
-  assert.match(page, /SAVED_RELEASES_STORAGE_KEY/);
-  assert.match(page, /salvarJsonUsuarioEmBreve/);
-  assert.match(page, /async function salvarLancamento/);
+  assert.match(page, /useEmBreveSalvarLancamento/);
 });

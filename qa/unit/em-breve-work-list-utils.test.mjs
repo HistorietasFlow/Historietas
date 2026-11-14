@@ -26,7 +26,7 @@ test("helpers de lista de obras de Em Breve preservam contratos puros", () => {
     "obraIdPorIdentificador.get(identificador) || identificador",
     "removerObrasDuplicadasEmBreve",
     "new Set<string>()",
-    "normalizarTexto(obra.titulo) || obra.id",
+    "obra.id || normalizarTexto(obra.titulo)",
     "obrasVistas.has(chave)",
     "obrasVistas.add(chave)",
   ].forEach((contrato) => assert.ok(modulo.includes(contrato), contrato));
