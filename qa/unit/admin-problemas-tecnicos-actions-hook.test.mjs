@@ -42,7 +42,7 @@ test("hook preserva payload, mutation e tratamento de retorno", () => {
     "payload,",
     "if (error)",
     "throw error;",
-    "if (!data)",
+    "if (!data || data.id !== problema.id)",
     "O chamado não foi encontrado ou não pôde ser atualizado.",
   ].forEach((contrato) => assert.ok(hook.includes(contrato), contrato));
   assert.doesNotMatch(hook, /\.from\(|\.update\(|\.select\(/);
@@ -61,23 +61,23 @@ test("hook preserva atualizações imutáveis, mensagens e limpeza", () => {
     "analisadoPor: String(atualizado.analisado_por || \"\")",
     "analisadoEm: String(atualizado.analisado_em || \"\")",
     "atualizadoEm: String(atualizado.atualizado_em || \"\")",
-    "setObservacoes((atuais) => ({",
-    "[problema.id]: String(atualizado.observacao_admin || \"\")",
+    "setObservacoes((atuais) => {",
+    "[problema.id]: confirmado.observacaoAdmin",
     "setSucesso(mensagemSucesso);",
     'criarMensagemErro("Erro ao atualizar chamado técnico", error)',
     "finally {",
-    "setAcaoEmAndamento(\"\");",
+    "if (atual()) setAcaoEmAndamento(acaoAtual => acaoAtual === problema.id ? \"\" : acaoAtual);",
   ].forEach((contrato) => assert.ok(hook.includes(contrato), contrato));
 
   const ordem = [
     "if (!usuarioId || !ehAdmin)",
-    "setAcaoEmAndamento(problema.id)",
     'const payload: TablesUpdate<"problemas_tecnicos"> = {};',
+    "setAcaoEmAndamento(problema.id)",
     "atualizarProblemaTecnicoAdmin({",
     "if (error)",
-    "if (!data)",
+    "if (!data || data.id !== problema.id)",
     "setProblemas((atuais) =>",
-    "setObservacoes((atuais) => ({",
+    "setObservacoes((atuais) => {",
     "setSucesso(mensagemSucesso)",
     "finally {",
   ].map((trecho) => hook.indexOf(trecho));
@@ -92,7 +92,7 @@ test("página delega a action e o card preserva controles e JSX", () => {
   );
   assert.match(page, /const \{ atualizarChamado \} = useAdminProblemasTecnicosActions\(/);
   assert.doesNotMatch(page, /async function atualizarChamado\(/);
-  assert.match(page, /recarregarProblemasTecnicos\(carregarProblemas\)/);
+  assert.match(page, /recarregarProblemasTecnicos\(carregarProblemas, capturarExecucao\(\)\)/);
   assert.match(page, /Atualizar/);
   assert.equal((card.match(/atualizarChamado\(/g) || []).length, 3);
   assert.match(card, /<AdminProblemasTecnicosTicketStatusControl/);
