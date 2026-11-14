@@ -1080,3 +1080,12 @@ O ciclo funcional iniciado pelas melhorias de Explorar, continuidade de leitura,
 gestão de comentários para autores, proteção contra spoilers e histórico de
 moderação está concluído no código. Novas melhorias devem partir de uma nova
 priorização, sem reabrir essas frentes sem evidência de regressão.
+
+### Editar capítulo — integração do Diário por RPC (sobre #2307)
+
+Branch derivada da #2307 usa somente a RPC do contrato #2316, com token extraído do
+PATCH confirmado e guardado na recuperação da intenção. Sem migration/coluna, o
+save segue compatível; gate desligado/RPC ausente não repetem capítulo. Pendências
+são recuperadas por ação explícita sem repetir notificações; NULL permanece incerto.
+Schema/ativação e homologação conjunta seguem separados. Ver
+`app/editar-capitulo/INTEGRACAO_DIARIO_RPC.md` para ordem de implantação e limites.

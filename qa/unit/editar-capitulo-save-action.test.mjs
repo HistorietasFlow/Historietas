@@ -62,8 +62,8 @@ test("useEditarCapituloSaveAction preserva a ordem sensível do salvamento", () 
   assert.ok(indice("await supabase.auth.getUser()") < indice('.from("obras")'));
   assert.ok(indice("await salvarTextoCapituloRemoto") < hookSource.lastIndexOf("aplicarEdicaoCapituloNasObrasLocais"));
   assert.ok(hookSource.lastIndexOf("salvarObrasEditarCapituloStorage") < indice("setObras(novasObrasDoUsuario)"));
-  assert.ok(indice("setObras(novasObrasDoUsuario)") < indice("await registrarDiarioEdicaoCapitulo"));
-  assert.ok(indice("await registrarDiarioEdicaoCapitulo") < indice("await atualizarNotificacaoCapituloSupabase"));
+  assert.ok(indice("setObras(novasObrasDoUsuario)") < hookSource.lastIndexOf("await sincronizarDiario()"));
+  assert.ok(hookSource.lastIndexOf("await sincronizarDiario()") < indice("await atualizarNotificacaoCapituloSupabase"));
   assert.ok(indice("await atualizarNotificacaoCapituloSupabase") < hookSource.lastIndexOf("setSalvou(ultimosRef.current.titulo"));
 });
 

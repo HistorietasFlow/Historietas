@@ -1,3 +1,9 @@
+export const uuidDiarioEdicaoValido = (valor: unknown): valor is string =>
+  typeof valor === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(valor);
+export type IntencaoDiarioEdicao = {
+  versao: string;
+  estado: "inelegivel" | "pendente" | "incerto" | "confirmado" | "indisponivel" | "conflito";
+};
 export type ReferenciaTextoCapitulo = {
   id: string;
   obra_id: string;
@@ -20,7 +26,10 @@ export function referenciaTextoCapitulo(valor: unknown): ReferenciaTextoCapitulo
       typeof row.publicado !== "boolean" || typeof row.atualizado_em !== "string" || !row.atualizado_em ||
       !/^\d{4}-\d{2}-\d{2}T/.test(row.atualizado_em) || !Number.isFinite(Date.parse(row.atualizado_em)) ||
       row.tipo_conteudo !== "texto") return null;
-  return row as ReferenciaTextoCapitulo;
+  // SELECT * permite o rollout sem a coluna nova. Não persistir colunas extras
+  // na referência; o token do Diário vem somente do canal do PATCH confirmado.
+  return {id: row.id, obra_id: row.obra_id, user_id: row.user_id, titulo: row.titulo, texto: row.texto,
+    ordem: row.ordem, publicado: row.publicado, atualizado_em: row.atualizado_em, tipo_conteudo: "texto"};
 }
 
 export type RecuperacaoTextoCapitulo = {
@@ -28,6 +37,8 @@ export type RecuperacaoTextoCapitulo = {
   texto: string;
   estado: "pronto" | "incerto" | "confirmado";
   referencia: ReferenciaTextoCapitulo | null;
+  diario?: IntencaoDiarioEdicao[];
+  escritaConfirmada?: boolean;
   local?: { titulo: string; texto: string; ordem?: number; publicado?: boolean };
 };
 
@@ -43,6 +54,15 @@ export function lerRecuperacaoTexto(userId: string, obraId: string, capituloId: 
       !["pronto", "incerto", "confirmado"].includes(valor.estado) ||
       (valor.referencia !== null && !referenciaTextoCapitulo(valor.referencia))) {
     throw new Error("Não consegui ler a cópia de recuperação. Preserve seu texto antes de continuar.");
+  }
+  if (valor.escritaConfirmada !== undefined && (typeof valor.escritaConfirmada !== "boolean" ||
+      (valor.escritaConfirmada && !valor.referencia))) {
+    throw new Error("A confirmação remota de recuperação está inválida. Preserve seu texto antes de continuar.");
+  }
+  if (valor.diario !== undefined && (!Array.isArray(valor.diario) || valor.diario.some(item =>
+    !item || !uuidDiarioEdicaoValido(item.versao) || !["inelegivel", "pendente", "incerto", "confirmado", "indisponivel", "conflito"].includes(item.estado)) ||
+    new Set(valor.diario.map(item => item.versao)).size !== valor.diario.length)) {
+    throw new Error("A intenção de Diário está inválida. Preserve a recuperação antes de continuar.");
   }
   if (valor.local && (typeof valor.local.titulo !== "string" || typeof valor.local.texto !== "string" ||
       (valor.local.ordem !== undefined && (!Number.isInteger(valor.local.ordem) || valor.local.ordem < 1)) ||

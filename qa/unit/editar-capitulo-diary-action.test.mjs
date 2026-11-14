@@ -1,239 +1,30 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
 import test from "node:test";
-import typescript from "typescript";
-
-const source = readFileSync(
-  new URL(
-    "../../app/editar-capitulo/actions/registrar-diario-edicao-capitulo.ts",
-    import.meta.url,
-  ),
-  "utf8",
-);
-const pageSource = readFileSync(
-  new URL("../../app/editar-capitulo/page.tsx", import.meta.url),
-  "utf8",
-);
-const saveActionSource = readFileSync(
-  new URL(
-    "../../app/editar-capitulo/hooks/useEditarCapituloSaveAction.ts",
-    import.meta.url,
-  ),
-  "utf8",
-);
-let indiceModulo = 0;
-
-async function carregarModulo(resultados = []) {
-  const chamadas = [];
-  globalThis.__editarCapituloDiaryActionDependencies = {
-    supabase: {
-      from(tabela) {
-        chamadas.push(["from", tabela]);
-        return {
-          async insert(payload) {
-            chamadas.push(["insert", tabela, payload]);
-            const resultado = resultados.shift() || { error: null };
-
-            if (resultado instanceof Error) {
-              throw resultado;
-            }
-
-            return resultado;
-          },
-        };
-      },
-    },
-    idObraSupabaseValido(id) {
-      return id.startsWith("valido-");
-    },
-    criarHrefLeituraCapitulo(obra, capituloId, numeroCapitulo) {
-      chamadas.push(["href", obra, capituloId, numeroCapitulo]);
-      return `/leitura/${capituloId}/${numeroCapitulo}`;
-    },
-  };
-
-  const javascript = typescript
-    .transpileModule(
-      source
-        .replace(
-          'import { supabase } from "../../../lib/supabase/client";',
-          "const supabase = globalThis.__editarCapituloDiaryActionDependencies.supabase;",
-        )
-        .replace(
-          'import { idObraSupabaseValido } from "../../../lib/utils";',
-          "const idObraSupabaseValido = globalThis.__editarCapituloDiaryActionDependencies.idObraSupabaseValido;",
-        )
-        .replace(
-          'import { criarHrefLeituraCapitulo } from "../lib/editar-capitulo-route-utils";',
-          "const criarHrefLeituraCapitulo = globalThis.__editarCapituloDiaryActionDependencies.criarHrefLeituraCapitulo;",
-        ),
-      {
-        compilerOptions: {
-          module: typescript.ModuleKind.ESNext,
-          target: typescript.ScriptTarget.ES2022,
-        },
-      },
-    )
-    .outputText;
-  const modulo = await import(
-    `data:text/javascript;base64,${Buffer.from(javascript).toString("base64")}#${indiceModulo++}`,
-  );
-
-  return { ...modulo, chamadas };
-}
-
-const obra = {
-  id: "valido-obra-1",
-  titulo: "Obra editada",
-  slug: "obra-editada",
-  publicado: true,
-};
-
-const parametros = {
-  userId: " usuario-1 ",
-  obra,
-  capituloId: "valido-capitulo-1",
-  tituloCapitulo: "Capítulo atualizado",
-  numeroCapitulo: 2,
-  atualizadoEm: "2026-10-25T00:00:00.000Z",
-};
-
-test("Diário não repete INSERT com resultado incerto, mesmo quando a resposta traz erro", async () => {
-  for (const code of ["", "503", "08007", "40003"]) {
-    const modulo = await carregarModulo([{error: {code, message: "Resposta perdida após commit"}}]);
-    await modulo.registrarDiarioEdicaoCapitulo(parametros);
-    assert.equal(modulo.chamadas.filter(call => call[0] === "insert").length, 1);
-  }
-});
-
-test("Diário de Editar Capítulo ignora usuário ou IDs inválidos sem acessar Supabase", async () => {
-  const modulo = await carregarModulo();
-
-  await modulo.registrarDiarioEdicaoCapitulo({ ...parametros, userId: "   " });
-  await modulo.registrarDiarioEdicaoCapitulo({
-    ...parametros,
-    obra: { ...obra, id: "invalido" },
-  });
-  await modulo.registrarDiarioEdicaoCapitulo({
-    ...parametros,
-    capituloId: "invalido",
-  });
-
-  assert.deepEqual(modulo.chamadas, []);
-});
-
-test("Diário de Editar Capítulo insere payload público completo e não usa fallback no sucesso", async () => {
-  const modulo = await carregarModulo();
-
-  await modulo.registrarDiarioEdicaoCapitulo(parametros);
-
-  assert.deepEqual(modulo.chamadas, [
-    ["href", obra, "valido-capitulo-1", 2],
-    ["from", "diario_atividades"],
-    ["insert", "diario_atividades", {
-      user_id: "usuario-1",
-      tipo: "editou_capitulo",
-      obra_id: "valido-obra-1",
-      capitulo_id: "valido-capitulo-1",
-      texto: "",
-      visibilidade: "publico",
-      metadata: {
-        obra_titulo: "Obra editada",
-        titulo_obra: "Obra editada",
-        capitulo_titulo: "Capítulo atualizado",
-        numero_capitulo: 2,
-        href: "/leitura/valido-capitulo-1/2",
-      },
-      criado_em: "2026-10-25T00:00:00.000Z",
-      atualizado_em: "2026-10-25T00:00:00.000Z",
-    }],
-  ]);
-});
-
-test("Diário de Editar Capítulo mantém visibilidade privada e fallback simplificado", async () => {
-  const modulo = await carregarModulo([{ error: { code: "42703", message: "metadata indisponível" } }]);
-
-  await modulo.registrarDiarioEdicaoCapitulo({
-    ...parametros,
-    obra: { ...obra, publicado: false },
-  });
-
-  const inserts = modulo.chamadas.filter(([tipo]) => tipo === "insert");
-  assert.equal(inserts.length, 2);
-  assert.equal(inserts[0][2].visibilidade, "privado");
-  assert.deepEqual(inserts[1], ["insert", "diario_atividades", {
-    user_id: "usuario-1",
-    tipo: "editou_capitulo",
-    obra_id: "valido-obra-1",
-    capitulo_id: "valido-capitulo-1",
-    texto: "",
-    visibilidade: "privado",
-    criado_em: "2026-10-25T00:00:00.000Z",
-  }]);
-  assert.equal("metadata" in inserts[1][2], false);
-  assert.equal("atualizado_em" in inserts[1][2], false);
-});
-
-test("Diário de Editar Capítulo absorve exceções e preserva o aviso", async () => {
-  const modulo = await carregarModulo([new Error("falha de rede")]);
-  const warnAnterior = console.warn;
-  const avisos = [];
-  console.warn = (...args) => avisos.push(args);
-
-  try {
-    await assert.doesNotReject(() => modulo.registrarDiarioEdicaoCapitulo(parametros));
-  } finally {
-    console.warn = warnAnterior;
-  }
-
-  assert.deepEqual(avisos, [[
-    "Não consegui registrar a edição do capítulo no Diário:",
-    new Error("falha de rede"),
-  ]]);
-});
-
-test("Editar Capítulo delega somente a ação de Diário antes da notificação", () => {
-  assert.match(
-    saveActionSource,
-    /import \{ registrarDiarioEdicaoCapitulo \} from "\.\.\/actions\/registrar-diario-edicao-capitulo";/,
-  );
-  assert.doesNotMatch(pageSource, /async function registrarDiarioEdicaoCapitulo\(/);
-  assert.match(source, /export async function registrarDiarioEdicaoCapitulo\(/);
-  assert.doesNotMatch(source, /useState|useEffect|localStorage|router|<\w/);
-  assert.match(source, /\.from\("diario_atividades"\)\.insert\(payload\)/);
-  assert.match(source, /await supabase\.from\("diario_atividades"\)\.insert\(\{/);
-  assert.match(source, /tipo: "editou_capitulo"/);
-  assert.match(
-    source,
-    /console\.warn\("Não consegui registrar a edição do capítulo no Diário:", error\)/,
-  );
-  assert.match(
-    saveActionSource,
-    /await registrarDiarioEdicaoCapitulo\([\s\S]*?\);\s*\n\s*if \(!vigente\(\)\) return;\s*\n\s*await atualizarNotificacaoCapituloSupabase\(/,
-  );
-});
-
-for (const code of ["23514", "42501", "503"]) {
-  test(`Diário: ${code} é reportado sem repetir INSERT nem trocar o tipo`, async () => {
-    const error = {code, message: "Evento recusado ou resposta incerta"};
-    const modulo = await carregarModulo([{error}]);
-    const previous = console.warn, warnings = [];
-    console.warn = (...args) => warnings.push(args);
-    try {await modulo.registrarDiarioEdicaoCapitulo(parametros);}
-    finally {console.warn = previous;}
-    const inserts = modulo.chamadas.filter(([tipo]) => tipo === "insert");
-    assert.equal(inserts.length, 1);
-    assert.equal(inserts[0][2].tipo, "editou_capitulo");
-    assert.deepEqual(warnings, [["Não consegui registrar a edição do capítulo no Diário:", error]]);
+import {createClient} from "@supabase/supabase-js";
+import {loadApplicationModule as load} from "../helpers/load-application-module.mjs";
+const capituloId = "00000000-0000-4000-8000-000000000001", versao = "00000000-0000-4000-8000-000000000002";
+for (const [scenario, expected] of [["uuid", "confirmado"], ["null", "incerto"], ["vazia-200", "incerto"], ["55000", "indisponivel"], ["PGRST202", "indisponivel"], ["42883", "indisponivel"], ["PT409", "conflito"], ["42501", "conflito"], ["rede", "incerto"], ["503", "incerto"], ["204", "incerto"], ["invalida", "incerto"]]) {
+  test(`RPC Diário ${scenario}: somente IDs e um POST`, async () => {
+    const requests = [];
+    const client = createClient("http://127.0.0.1:59999", "chave-ficticia", {auth: {persistSession: false, autoRefreshToken: false, detectSessionInUrl: false}, global: {fetch: async (url, options) => {
+      requests.push({url: new URL(url), options});
+      if (scenario === "rede") throw new TypeError("Resposta perdida");
+      if (scenario === "vazia-200") return new Response(null, {status: 200});
+      if (scenario === "204") return new Response(null, {status: 204});
+      const success = ["uuid", "null", "invalida"].includes(scenario);
+      const body = scenario === "uuid" ? capituloId : scenario === "null" ? null : scenario === "invalida" ? {id: capituloId} : {code: scenario, message: "Recusado"};
+      return new Response(JSON.stringify(body), {status: success ? 200 : ({PGRST202: 404, "42883": 404, "55000": 400, PT409: 409, "42501": 403}[scenario] || 503), headers: {"Content-Type": "application/json"}});
+    }}});
+    const {registrarDiarioEdicaoCapitulo} = load("app/editar-capitulo/actions/registrar-diario-edicao-capitulo.ts", {"../../../lib/supabase/client": {supabase: client}});
+    assert.equal(await registrarDiarioEdicaoCapitulo({capituloId, versao}), expected);
+    assert.equal(requests.length, 1);
+    assert.equal(requests[0].url.pathname, "/rest/v1/rpc/registrar_diario_edicao_capitulo");
+    assert.equal(requests[0].options.method, "POST");
+    assert.deepEqual(JSON.parse(requests[0].options.body), {p_capitulo_id: capituloId, p_versao: versao});
   });
 }
-test("Diário: erro no fallback comprovado também é reportado, sem terceira tentativa", async () => {
-  const error = {code: "23514", message: "Tipo inválido"};
-  const modulo = await carregarModulo([{error: {code: "42703"}}, {error}]);
-  const previous = console.warn, warnings = [];
-  console.warn = (...args) => warnings.push(args);
-  try {await modulo.registrarDiarioEdicaoCapitulo(parametros);}
-  finally {console.warn = previous;}
-  assert.equal(modulo.chamadas.filter(([tipo]) => tipo === "insert").length, 2);
-  assert.equal(warnings[0][1], error);
+test("token ou capítulo inválidos não disparam RPC", async () => {
+  const {registrarDiarioEdicaoCapitulo} = load("app/editar-capitulo/actions/registrar-diario-edicao-capitulo.ts", {"../../../lib/supabase/client": {supabase: {rpc() {assert.fail("RPC inesperada");}}}});
+  assert.equal(await registrarDiarioEdicaoCapitulo({capituloId, versao: "invalido"}), "conflito");
+  assert.equal(await registrarDiarioEdicaoCapitulo({capituloId: "local", versao}), "conflito");
 });

@@ -3111,3 +3111,10 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Performance — Fase 1: filtros avançados do Explorar
 
 - A composição visual dos filtros avançados de `/explorar` passou a ser carregada em um chunk sob demanda, preservando na página os estados, regras de negócio, body lock e callbacks existentes.
+
+## Editar capítulo — Diário por RPC segura
+
+Integração isolada sobre #2307 para o contrato #2316: sem INSERT direto, token do
+UPDATE confirmado, recuperação por intenção e compatibilidade antes da migration.
+Sem alteração das branches de origem, migration ou ativação. Contrato e implantação
+em [Integração do Diário](../app/editar-capitulo/INTEGRACAO_DIARIO_RPC.md).
