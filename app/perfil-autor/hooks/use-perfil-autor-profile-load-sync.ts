@@ -1,4 +1,4 @@
-import { useEffect, type Dispatch, type SetStateAction } from "react";
+import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from "react";
 import { idObraSupabaseValido } from "../../../lib/utils";
 import {
   AUTHOR_FOLLOW_STORAGE_KEY,
@@ -53,6 +53,8 @@ export function usePerfilAutorProfileLoadSync({
   autenticacaoCarregada,
   queryPerfilAtual,
   usuarioIdLogado,
+  versaoIdentidade = 0,
+  limparEstadoPerfilAnterior,
   identidadeAutenticadaPerfilRef,
   setAbaPerfil,
   setAutorSelecionado,
@@ -71,6 +73,8 @@ export function usePerfilAutorProfileLoadSync({
   autenticacaoCarregada: boolean;
   queryPerfilAtual: string;
   usuarioIdLogado: string;
+  versaoIdentidade?: number;
+  limparEstadoPerfilAnterior?: () => void;
   identidadeAutenticadaPerfilRef: {
     current: IdentidadeAutenticadaPerfilAutor;
   };
@@ -88,6 +92,9 @@ export function usePerfilAutorProfileLoadSync({
   setPerfisAutoresSalvos: Setter<PerfisAutoresSalvos>;
   setCarregando: Setter<boolean>;
 }) {
+  const contexto = useMemo(() => ({ queryPerfilAtual, usuarioIdLogado, autenticacaoCarregada, versaoIdentidade }),
+    [queryPerfilAtual, usuarioIdLogado, autenticacaoCarregada, versaoIdentidade]);
+  const [resultado, setResultado] = useState<{ contexto: typeof contexto; erro: boolean } | null>(null);
   useEffect(() => {
     if (!autenticacaoCarregada) {
       return;
@@ -105,6 +112,15 @@ export function usePerfilAutorProfileLoadSync({
     }
 
     async function carregarPerfilAutor() {
+      setCarregando(true);
+      setPerfilUsuarioRemoto(null);
+      setObras([]);
+      setAutoresSeguidos([]);
+      setObrasFavoritas([]);
+      setObrasConcluidas([]);
+      setObrasSeguidasBiblioteca([]);
+      setPerfisAutoresSalvos({});
+      limparEstadoPerfilAnterior?.();
       const params = new URLSearchParams(queryPerfilAtual);
       const autorParam = params.get("autor") || "";
       const autorIdParam =
@@ -136,12 +152,11 @@ export function usePerfilAutorProfileLoadSync({
         ? usuarioIdConfirmado
         : identidadeEsperada.usuarioId;
 
-      if (
-        !execucaoCarregamentoEstaAtual() ||
-        (resultadoEstadoUsuario.identidadeConfirmada &&
-          usuarioIdAtual !== identidadeEsperada.usuarioId)
-      ) {
+      if (!execucaoCarregamentoEstaAtual()) {
         return;
+      }
+      if (resultadoEstadoUsuario.identidadeConfirmada && usuarioIdAtual !== identidadeEsperada.usuarioId) {
+        throw new Error("A identidade do carregamento do perfil mudou.");
       }
 
       if (usuarioIdAtual) {
@@ -355,10 +370,20 @@ export function usePerfilAutorProfileLoadSync({
       setObrasConcluidas(obrasConcluidasNormalizadas);
       setObrasSeguidasBiblioteca(obrasSeguidasBibliotecaNormalizadas);
       setPerfisAutoresSalvos(carregarPerfisAutores(usuarioIdAtual));
-      setCarregando(false);
     }
 
-    void carregarPerfilAutor();
+    let erro = false;
+    void carregarPerfilAutor().catch((error) => {
+      if (execucaoCarregamentoEstaAtual()) {
+        erro = true;
+        console.warn("Não consegui carregar o perfil agora:", error);
+      }
+    }).finally(() => {
+      if (execucaoCarregamentoEstaAtual()) {
+        setResultado({ contexto, erro });
+        setCarregando(false);
+      }
+    });
 
     return () => {
       componenteAtivo = false;
@@ -367,6 +392,8 @@ export function usePerfilAutorProfileLoadSync({
     autenticacaoCarregada,
     queryPerfilAtual,
     usuarioIdLogado,
+    contexto,
+    limparEstadoPerfilAnterior,
     identidadeAutenticadaPerfilRef,
     setAbaPerfil,
     setAutorSelecionado,
@@ -382,4 +409,8 @@ export function usePerfilAutorProfileLoadSync({
     setPerfisAutoresSalvos,
     setCarregando,
   ]);
+  return {
+    carregamentoAtual: autenticacaoCarregada && resultado?.contexto === contexto,
+    erroCarregamento: resultado?.contexto === contexto && resultado.erro,
+  };
 }

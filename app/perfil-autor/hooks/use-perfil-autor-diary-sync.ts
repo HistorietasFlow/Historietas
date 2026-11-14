@@ -59,22 +59,13 @@ export function usePerfilAutorDiarySync({
 
       const perfilDiario = perfilAtual;
       const userIdPerfil = perfilDiario.autorId.trim();
-      const bibliotecaUsaUsuarioLogado =
-        bibliotecaPerfilVisivel &&
-        abaPerfil === "biblioteca" &&
-        Boolean(usuarioIdLogado.trim());
-      const userIdFonteDiario = bibliotecaUsaUsuarioLogado
-        ? usuarioIdLogado.trim()
-        : userIdPerfil;
+      const userIdFonteDiario = userIdPerfil;
 
       const estaVendoProprioPerfil =
         Boolean(usuarioIdLogado.trim()) &&
         userIdPerfil === usuarioIdLogado.trim();
 
-      const incluirItensPrivados =
-        bibliotecaUsaUsuarioLogado ||
-        podeEditarPerfil ||
-        estaVendoProprioPerfil;
+      const incluirItensPrivados = podeEditarPerfil && estaVendoProprioPerfil;
 
       setDiarioPerfil({
         ...diarioPerfilVazio,
