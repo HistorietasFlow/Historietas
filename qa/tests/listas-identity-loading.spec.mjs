@@ -1,6 +1,10 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 
+// All SDK and prefetch traffic must stay inside the HTTP fixture boundary.
+// Service-worker fetches bypass Playwright page.route interception.
+test.use({ serviceWorkers: "block" });
+
 const API = (process.env.NEXT_PUBLIC_SUPABASE_URL || "").replace(/\/$/, "");
 const id = n => `f0200000-0000-4000-8000-${String(n).padStart(12, "0")}`;
 const A = id(1), B = id(2), C = id(3);
@@ -16,12 +20,35 @@ function session(owner) {
   const user = { id: owner, aud: "authenticated", role: "authenticated", email: "listas-fixture@example.test", user_metadata: { nome: name(owner) }, app_metadata: {}, created_at: "2026-01-01T00:00:00Z" };
   return { access_token: `${encode({ alg: "HS256", typ: "JWT" })}.${encode({ sub: owner, aud: "authenticated", role: "authenticated", exp: now + 3600, iat: now })}.fixture`, refresh_token: "fixture", expires_at: now + 3600, expires_in: 3600, token_type: "bearer", user };
 }
-async function setup(page, { privateProfiles = [A, B], holdProfile = "", holdAuthForRoute = "", failFavorites = "", empty = false } = {}) {
+const releaseGates = new WeakMap();
+test.afterEach(async ({ page }) => {
+  releaseGates.get(page)?.();
+  await page.unrouteAll({ behavior: "wait" });
+});
+
+async function setup(page, baseURL, server, { privateProfiles = [A, B], holdProfile = "", holdAuthForRoute = "", failFavorites = "", empty = false } = {}) {
   let viewer = A, failed = failFavorites;
   const gate = deferred();
+  releaseGates.set(page, gate.resolve);
   const requests = [];
   const key = `sb-${new URL(API).hostname.split(".")[0]}-auth-token`;
   const initial = session(A);
+  // This unsigned session belongs only to the intercepted browser SDK. Next's
+  // server/proxy must remain anonymous: its real Auth rejects fixture tokens,
+  // and an automatic Link prefetch can otherwise expire the browser cookie.
+  await page.route(`${baseURL}/**`, async route => {
+    const headers = await route.request().allHeaders();
+    const cookies = (headers.cookie || "").split(";").map(cookie => cookie.trim());
+    const fixtureCookie = cookie => cookie.split("=", 1)[0] === key || cookie.startsWith(`${key}.`);
+    if (!cookies.some(fixtureCookie)) return route.continue();
+    // continue({ headers }) cannot override Cookie. The isolated request fixture
+    // also keeps redirects from restoring cookies from the browser jar.
+    // The actual application server, proxy and prefetch response still run.
+    const response = await server.fetch(route.request(), {
+      headers: { ...headers, cookie: cookies.filter(cookie => !fixtureCookie(cookie)).join("; ") },
+    });
+    await route.fulfill({ response });
+  });
   await page.addInitScript(({ key, initial }) => {
     document.cookie = `${key}=base64-${btoa(JSON.stringify(initial)).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "")}; path=/; SameSite=Lax`;
   }, { key, initial });
@@ -81,11 +108,18 @@ const assertLocal = baseURL => {
 };
 
 for (const device of [{ name: "desktop", viewport: { width: 1440, height: 900 } }, { name: "mobile", viewport: { width: 390, height: 844 } }]) {
-  test(`Listas remove perfil e contagens anteriores antes de autorizar o destino (${device.name})`, async ({ page, baseURL }) => {
+  test(`Listas remove perfil e contagens anteriores antes de autorizar o destino (${device.name})`, async ({ page, baseURL, request }) => {
     assertLocal(baseURL); await page.setViewportSize(device.viewport);
-    const f = await setup(page, { holdAuthForRoute: B });
+    const f = await setup(page, baseURL, request, { holdAuthForRoute: B });
     await page.goto(routeFor(A));
     await expect(page.getByText(title(A), { exact: true })).toBeVisible();
+    // Exercise server prefetch even on mobile, where Link may not prefetch by
+    // itself. It must not send this browser-only session to real server Auth.
+    await page.evaluate(async () => {
+      await fetch("/obra/fixture-1", { headers: { RSC: "1", "Next-Router-Prefetch": "1" } });
+    });
+    const cookies = await page.context().cookies();
+    expect(cookies.some(cookie => cookie.name === `sb-${new URL(API).hostname.split(".")[0]}-auth-token`)).toBe(true);
     await navigate(page, routeFor(B));
     await expect(page.getByText("Carregando lista...", { exact: true })).toBeVisible();
     await expect(page.getByText(title(A), { exact: true })).toHaveCount(0);
@@ -104,9 +138,9 @@ for (const device of [{ name: "desktop", viewport: { width: 1440, height: 900 } 
     expect(violations).toEqual([]);
   });
 
-  test(`Listas ignora perfil atrasado após A → B → C (${device.name})`, async ({ page, baseURL }) => {
+  test(`Listas ignora perfil atrasado após A → B → C (${device.name})`, async ({ page, baseURL, request }) => {
     assertLocal(baseURL); await page.setViewportSize(device.viewport);
-    const f = await setup(page, { holdProfile: B, privateProfiles: [A] });
+    const f = await setup(page, baseURL, request, { holdProfile: B, privateProfiles: [A] });
     await page.goto(routeFor(A)); await expect(page.getByText(title(A), { exact: true })).toBeVisible();
     await navigate(page, routeFor(B));
     await expect.poll(() => f.requests.some(r => r.table === "profiles_publicos" && r.owner === B)).toBe(true);
@@ -119,9 +153,9 @@ for (const device of [{ name: "desktop", viewport: { width: 1440, height: 900 } 
     expect(f.requests.filter(r => r.table === "favoritos" && r.owner === B)).toHaveLength(0);
   });
 
-  test(`Listas invalida logout e troca de conta sem navegar (${device.name})`, async ({ page, baseURL }) => {
+  test(`Listas invalida logout e troca de conta sem navegar (${device.name})`, async ({ page, baseURL, request }) => {
     assertLocal(baseURL); await page.setViewportSize(device.viewport);
-    const f = await setup(page);
+    const f = await setup(page, baseURL, request);
     await page.goto(routeFor(A)); await expect(page.getByText(title(A), { exact: true })).toBeVisible();
     await f.switchViewer(null);
     await expect(page.getByText("Esta lista é privada", { exact: true })).toBeVisible();
@@ -138,9 +172,9 @@ for (const device of [{ name: "desktop", viewport: { width: 1440, height: 900 } 
     expect(f.requests.length).toBe(count);
   });
 
-  test(`Listas distingue falha de favoritos de vazio confirmado (${device.name})`, async ({ page, baseURL }) => {
+  test(`Listas distingue falha de favoritos de vazio confirmado (${device.name})`, async ({ page, baseURL, request }) => {
     assertLocal(baseURL); await page.setViewportSize(device.viewport);
-    await setup(page, { failFavorites: B, privateProfiles: [A] });
+    await setup(page, baseURL, request, { failFavorites: B, privateProfiles: [A] });
     await page.goto(routeFor(A)); await expect(page.getByText(title(A), { exact: true })).toBeVisible();
     await navigate(page, routeFor(B));
     await expect(page.getByText("Não foi possível abrir a lista", { exact: true })).toBeVisible();

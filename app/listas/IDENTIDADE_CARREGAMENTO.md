@@ -115,3 +115,44 @@ Memory Bank e `docs/refatoracao-comunidade.md` não foram editados; evidências
 ficam neste registro e na PR. Sem alterações à Home/#2298, SQL, produção,
 branches alheias, merge ou ativação. A CI completa permanece no pipeline;
 consultar uma vez após abrir a PR draft, sem polling ou rerun.
+
+## Correção da fixture após a primeira CI — 14/11/2026
+
+A execução `43530623107` teve **7 falhas** nesta spec e **196 passes** no
+Playwright; dois testes alheios recuperaram em retry. Typecheck, Lint, Build,
+static/session e integrações Supabase passaram. Não alterar testes alheios
+para resolver esta falha.
+
+O trace mostrou um prefetch RSC de `/obra/fixture-1` recebendo
+`Set-Cookie: sb-127-auth-token=; Max-Age=0`. O cookie sem assinatura é válido
+somente para o HTTP interceptado do navegador. O proxy Next consultava o Auth
+local real, rejeitava essa sessão e apagava o cookie. As validações seguintes
+terminavam em erro ou visitante; em mobile, a corrida podia ocorrer antes da
+primeira lista. O resultado local anterior com backend indisponível não cobria
+essa rejeição, apesar dos 8/8 registrados.
+
+A fixture agora remove apenas o cookie Auth fictício (inclusive chunks) das
+requisições ao servidor da aplicação. Usa o fixture `request` isolado do
+Playwright: redirects não podem restaurar o cookie do navegador, como ocorre
+com `route.fetch`. Servidor/proxy e respostas reais continuam executando;
+Auth/Data API do navegador continuam interceptados. Service workers ficam
+bloqueados somente nesta spec para respeitar a fronteira de interceptação.
+O cleanup libera respostas retidas e aguarda handlers antes de desmontar,
+sem suprimir erros de rotas. Nenhuma mudança no código funcional, no Auth
+compartilhado, na CI ou nos contratos de privacidade.
+
+O cenário de privacidade em desktop/mobile também emite prefetch explícito e
+verifica que o cookie continua presente antes de trocar a rota. As asserções
+de privacidade, loading, dados anteriores, quantidade de consultas e Axe permanecem.
+Sem timeouts maiores, retries extras, skips ou diminuição da cobertura.
+
+Reprodução sem Docker: proxy HTTP temporário diante do build existente, em
+loopback `3110 → 3100`, adicionando expiração do cookie quando uma requisição
+`/obra/*` carrega a sessão fictícia. A spec original falhou **1/1** como na CI;
+o cenário corrigido passou **1/1**. Bateria final **8/8**, desktop/mobile,
+com o proxy de rejeição ativo, `--workers=2 --retries=0` (um worker efetivo para
+esta spec serial), **33,6 s**. Lint focado e `git diff --check` aprovados.
+Evidências em `/workspace/work/listas-ci-repro.log` e
+`/workspace/work/listas-ci-fix-suite.log` durante esta sessão. O build existente
+foi reutilizado porque somente QA/documentação foram alterados. Sem Docker,
+backend real ou homologação de RLS local; CI completa continua necessária.
