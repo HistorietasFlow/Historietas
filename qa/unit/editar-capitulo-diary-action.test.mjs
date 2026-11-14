@@ -212,3 +212,28 @@ test("Editar Capítulo delega somente a ação de Diário antes da notificação
     /await registrarDiarioEdicaoCapitulo\([\s\S]*?\);\s*\n\s*if \(!vigente\(\)\) return;\s*\n\s*await atualizarNotificacaoCapituloSupabase\(/,
   );
 });
+
+for (const code of ["23514", "42501", "503"]) {
+  test(`Diário: ${code} é reportado sem repetir INSERT nem trocar o tipo`, async () => {
+    const error = {code, message: "Evento recusado ou resposta incerta"};
+    const modulo = await carregarModulo([{error}]);
+    const previous = console.warn, warnings = [];
+    console.warn = (...args) => warnings.push(args);
+    try {await modulo.registrarDiarioEdicaoCapitulo(parametros);}
+    finally {console.warn = previous;}
+    const inserts = modulo.chamadas.filter(([tipo]) => tipo === "insert");
+    assert.equal(inserts.length, 1);
+    assert.equal(inserts[0][2].tipo, "editou_capitulo");
+    assert.deepEqual(warnings, [["Não consegui registrar a edição do capítulo no Diário:", error]]);
+  });
+}
+test("Diário: erro no fallback comprovado também é reportado, sem terceira tentativa", async () => {
+  const error = {code: "23514", message: "Tipo inválido"};
+  const modulo = await carregarModulo([{error: {code: "42703"}}, {error}]);
+  const previous = console.warn, warnings = [];
+  console.warn = (...args) => warnings.push(args);
+  try {await modulo.registrarDiarioEdicaoCapitulo(parametros);}
+  finally {console.warn = previous;}
+  assert.equal(modulo.chamadas.filter(([tipo]) => tipo === "insert").length, 2);
+  assert.equal(warnings[0][1], error);
+});

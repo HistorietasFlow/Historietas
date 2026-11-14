@@ -68,9 +68,9 @@ export async function registrarDiarioEdicaoCapitulo({
 
     // A compatibilidade sem metadata só é segura quando o servidor comprova
     // que a coluna foi rejeitada. Transporte incerto pode ocorrer após commit.
-    if (error.code !== "42703" && error.code !== "PGRST204") return;
+    if (error.code !== "42703" && error.code !== "PGRST204") throw error;
 
-    await supabase.from("diario_atividades").insert({
+    const { error: erroFallback } = await supabase.from("diario_atividades").insert({
       user_id: usuarioId,
       tipo: "editou_capitulo",
       obra_id: obra.id,
@@ -79,6 +79,7 @@ export async function registrarDiarioEdicaoCapitulo({
       visibilidade,
       criado_em: atualizadoEm,
     });
+    if (erroFallback) throw erroFallback;
   } catch (error) {
     console.warn("Não consegui registrar a edição do capítulo no Diário:", error);
   }
