@@ -60,9 +60,14 @@ export function useObraPublicWorkLoad({
       }, 0);
 
       try {
-        const obrasNormalizadas = carregarObrasLocaisComBackup(
-          identidadeEsperada.usuarioId,
-        );
+        let obrasNormalizadas: ObraLocal[] = [];
+        try {
+          obrasNormalizadas = carregarObrasLocaisComBackup(
+            identidadeEsperada.usuarioId,
+          );
+        } catch {
+          // Storage/backup é auxiliar; uma falha local não impede a leitura remota.
+        }
 
         if (!execucaoCarregamentoEstaAtual()) {
           return;

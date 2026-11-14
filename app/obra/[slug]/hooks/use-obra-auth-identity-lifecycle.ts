@@ -13,6 +13,8 @@ type UseObraAuthIdentityLifecycleParams = {
 export function useObraAuthIdentityLifecycle({
   onIdentidadeMudou,
 }: UseObraAuthIdentityLifecycleParams) {
+  const [erroAutenticacao, setErroAutenticacao] = useState(false);
+  const [retry, setRetry] = useState(0);
   const [usuarioIdLogado, setUsuarioIdLogado] = useState("");
   const [autenticacaoCarregada, setAutenticacaoCarregada] = useState(false);
   const [versaoIdentidade, setVersaoIdentidade] = useState(0);
@@ -39,6 +41,7 @@ export function useObraAuthIdentityLifecycle({
         setUsuarioIdLogado(resultado.identidade.usuarioId);
       }
 
+      setErroAutenticacao(false);
       setAutenticacaoCarregada(true);
     }
 
@@ -47,7 +50,8 @@ export function useObraAuthIdentityLifecycle({
       versaoConsultaAutenticacaoObraRef.current = versaoConsulta;
 
       try {
-        const { data } = await supabase.auth.getUser();
+        const { data, error } = await supabase.auth.getUser();
+        if (error && error.name !== "AuthSessionMissingError") throw error;
         const userId = data.user?.id || "";
 
         if (
@@ -68,6 +72,8 @@ export function useObraAuthIdentityLifecycle({
           })
         ) {
           aplicarIdentidadeAutenticada("");
+          setAutenticacaoCarregada(false);
+          setErroAutenticacao(true);
         }
       }
     }
@@ -77,7 +83,7 @@ export function useObraAuthIdentityLifecycle({
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (componenteAtivo) {
+      if (componenteAtivo && _event !== "INITIAL_SESSION") {
         versaoConsultaAutenticacaoObraRef.current += 1;
         aplicarIdentidadeAutenticada(session?.user?.id || "");
       }
@@ -88,9 +94,11 @@ export function useObraAuthIdentityLifecycle({
       versaoConsultaAutenticacaoObraRef.current += 1;
       subscription.unsubscribe();
     };
-  }, [onIdentidadeMudou]);
+  }, [onIdentidadeMudou, retry]);
 
   return {
+    erroAutenticacao,
+    tentarAutenticacaoNovamente: () => setRetry(valor => valor + 1),
     usuarioIdLogado,
     autenticacaoCarregada,
     versaoIdentidade,
