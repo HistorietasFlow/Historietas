@@ -88,6 +88,7 @@ async function setup(page, baseURL, server, { privateProfiles = [A, B], holdProf
     requests, release: gate.resolve,
     recover() { failed = ""; },
     async switchViewer(owner, event = owner ? "SIGNED_IN" : "SIGNED_OUT") {
+      const validacoesAntes = requests.filter(request => request.table === "user").length;
       viewer = owner;
       const next = session(owner);
       await page.evaluate(({ key, next, event }) => {
@@ -98,6 +99,10 @@ async function setup(page, baseURL, server, { privateProfiles = [A, B], holdProf
         channel.postMessage({ event, session: next });
         channel.close();
       }, { key, next, event });
+      if (owner) {
+        await expect.poll(() => requests.filter(request => request.table === "user").length)
+          .toBeGreaterThan(validacoesAntes);
+      }
     },
   };
 }
