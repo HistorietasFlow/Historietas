@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
+// Regressões executáveis no gate de sessão existente.
+import "./perfil-autor-identidade-segura.test.mjs";
 
 const source = readFileSync(
   new URL(

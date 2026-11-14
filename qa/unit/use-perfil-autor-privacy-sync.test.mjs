@@ -34,9 +34,9 @@ test("hook preserva fallback das permissões para perfil inválido", () => {
 test("hook preserva leitura remota, relacionamento e cancelamento", () => {
   assert.match(source, /await carregarPreferenciasPrivacidade\(userIdPerfil, \{/);
   assert.match(source, /usarFallbackLocal: perfilPertenceAoUsuario/);
-  assert.match(source, /await carregarPermissoesAbasPerfil\(userIdPerfil, preferencias\)/);
+  assert.match(source, /await carregarPermissoesAbasPerfilConfirmadas\(userIdPerfil\)/);
   assert.match(source, /estadoRelacionamentoPerfil/);
   assert.match(source, /let cancelado = false;/);
-  assert.match(source, /if \(!cancelado\) \{/);
+  assert.match(source, /if \(execucaoAtual\(\)\) \{/);
   assert.match(source, /cancelado = true;/);
 });
