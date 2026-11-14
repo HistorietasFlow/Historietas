@@ -1,3 +1,7 @@
+// Regressões de comportamento integradas ao gate posttest:static existente.
+import "./admin-comunidade-concurrency.test.mjs";
+import "./admin-comunidade-confirmed-write.test.mjs";
+import "./admin-comunidade-initial-data-lifecycle.test.mjs";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";

@@ -14,6 +14,17 @@ import {
 
 type SearchParamsListas = Pick<URLSearchParams, "get" | "toString">;
 
+export function criarChaveCarregamentoListas(rota: {
+  modo: ModoLista;
+  origemPerfil: OrigemPerfil;
+  userIdUrl: string;
+  secao: string;
+  genero: string;
+}) {
+  // Category, order and work focus remain local navigation, as before.
+  return JSON.stringify([rota.modo, rota.origemPerfil, rota.userIdUrl, rota.secao, rota.genero]);
+}
+
 export function obterEstadoRotaListas(searchParams: SearchParamsListas) {
   const queryAtual = searchParams.toString();
 

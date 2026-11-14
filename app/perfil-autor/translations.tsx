@@ -1617,6 +1617,10 @@ const PERFIL_AUTOR_UI_TRANSLATIONS: Record<
     "en": "Profile not found",
     "es": "Perfil no encontrado"
   },
+  "Não foi possível carregar o perfil agora.": {
+    "en": "The profile could not be loaded right now.",
+    "es": "No se pudo cargar el perfil ahora."
+  },
   "Abrir menu do perfil": {
     "en": "Open profile menu",
     "es": "Abrir menú del perfil"

@@ -15,6 +15,7 @@ export function obterEstadoAlvoPerfilAutor({
   autorIdSelecionado,
   usuarioIdLogado,
   autenticacaoCarregada,
+  carregamentoAtual = true,
 }: {
   obras: ObraLocal[];
   totaisInteracoesObras: TotaisInteracoesObrasPerfilAutor;
@@ -23,7 +24,15 @@ export function obterEstadoAlvoPerfilAutor({
   autorIdSelecionado: string;
   usuarioIdLogado: string;
   autenticacaoCarregada: boolean;
+  carregamentoAtual?: boolean;
 }) {
+  if (!carregamentoAtual) {
+    return {
+      autorNaoEncontrado: false, perfilDoUsuarioLogado: null, perfilParaMostrar: null,
+      perfilPertenceAoUsuario: false, redirecionandoParaLogin: false,
+      perfilAutorId: "", perfilNome: "", obrasPerfil: [], totalObrasPerfil: 0,
+    };
+  }
   const perfisAutores = montarPerfisAutoresPorObras(
     obras,
     totaisInteracoesObras,

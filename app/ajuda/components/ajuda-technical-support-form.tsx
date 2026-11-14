@@ -31,6 +31,8 @@ type AjudaTechnicalSupportFormProps = {
   titulo: string;
   descricao: string;
   enviando: boolean;
+  sessaoConfirmada: boolean;
+  envioIncerto: boolean;
   usuarioAutenticado: boolean | null;
   language: HistorietasLanguage;
   onCategoriaChange: (valor: string) => void;
@@ -46,6 +48,8 @@ export function AjudaTechnicalSupportForm({
   titulo,
   descricao,
   enviando,
+  sessaoConfirmada,
+  envioIncerto,
   usuarioAutenticado,
   language,
   onCategoriaChange,
@@ -186,7 +190,7 @@ export function AjudaTechnicalSupportForm({
         <button
           type="submit"
           className="ajuda-submit-ticket-button"
-          disabled={enviando || usuarioAutenticado === false}
+          disabled={enviando || envioIncerto || !sessaoConfirmada || usuarioAutenticado !== true}
         >
           {enviando
             ? t({ pt: "Enviando...", en: "Submitting...", es: "Enviando..." })

@@ -119,7 +119,7 @@ test("Painel do Autor delega somente helpers puros de colecao", () => {
   assert.equal((pagina.match(/\bcolecaoTemObraPainel\b/g) || []).length, 0);
   assert.equal((deleteWorkHook.match(/\bremoverObraDaColecaoPainel\b/g) || []).length, 3);
   assert.equal((pagina.match(/\bfiltrarListaPorObrasDoUsuario\b/g) || []).length, 0);
-  assert.equal((initialDataHook.match(/\bfiltrarListaPorObrasDoUsuario\b/g) || []).length, 3);
+  assert.equal((initialDataHook.match(/\bfiltrarListaPorObrasDoUsuario\b/g) || []).length, 5);
   assert.equal((dataLoaderSource.match(/\bfiltrarListaPorObrasDoUsuario\b/g) || []).length, 3);
   assert.match(
     utilsSource,

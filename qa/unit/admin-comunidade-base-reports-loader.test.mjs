@@ -30,7 +30,7 @@ const contextoLoader = readFileSync(
 
 test("loader base preserva query, erro e normalização das denúncias", () => {
   assert.match(source, /from\("comunidade_denuncias"\)/);
-  assert.match(source, /"id, alvo_tipo, alvo_id, alvo_autor_id, denunciante_id, motivo, detalhe, status, arquivada, observacao_admin, analisado_por, analisado_em, criado_em"/);
+  assert.match(source, /"id, alvo_tipo, alvo_id, alvo_autor_id, denunciante_id, motivo, detalhe, status, arquivada, observacao_admin, analisado_por, analisado_em, criado_em, atualizado_em"/);
   assert.match(source, /order\("criado_em", \{ ascending: false \}\)/);
   assert.match(source, /limit\(200\)/);
   assert.match(source, /throw denunciasErro/);

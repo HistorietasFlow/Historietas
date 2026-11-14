@@ -1,6 +1,7 @@
 import { useRouter } from "next/navigation";
 import {
   useEffect,
+  useRef,
   type Dispatch,
   type SetStateAction,
 } from "react";
@@ -9,6 +10,7 @@ import { criarLoginHrefNotificacoes } from "../lib/notificacoes-navigation-utils
 import { notificacaoEhCapitulo } from "../lib/notificacoes-filter-utils";
 import {
   mesclarNotificacoes,
+  preservarLeituraAlteradaDuranteCarga,
 } from "../lib/notificacoes-merge-utils";
 import type {
   NotificacaoLocal,
@@ -51,6 +53,7 @@ type UseNotificacoesInitialLoadProps = {
   setNotificacoes: Dispatch<SetStateAction<NotificacaoLocal[]>>;
   setObras: Dispatch<SetStateAction<ObraLocal[]>>;
   setUsuarioNotificacoesId: Dispatch<SetStateAction<string>>;
+  setSolicitacaoRespondendoId: Dispatch<SetStateAction<string>>;
 };
 
 export function useNotificacoesInitialLoad({
@@ -59,13 +62,22 @@ export function useNotificacoesInitialLoad({
   setNotificacoes,
   setObras,
   setUsuarioNotificacoesId,
+  setSolicitacaoRespondendoId,
 }: UseNotificacoesInitialLoadProps) {
   const router = useRouter();
-  // Os setters recebidos são estáveis; as dependências preservam literalmente o efeito original.
+  const contextoUsuario = useRef<{ usuarioId: string } | null>(null);
+  // Setters React são estáveis. Cada efeito/carga e troca de identidade invalida
+  // resultados e callbacks antigos, inclusive em uma sequência A → B → A.
   useEffect(() => {
     let componenteAtivo = true;
+    let versaoCarga = 0;
+    let identidadeObservada: string | null = null;
+    let recargaAgendada: number | undefined;
+    contextoUsuario.current = null;
 
     async function carregarDados() {
+      const versao = ++versaoCarga;
+      const cargaVigente = () => componenteAtivo && versao === versaoCarga;
       let manterCarregando = false;
       let usuarioAutenticado = false;
       let usuarioAtualId = "";
@@ -74,31 +86,43 @@ export function useNotificacoesInitialLoad({
         const { data: dadosUsuario, error: erroUsuario } =
           await supabase.auth.getUser();
 
-        if (!componenteAtivo) {
+        if (!cargaVigente()) {
           return;
         }
 
         if (erroUsuario || !dadosUsuario.user) {
+          identidadeObservada ??= "";
           manterCarregando = true;
           router.replace(criarLoginHrefNotificacoes());
           return;
         }
 
         usuarioAtualId = dadosUsuario.user.id;
+        if (identidadeObservada !== null && identidadeObservada !== usuarioAtualId) {
+          manterCarregando = true;
+          return;
+        }
+        identidadeObservada = usuarioAtualId;
+        contextoUsuario.current = { usuarioId: usuarioAtualId };
         usuarioAutenticado = true;
         const obrasLocais = carregarObras(usuarioAtualId);
         const notificacoesLocais = carregarNotificacoes(usuarioAtualId);
         const obrasSupabase = await carregarObrasPublicadasSupabase();
+        if (!cargaVigente()) return;
         const estadoSupabase = await carregarEstadoSupabaseNotificacoes(
-          carregarNotificacoesDiretasSupabase
+          carregarNotificacoesDiretasSupabase,
+          usuarioAtualId
         );
+        if (!cargaVigente()) return;
+        if (estadoSupabase && estadoSupabase.userId !== usuarioAtualId) {
+          throw new Error("Estado de notificações pertence a outra conta.");
+        }
         const notificacoesDiretasSupabase = estadoSupabase?.notificacoesDiretas || [];
         const obrasDiretasSupabase =
           await carregarObrasDasNotificacoesDiretasSupabase(
             notificacoesDiretasSupabase
           );
-        const idsNotificacoesApagadas =
-          carregarIdsNotificacoesApagadas(usuarioAtualId);
+        if (!cargaVigente()) return;
         const obrasMescladas = mesclarObrasPorIdSlug(obrasLocais, [
           ...obrasSupabase,
           ...obrasDiretasSupabase,
@@ -121,16 +145,6 @@ export function useNotificacoesInitialLoad({
         const obrasPorIdMescladas = new Map(
           obrasMescladas.map((obra) => [obra.id, obra])
         );
-        const notificacoesLocaisFiltradas = notificacoesLocais.filter(
-          (notificacao) =>
-            !notificacaoEhCapitulo(notificacao) ||
-            notificacaoCapituloPertenceAObraSeguida(
-              notificacao,
-              obrasPorIdMescladas,
-              idsSeguidos,
-              usuarioAtualId
-            )
-        );
         const notificacoesLidasIds = estadoSupabase?.notificacoesLidasIds || [];
         const notificacoesCapitulosSupabase = criarNotificacoesDeCapitulos(
           obrasMescladas,
@@ -142,7 +156,7 @@ export function useNotificacoesInitialLoad({
           notificacoesComunidadeSupabase,
           notificacoesDiarioSupabase,
           notificacoesProblemasTecnicosSupabase,
-        ] = await Promise.all([
+        ] = await Promise.allSettled([
           carregarNotificacoesComunidadeSupabase(
             usuarioAtualId,
             notificacoesLidasIds
@@ -156,15 +170,39 @@ export function useNotificacoesInitialLoad({
             notificacoesLidasIds
           ),
         ]);
+        if (!cargaVigente()) return;
+        // Releia após a última espera: ações locais e exclusões podem ter
+        // acontecido enquanto as fontes remotas respondiam.
+        const notificacoesAtuais = carregarNotificacoes(usuarioAtualId);
+        const notificacoesLocaisFiltradas = notificacoesAtuais.filter(
+          (notificacao) =>
+            !notificacaoEhCapitulo(notificacao) ||
+            notificacaoCapituloPertenceAObraSeguida(
+              notificacao,
+              obrasPorIdMescladas,
+              idsSeguidos,
+              usuarioAtualId
+            )
+        );
         const notificacoesMescladas = filtrarNotificacoesApagadas(
-          mesclarNotificacoes(notificacoesLocaisFiltradas, [
-            ...notificacoesCapitulosSupabase,
-            ...notificacoesDiretasSupabase,
-            ...notificacoesComunidadeSupabase,
-            ...notificacoesDiarioSupabase,
-            ...notificacoesProblemasTecnicosSupabase,
-          ]),
-          idsNotificacoesApagadas
+          preservarLeituraAlteradaDuranteCarga(
+            mesclarNotificacoes(notificacoesLocaisFiltradas, [
+              ...notificacoesCapitulosSupabase,
+              ...notificacoesDiretasSupabase,
+              ...(notificacoesComunidadeSupabase.status === "fulfilled"
+                ? notificacoesComunidadeSupabase.value
+                : []),
+              ...(notificacoesDiarioSupabase.status === "fulfilled"
+                ? notificacoesDiarioSupabase.value
+                : []),
+              ...(notificacoesProblemasTecnicosSupabase.status === "fulfilled"
+                ? notificacoesProblemasTecnicosSupabase.value
+                : []),
+            ]),
+            notificacoesLocais,
+            notificacoesAtuais
+          ),
+          carregarIdsNotificacoesApagadas(usuarioAtualId)
         ).map((notificacao) => prepararNotificacaoTexto(notificacao));
 
         try {
@@ -178,7 +216,7 @@ export function useNotificacoesInitialLoad({
           // Se o navegador bloquear localStorage, a página continua com o estado em memória.
         }
 
-        if (!componenteAtivo) {
+        if (!cargaVigente()) {
           return;
         }
 
@@ -189,7 +227,7 @@ export function useNotificacoesInitialLoad({
           notificacoesMescladas.filter((notificacao) => !notificacao.lida).length
         );
       } catch {
-        if (!componenteAtivo) {
+        if (!cargaVigente()) {
           return;
         }
 
@@ -200,7 +238,10 @@ export function useNotificacoesInitialLoad({
         }
 
         const obrasLocais = carregarObras(usuarioAtualId);
-        const notificacoesLocais = carregarNotificacoes(usuarioAtualId);
+        const notificacoesLocais = filtrarNotificacoesApagadas(
+          carregarNotificacoes(usuarioAtualId),
+          carregarIdsNotificacoesApagadas(usuarioAtualId)
+        );
 
         setUsuarioNotificacoesId(usuarioAtualId);
         setObras(obrasLocais);
@@ -209,17 +250,47 @@ export function useNotificacoesInitialLoad({
           notificacoesLocais.filter((notificacao) => !notificacao.lida).length
         );
       } finally {
-        if (componenteAtivo && !manterCarregando) {
+        if (cargaVigente() && !manterCarregando) {
           setCarregando(false);
         }
       }
     }
 
-    void carregarDados();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_evento, sessao) => {
+      const usuarioId = sessao?.user?.id || "";
+      if (!componenteAtivo || usuarioId === identidadeObservada) return;
+      identidadeObservada = usuarioId;
+      ++versaoCarga;
+      contextoUsuario.current = null;
+      setUsuarioNotificacoesId("");
+      setNotificacoes([]);
+      setObras([]);
+      setSolicitacaoRespondendoId("");
+      definirNotificacoesNaoLidas(0);
+      setCarregando(true);
+      if (recargaAgendada !== undefined) window.clearTimeout(recargaAgendada);
+      // Não execute consultas Supabase dentro do callback de Auth.
+      recargaAgendada = window.setTimeout(() => {
+        recargaAgendada = undefined;
+        if (componenteAtivo) void carregarDados();
+      }, 0);
+    });
+    if (recargaAgendada === undefined) void carregarDados();
 
     return () => {
       componenteAtivo = false;
+      ++versaoCarga;
+      contextoUsuario.current = null;
+      subscription.unsubscribe();
+      if (recargaAgendada !== undefined) window.clearTimeout(recargaAgendada);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router, definirNotificacoesNaoLidas]);
+
+  return function criarVerificadorUsuarioVigente(usuarioId: string) {
+    const contexto = contextoUsuario.current;
+    return () => Boolean(
+      contexto && contexto.usuarioId === usuarioId && contextoUsuario.current === contexto
+    );
+  };
 }

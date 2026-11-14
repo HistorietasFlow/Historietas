@@ -267,3 +267,27 @@ test("home-supabase-works-loader estabelece a fronteira do loader principal", ()
   assert.match(modulo, /carregarPerfisSupabaseHome/);
   assert.doesNotMatch(modulo, /\.insert\(|\.update\(|\.delete\(|\.rpc\(/);
 });
+
+test("loader sinaliza fallback e falha de métricas sem acrescentar consultas", async () => {
+  preparar({ obrasErro: new Error("offline") });
+  let falhas = 0;
+  const locais = [{ id: "local" }];
+  await comWarnings(async () => {
+    assert.equal(await carregarObrasSupabaseHome(locais, "user", undefined, () => falhas++), locais);
+  });
+  assert.equal(falhas, 1);
+  assert.equal(estado.consultas.length, 1);
+  preparar();
+  await carregarObrasSupabaseHome([], "user", undefined, () => falhas++);
+  assert.equal(falhas, 2, "métricas não carregadas não certificam atualização");
+  assert.equal(estado.consultas.length, 2);
+});
+
+test("fallback local após catálogo vazio não certifica atualização remota", async () => {
+  preparar({ catalogo: { obraIds: [] } });
+  const locais = [{ id: "local", titulo: "Local" }];
+  let incompleto = false;
+  assert.equal(await carregarObrasSupabaseHome(locais, "user", undefined, () => { incompleto = true; }), locais);
+  assert.equal(incompleto, true);
+  assert.equal(estado.consultas[0].executada, false);
+});

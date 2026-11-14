@@ -35,7 +35,7 @@ test("página mantém normalização, erro e estados após delegar a query", () 
   assert.match(hook, /normalizarCategoria\(registro\.categoria\)/);
   assert.match(hook, /normalizarStatus\(registro\.status\)/);
   assert.match(hook, /normalizarPrioridade\(registro\.prioridade\)/);
-  assert.match(hook, /setProblemas\(registros\)/);
+  assert.match(hook, /setProblemas\(atuais => mesmaExecucao\(\) \? registros : atuais\)/);
   assert.match(hook, /setObservacoes\(/);
   assert.match(hook, /await carregarNomes\(registros\.map\(\(problema\) => problema\.userId\)\)/);
   assert.match(page, /useAdminProblemasTecnicosInitialData/);

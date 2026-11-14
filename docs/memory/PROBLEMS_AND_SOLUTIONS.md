@@ -34,6 +34,46 @@ Database/Auth/Data API, sem testar Storage/Realtime. Build/lockfiles/aplicação
 idênticos à main foram reutilizados; suíte ampla fica para a CI. Uma rodada
 verde não garante ausência absoluta de instabilidade. Nenhuma mudança funcional.
 
+### Consolidação local de Obra e Leitor — 13/11/2026
+
+Base `98be8c31`, branch `codex-local/obra-leitor-e2e-estabilidade`. Os dois
+arquivos originais (`obra-critical` e `chapter-canonical`) passaram **16/16**,
+workers=1/retries=0; não houve reprodução espontânea da falha anterior.
+MutationObserver no Chromium capturou, desktop/mobile, loading visível junto
+de raiz sob `div#S:1[hidden]`/`div#S:2[hidden]`; no Leitor desktop também houve
+texto idêntico em um span visível e outro oculto. Nos quatro carregamentos
+instrumentados o heading já estava visível antes da resposta da barreira.
+As confirmações públicas seguintes retornaram HTTP 200. Uma cópia oculta
+controlada reproduziu `strict mode violation` no seletor global `main`.
+Essas evidências comprovam a fragilidade da seleção/sincronização, não duas
+páginas simultaneamente ativas nem defeito permanente da aplicação.
+
+O helper de confirmação do histórico foi reutilizado em
+`qa/tests/public-reader-readiness.mjs`: acompanha uma Request nova do slug/
+número esperados, confere status/estado/IDs e exige URL, título/texto exatos
+na única raiz ativa, sem busy e com apenas um main visível. Hidratação e query
+conflitante também usam esse contrato. A Obra aguarda sua confirmação pública
+e estado interativo da identidade atual antes das ações; o CTA verifica o
+capítulo de destino, não apenas qualquer main. Cópias ocultas/visíveis
+controladas mantêm a regressão contra ambiguidade sem aceitar duplicação ativa.
+SSR inicial, metadata, 404, IDs internos, histórico, comentários, foco e ações
+sociais preservados; sem mudanças de aplicação, banco, autenticação ou timeouts.
+
+Validação final: **21/21** nos arquivos afetados e **7/7** em smoke/axe de
+Obra/Leitor, desktop/mobile, um worker, zero retries/skips. Lint focado e diff
+check aprovados. Next 16.4.5 build/start, Node 22.23.4, CLI 2.116.0 e fixtures
+existentes no novo Supabase descartável `obra-leitor-e2e` (API local 64421).
+O primeiro build recusou a junction externa de dependências pelo isolamento
+do Turbopack; copiar as dependências existentes com lockfiles idênticos para
+o worktree permitiu o build, sem alterar configuração/dependências versionadas.
+Fixtures foram recriadas entre baseline e rodada final: o teste de moderação
+consome o comentário 01. Não repetir a rodada sobre essa fixture consumida.
+
+Os containers antigos foram pausados temporariamente e restaurados, sem
+excluir dados/volumes; configuração, auxiliar ACL e relatórios ficaram locais.
+A suíte completa permanece na CI. Esta rodada não prova estabilidade absoluta
+nem encerra o HTTP 503/ocorrência autenticada anterior ainda inconclusivos.
+
 ## TLS do monitor SQL: raiz privada Supabase nao confiada pelo sistema
 
 Em 11/11/2026, negociacao sem credenciais no Session Pooler falhou com

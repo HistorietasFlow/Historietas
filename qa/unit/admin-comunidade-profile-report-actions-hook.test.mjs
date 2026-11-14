@@ -14,72 +14,13 @@ const page = readFileSync(
   "utf8",
 );
 
-test("hook de denúncias de perfil preserva atualização de status", () => {
-  assert.match(hook, /DenunciaPerfilComContexto/);
-  assert.match(hook, /StatusDenunciaPerfil/);
-  assert.match(hook, /async function atualizarStatusDenunciaPerfil\(/);
-  assert.match(
-    hook,
-    /if \(!usuarioId \|\| !ehAdmin\) \{\s*setErro\("Apenas moderadores podem atualizar denúncias de perfis\."\);/,
-  );
-  assert.match(hook, /const chaveAcao = `perfil-\$\{denunciaId\}-\$\{novoStatus\}`;/);
-  assert.match(hook, /if \(acaoEmAndamento\) \{\s*return;/);
-
-  const inicio = hook.indexOf("setAcaoEmAndamento(chaveAcao)");
-  const limparErro = hook.indexOf('setErro("")', inicio);
-  const limparSucesso = hook.indexOf('setSucesso("")', limparErro);
-  const atualizadoEm = hook.indexOf("new Date().toISOString()", limparSucesso);
-  const persistir = hook.indexOf(
-    "await persistirStatusDenunciaPerfilModeracao({",
-    atualizadoEm,
-  );
-  assert.ok(inicio >= 0 && inicio < limparErro && limparErro < limparSucesso);
-  assert.ok(limparSucesso < atualizadoEm && atualizadoEm < persistir);
-  assert.match(hook, /denunciasAtuais\.map\(/);
-  assert.match(hook, /STATUS_PERFIL_LABEL\[\s*novoStatus\s*\]/);
-  assert.match(hook, /Denúncia de perfil marcada como/);
-  assert.match(
-    hook,
-    /criarMensagemErro\("Erro ao atualizar denúncia de perfil", error\)/,
-  );
-  assert.match(hook, /finally \{\s*setAcaoEmAndamento\(""\);/);
-});
-
-test("hook de denúncias de perfil preserva remoção apenas quando resolvida", () => {
-  assert.match(hook, /async function removerDenunciaPerfilResolvida\(/);
-  assert.match(
-    hook,
-    /Apenas moderadores podem remover denúncias de perfis resolvidas\./,
-  );
-  assert.match(hook, /denunciasPerfis\.find\(\(item\) => item\.id === denunciaId\)/);
-  assert.match(hook, /denuncia\.status !== "resolvida"/);
-  assert.match(
-    hook,
-    /Somente denúncias de perfis resolvidas podem ser removidas do painel\./,
-  );
-  assert.match(
-    hook,
-    /const chaveAcao = `perfil-\$\{denunciaId\}-remover-denuncia`;/,
-  );
-
-  const fecharMenu = hook.indexOf('setMenuDenunciaAbertoId("")');
-  const iniciarAcao = hook.indexOf("setAcaoEmAndamento(chaveAcao)", fecharMenu);
-  const limparErro = hook.indexOf('setErro("")', iniciarAcao);
-  const limparSucesso = hook.indexOf('setSucesso("")', limparErro);
-  const persistir = hook.indexOf(
-    "await persistirRemocaoDenunciaPerfilResolvidaModeracao({",
-    limparSucesso,
-  );
-  assert.ok(fecharMenu >= 0 && fecharMenu < iniciarAcao);
-  assert.ok(iniciarAcao < limparErro && limparErro < limparSucesso);
-  assert.ok(limparSucesso < persistir);
-  assert.match(hook, /denunciasAtuais\.filter\(/);
-  assert.match(hook, /Denúncia de perfil resolvida removida do painel\./);
-  assert.match(
-    hook,
-    /criarMensagemErro\("Erro ao remover denúncia de perfil resolvida", error\)/,
-  );
-  assert.match(hook, /finally \{\s*setAcaoEmAndamento\(""\);/);
+test("ações de perfil compartilham trava e revalidação com conteúdo", () => {
+  assert.match(hook, /iniciarAcaoModeracao\(controleModeracao, usuarioId, ehAdmin\)/);
+  assert.match(hook, /validarAcaoModeracao\(controleModeracao, acao\)/);
+  assert.match(hook, /finalizarAcaoModeracao\(controleModeracao, acao\)/);
+  assert.match(hook, /esperada\.status !== "resolvida"/);
+  assert.match(hook, /\.\.\.confirmado/);
+  assert.match(hook, /contextoVigente\(\) \? aplicar\(lista\) : lista/);
 });
 
 test("página delega ações de denúncias de perfil e preserva callbacks dos cards", () => {

@@ -47,7 +47,7 @@ test("Admin Comunidade mantém a orquestração de denúncias de perfil", () => 
   assert.match(hook, /buscarDenunciasPerfisModeracao/);
   assert.match(
     hook,
-    /async function carregarDenunciasPerfis\(\) \{\s*const denunciasComContexto = await buscarDenunciasPerfisModeracao\(\);\s*setDenunciasPerfis\(denunciasComContexto\);/,
+    /async function carregarDenunciasPerfis\(\) \{\s*const denunciasComContexto = await buscarDenunciasPerfisModeracao\(\);\s*if \(vigente\(ctx, leitura\)\) setDenunciasPerfis\(denunciasComContexto\);/,
   );
   assert.match(hook, /Promise\.all\([\s\S]*?carregarDenunciasPerfis\(\)/);
   assert.match(page, /useAdminComunidadeInitialData\(/);

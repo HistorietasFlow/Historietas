@@ -54,7 +54,7 @@ test("página delega somente a leitura/orquestração aos hooks dedicados", () =
 
 test("carregamento principal preserva dependências, cancelamentos, privacidade e catálogo", () => {
   assert.match(pageDataHook, /\}, \[modo, origemPerfil, userIdUrl, secao, genero\]\);/);
-  assert.equal((pageDataHook.match(/if \(cancelado\)/g) || []).length, 3);
+  assert.equal((pageDataHook.match(/if \(cancelado\)/g) || []).length, 9);
   assert.match(pageDataHook, /await supabase\.auth\.getUser\(\)/);
   assert.match(pageDataHook, /perfilIdRecebido = userIdUrl\.trim\(\) \|\| usuarioLogadoId/);
   assert.match(pageDataHook, /usarFallbackLocal: proprioPerfil/);

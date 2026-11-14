@@ -262,3 +262,14 @@ test("home-collection-supabase-utils estabelece a fronteira das coleções", () 
     /import \{[\s\S]*?carregarObrasSupabaseHome,[\s\S]*?\} from "\.\.\/lib\/home-supabase-works-loader";/,
   );
 });
+
+test("coleção vazia confirmada é distinta de falha, sem mudar o retorno legado", async () => {
+  resetarEstado();
+  let falhas = 0;
+  assert.deepEqual(await carregarIdsColecaoUsuarioHome("favoritos", "usuario-1", () => falhas++), []);
+  assert.equal(falhas, 0);
+  estado.respostasRange.push({ resultado: { data: null, error: new Error("offline") } });
+  assert.deepEqual(await carregarIdsColecaoUsuarioHome("favoritos", "usuario-1", () => falhas++), []);
+  assert.equal(falhas, 1);
+  assert.equal(estado.chamadas.length, 2);
+});

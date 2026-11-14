@@ -11,7 +11,7 @@ const source = readFileSync(
   "utf8",
 );
 const pageSource = readFileSync(
-  new URL("../../app/adicionar-capitulo/page.tsx", import.meta.url),
+  new URL("../../app/adicionar-capitulo/hooks/useAdicionarCapituloCreateAction.ts", import.meta.url),
   "utf8",
 );
 const chamadasOrdenacao = [];
@@ -94,13 +94,12 @@ test("mutação preserva os fallbacks de autor e a prioridade de autorId", () =>
 });
 
 test("Adicionar Capítulo delega somente a mutação local de criação", () => {
-  assert.match(source, /ordenarCapitulosPorOrdem\(\[\s*\.\.\.obra\.capitulos,\s*novoCapitulo,/);
+  assert.match(source, /ordenarCapitulosPorOrdem\(\[\s*\.\.\.obra\.capitulos\.filter\(\(capitulo\) => capitulo\.id !== novoCapitulo\.id\),\s*capituloAtualizado,/);
   assert.match(source, /autor: nomeProfileAutor \|\| obra\.autor/);
   assert.match(source, /autorId: obra\.autorId \|\| usuarioIdLogado \|\| userId/);
   assert.match(source, /progressoLeitura: calcularProgressoLeitura\(capitulosAtualizados\)/);
   assert.doesNotMatch(source, /supabase|localStorage|useState|useEffect|router|^\s*<[A-Za-z]/mi);
-  assert.match(pageSource, /import \{ aplicarNovoCapituloNasObrasLocais \} from "\.\/lib\/adicionar-capitulo-local-create-mutation";/);
+  assert.match(pageSource, /import \{ aplicarNovoCapituloNasObrasLocais \} from "\.\.\/lib\/adicionar-capitulo-local-create-mutation";/);
   assert.doesNotMatch(pageSource, /const novasObras = obras\.map\(/);
-  assert.match(pageSource, /const novasObras = aplicarNovoCapituloNasObrasLocais\(/);
-  assert.match(pageSource, /salvarObras\(novasObras\);/);
+  assert.match(pageSource, /salvarObras\(aplicarNovoCapituloNasObrasLocais\(/);
 });

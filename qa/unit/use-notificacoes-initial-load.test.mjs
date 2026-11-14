@@ -27,10 +27,10 @@ test("hook preserva autenticacao, carregamento e cancelamento iniciais", () => {
 test("hook preserva composicao local, remota, filtros e persistencia", () => {
   assert.match(hook, /const obrasLocais = carregarObras\(usuarioAtualId\);/);
   assert.match(hook, /const notificacoesLocais = carregarNotificacoes\(usuarioAtualId\);/);
-  assert.match(hook, /await carregarEstadoSupabaseNotificacoes\(\s*carregarNotificacoesDiretasSupabase\s*\)/);
+  assert.match(hook, /await carregarEstadoSupabaseNotificacoes\(\s*carregarNotificacoesDiretasSupabase,\s*usuarioAtualId\s*\)/);
   assert.match(hook, /new Set\(\[\s*\.\.\.obrasSeguidasLocais,[\s\S]*?estadoSupabase\?\.obrasSeguidasIds/);
   assert.match(hook, /criarNotificacoesDeCapitulos\(/);
-  assert.match(hook, /Promise\.all\(\[\s*carregarNotificacoesComunidadeSupabase\(/);
+  assert.match(hook, /Promise\.allSettled\(\[\s*carregarNotificacoesComunidadeSupabase\(/);
   assert.match(hook, /carregarNotificacoesDiarioSupabase\(/);
   assert.match(hook, /carregarNotificacoesProblemasTecnicosSupabase\(/);
   assert.match(hook, /salvarJsonStorageUsuarioNotificacoes\(/);
@@ -43,7 +43,7 @@ test("hook preserva estados finais e fallback autenticado", () => {
   assert.match(hook, /setNotificacoes\(notificacoesMescladas\);/);
   assert.match(hook, /setObras\(obrasLocais\);/);
   assert.match(hook, /setNotificacoes\(notificacoesLocais\);/);
-  assert.match(hook, /if \(componenteAtivo && !manterCarregando\) \{\s*setCarregando\(false\);/);
+  assert.match(hook, /if \(cargaVigente\(\) && !manterCarregando\) \{\s*setCarregando\(false\);/);
 });
 
 test("pagina delega somente o lifecycle inicial ao hook", () => {

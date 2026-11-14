@@ -6,7 +6,7 @@ export function criarStorageKeyUsuarioHome(chave: string, userId: string) {
   return userIdLimpo ? `${chave}:${userIdLimpo}` : "";
 }
 
-export function lerStorageUsuarioHome(chave: string, userId = "") {
+export function lerStorageUsuarioHome(chave: string, userId = "", aoFalhar?: () => void) {
   const userIdLimpo = userId.trim();
 
   if (typeof window === "undefined" || !userIdLimpo) {
@@ -18,6 +18,7 @@ export function lerStorageUsuarioHome(chave: string, userId = "") {
 
     return chaveStorage ? localStorage.getItem(chaveStorage) : null;
   } catch {
+    aoFalhar?.();
     return null;
   }
 }
@@ -46,7 +47,7 @@ export function salvarJsonStorageUsuarioHome(
   }
 }
 
-export function carregarListaIdsHome(chave: string, userId: string, fallback: string[] = []) {
+export function carregarListaIdsHome(chave: string, userId: string, fallback: string[] = [], aoFalhar?: () => void) {
   const userIdLimpo = userId.trim();
 
   if (typeof window === "undefined" || !userIdLimpo) {
@@ -54,14 +55,16 @@ export function carregarListaIdsHome(chave: string, userId: string, fallback: st
   }
 
   try {
-    const listaTexto = lerStorageUsuarioHome(chave, userIdLimpo);
+    const listaTexto = lerStorageUsuarioHome(chave, userIdLimpo, aoFalhar);
     const listaJson: unknown = listaTexto ? JSON.parse(listaTexto) : [];
+    if (!Array.isArray(listaJson)) throw new Error("Storage de coleção inválido");
     const listaSalva = Array.isArray(listaJson)
       ? listaJson.filter((id): id is string => typeof id === "string")
       : [];
 
     return normalizarListaIdsHome([...fallback, ...listaSalva]);
   } catch {
+    aoFalhar?.();
     return normalizarListaIdsHome(fallback);
   }
 }
