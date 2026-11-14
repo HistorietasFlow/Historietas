@@ -95,3 +95,6 @@ test("status dos termos preserva o erro final e limita o retry", async () => {
 test.after(() => {
   delete globalThis.__aceiteTermosTeste;
 });
+
+// Mantém a regressão da interface no gate de aceite já existente.
+import "./aceitar-termos-consistency.test.mjs";
