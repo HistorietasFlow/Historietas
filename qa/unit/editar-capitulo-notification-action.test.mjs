@@ -166,6 +166,6 @@ test("Editar Capítulo delega somente a notificação após o Diário", () => {
   assert.match(source, /p_criado_em: atualizadoEm/);
   assert.match(
     saveActionSource,
-    /await registrarDiarioEdicaoCapitulo\([\s\S]*?\);\s*\n\s*if \(!vigente\(\)\) return;\s*\n\s*await atualizarNotificacaoCapituloSupabase\(/,
+    /await sincronizarDiario\(\);\s*if \(!vigente\(\)\) return;[\s\S]*?await atualizarNotificacaoCapituloSupabase\(/,
   );
 });

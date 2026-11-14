@@ -62,8 +62,8 @@ test("useEditarCapituloSaveAction preserva a ordem sensível do salvamento", () 
   assert.ok(indice("await supabase.auth.getUser()") < indice('.from("obras")'));
   assert.ok(indice("await salvarTextoCapituloRemoto") < hookSource.lastIndexOf("aplicarEdicaoCapituloNasObrasLocais"));
   assert.ok(hookSource.lastIndexOf("salvarObrasEditarCapituloStorage") < indice("setObras(novasObrasDoUsuario)"));
-  assert.ok(indice("setObras(novasObrasDoUsuario)") < indice("await registrarDiarioEdicaoCapitulo"));
-  assert.ok(indice("await registrarDiarioEdicaoCapitulo") < indice("await atualizarNotificacaoCapituloSupabase"));
+  assert.ok(indice("setObras(novasObrasDoUsuario)") < hookSource.lastIndexOf("await sincronizarDiario()"));
+  assert.ok(hookSource.lastIndexOf("await sincronizarDiario()") < indice("await atualizarNotificacaoCapituloSupabase"));
   assert.ok(indice("await atualizarNotificacaoCapituloSupabase") < hookSource.lastIndexOf("setSalvou(ultimosRef.current.titulo"));
 });
 
@@ -75,8 +75,10 @@ test("Editar Capítulo mantém estado, JSX e exclusão na página", () => {
   assert.match(pageSource, /const \{ salvarEdicao \} = useEditarCapituloSaveAction\(/);
   assert.match(pageSource, /<form onSubmit=\{salvarEdicao\}/);
   assert.doesNotMatch(pageSource, /async function salvarEdicao/);
-  assert.match(pageSource, /async function importarArquivoTexto/);
-  assert.match(pageSource, /async function excluirCapitulo/);
+  assert.match(pageSource, /const \{ marcarAlteracao, importarArquivoTexto \} =\s*useEditarCapituloImportAction\(/);
+  assert.match(pageSource, /onChange=\{importarArquivoTexto\}/);
+  assert.match(pageSource, /const \{ excluirCapitulo \} = useEditarCapituloDeleteAction\(/);
+  assert.match(pageSource, /void excluirCapitulo\(\)/);
   assert.match(pageSource, /const \[salvou, setSalvou\] = useState\(false\)/);
   assert.match(pageSource, /const \[processando, setProcessando\] = useState\(false\)/);
   assert.match(pageSource, /const \[excluindo, setExcluindo\] = useState\(false\)/);
