@@ -12,6 +12,14 @@ const playwrightLocalRunner = readFileSync(
   new URL("../scripts/run-playwright-local.mjs", import.meta.url),
   "utf8",
 );
+const playwrightConfig = readFileSync(
+  new URL("../playwright.config.mjs", import.meta.url),
+  "utf8",
+);
+const prepareE2eLocal = readFileSync(
+  new URL("../scripts/prepare-e2e-local.mjs", import.meta.url),
+  "utf8",
+);
 const packageJson = JSON.parse(
   readFileSync(new URL("../../package.json", import.meta.url), "utf8"),
 );
@@ -53,5 +61,13 @@ test("runner local do Playwright gerencia o Next sem shell ou retries implícito
   assert.match(playwrightLocalRunner, /shell: false/);
   assert.match(playwrightLocalRunner, /E2E_SERVER_EXTERNALLY_MANAGED: "true"/);
   assert.match(playwrightLocalRunner, /await encerrar\(servidor\)/);
+  assert.match(playwrightLocalRunner, /taskkill\.exe/);
+  assert.match(playwrightLocalRunner, /\["\/pid", String\(processo\.pid\), "\/t", "\/f"\]/);
+  assert.match(playwrightLocalRunner, /await aguardarSaida\(processo\)/);
   assert.match(playwrightLocalRunner, /process\.argv\.slice\(2\)/);
+  assert.match(playwrightConfig, /path\.join\(ROOT_DIR, "node_modules", "next", "dist", "bin", "next"\)/);
+  assert.doesNotMatch(playwrightConfig, /npm --prefix \.\. run dev/);
+  assert.match(playwrightConfig, /process\.platform === "win32"/);
+  assert.match(playwrightConfig, /run-playwright-local\.mjs/);
+  assert.doesNotMatch(prepareE2eLocal, /E2E_WEB_SERVER_COMMAND/);
 });

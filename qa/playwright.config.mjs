@@ -1,13 +1,30 @@
-import "./env.mjs";
+import path from "node:path";
+
+import { ROOT_DIR } from "./env.mjs";
 import { defineConfig } from "@playwright/test";
 
 const baseURL = (process.env.E2E_BASE_URL || "https://www.historietas.com.br").replace(/\/$/, "");
 const localBase = /^https?:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?$/i.test(baseURL);
+const quoteShellArgument = (value) => `"${String(value).replaceAll('"', '\\"')}"`;
+const defaultWebServerCommand = [
+  quoteShellArgument(process.execPath),
+  quoteShellArgument(path.join(ROOT_DIR, "node_modules", "next", "dist", "bin", "next")),
+  "start",
+  quoteShellArgument(ROOT_DIR),
+].join(" ");
 const webServerCommand = (
-  process.env.E2E_WEB_SERVER_COMMAND || "npm --prefix .. run dev"
+  process.env.E2E_WEB_SERVER_COMMAND || defaultWebServerCommand
 ).trim();
 const servidorGerenciadoExternamente =
   process.env.E2E_SERVER_EXTERNALLY_MANAGED === "true";
+const servidorGerenciadoIncompativel =
+  localBase && process.platform === "win32" && !servidorGerenciadoExternamente;
+
+if (servidorGerenciadoIncompativel) {
+  throw new Error(
+    "No Windows, execute o Playwright local com node qa/scripts/run-playwright-local.mjs.",
+  );
+}
 
 export default defineConfig({
   testDir: "./tests",
