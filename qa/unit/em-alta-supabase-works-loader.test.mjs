@@ -145,7 +145,7 @@ function resetarEstado() {
   estado.chamadas.length = 0;
   estado.respostas = { obras: [], capitulos: [] };
   estado.paginaErro = null;
-  estado.metricas = { carregado: false, obras: [], autores: [], capitulos: [] };
+  estado.metricas = { carregado: true, obras: [], autores: [], capitulos: [] };
   estado.conversoes.length = 0;
   estado.resultadosConversao.length = 0;
   delete estado.consultasCatalogo;
@@ -246,14 +246,13 @@ test("consulta obras, capítulos, métricas, profiles e conversor na ordem prese
   assert.equal(estado.conversoes[0][13], true);
 });
 
-test("fallback do catálogo, falha de capítulos e filtro final preservam o loader", async () => {
+test("fallback limitado do catálogo mantém critérios e filtro final", async () => {
   resetarEstado();
   estado.catalogo = new Error("catálogo indisponível");
   estado.respostas.obras.push({
     data: [obra(), obra({ id: "obra-2" }), obra({ id: "obra-3" })],
     error: null,
   });
-  estado.paginaErro = new Error("capítulos indisponíveis");
   estado.resultadosConversao.push(
     { id: "com-capitulo", capitulos: [{}], arquivoObra: null },
     { id: "com-arquivo", capitulos: [], arquivoObra: {} },
@@ -263,9 +262,11 @@ test("fallback do catálogo, falha de capítulos e filtro final preservam o load
   const avisos = [];
   console.warn = (...argumentos) => avisos.push(argumentos);
 
+  let amostras = 0;
   try {
-    const resultado = await carregarObrasSupabasePublicadas([]);
+    const resultado = await carregarObrasSupabasePublicadas([], "", { aoUsarAmostraLimitada: () => { amostras++; } });
     assert.deepEqual(resultado.map((item) => item.id), ["com-capitulo", "com-arquivo"]);
+    assert.equal(amostras, 1);
   } finally {
     console.warn = avisoOriginal;
   }
@@ -276,10 +277,10 @@ test("fallback do catálogo, falha de capítulos e filtro final preservam o load
     ["range", 0, 49],
   ]);
   assert.equal(avisos[0][0], "O ranking paginado ainda não está disponível; usando uma amostra limitada:");
-  assert.equal(avisos[1][0], "Não consegui carregar capítulos publicados do ranking:");
+  assert.equal(avisos.length, 1);
 });
 
-test("erro da consulta de obras preserva catch global e retorno vazio", async () => {
+test("erro da consulta de obras é propagado sem certificar ranking vazio", async () => {
   resetarEstado();
   estado.catalogo = { obraIds: ["obra-1"] };
   estado.respostas.obras.push({ data: null, error: { message: "falha obras" } });
@@ -288,7 +289,7 @@ test("erro da consulta de obras preserva catch global e retorno vazio", async ()
   console.warn = (...argumentos) => avisos.push(argumentos);
 
   try {
-    assert.deepEqual(await carregarObrasSupabasePublicadas([]), []);
+    await assert.rejects(carregarObrasSupabasePublicadas([]), erro => erro.message === "falha obras");
   } finally {
     console.warn = avisoOriginal;
   }
@@ -322,4 +323,18 @@ test("fronteira preserva queries de leitura e responsabilidades da página", () 
   assert.match(rankingObrasLocaisUtils, /\bencontrarCapituloParaContinuar\b/);
   assert.doesNotMatch(pagina, /function encontrarCapituloParaContinuar\b/);
   assert.match(pagina, /useEmAltaRankingLoader\(/);
+});
+
+test("capítulos ou métricas indisponíveis não certificam contagens zero no ranking", async () => {
+  const aviso=console.warn;console.warn=()=>{};
+  try {
+    resetarEstado();estado.catalogo={obraIds:["obra-1"]};estado.respostas.obras.push({data:[obra()],error:null});
+    estado.paginaErro=new Error("capítulos indisponíveis");
+    await assert.rejects(carregarObrasSupabasePublicadas([]),/capítulos indisponíveis/);
+    assert.equal(estado.conversoes.length,0);
+    resetarEstado();estado.catalogo={obraIds:["obra-1"]};estado.respostas.obras.push({data:[obra()],error:null});
+    estado.metricas.carregado=false;
+    await assert.rejects(carregarObrasSupabasePublicadas([]),/Métricas do ranking indisponíveis/);
+    assert.equal(estado.conversoes.length,0);
+  } finally {console.warn=aviso;}
 });
