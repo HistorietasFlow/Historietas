@@ -45,7 +45,7 @@ test("Em Alta delega só o shell e mantém os ramos de carregamento e conteúdo"
     pagina,
     /import \{ EmAltaPageShell \} from "\.\/components\/em-alta-page-shell";/,
   );
-  assert.match(pagina, /if \(carregandoRanking\)/);
+  assert.match(pagina, /if \(carregandoRanking \|\| !dadosDaIdentidadeAtual\)/);
   assert.match(
     pagina,
     /<EmAltaPageShell pageThemeStyle=\{pageThemeStyle\} carregando>\s*<LoadingSpinner label="Carregando Em Alta" \/>\s*<\/EmAltaPageShell>/,
@@ -58,5 +58,5 @@ test("Em Alta delega só o shell e mantém os ramos de carregamento e conteúdo"
   assert.doesNotMatch(pagina, /historietasThemeCss/);
   assert.doesNotMatch(pagina, /emAltaPageCss/);
   assert.match(pagina, /useEmAltaRankingLoader\(/);
-  assert.match(rankingLoaderFase891, /supabase\.auth\.getUser\(\)/);
+  assert.doesNotMatch(rankingLoaderFase891, /supabase\.auth\.getUser\(\)/);
 });

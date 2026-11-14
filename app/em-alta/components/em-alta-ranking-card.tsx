@@ -49,6 +49,8 @@ export function RankingCard({
   favorita,
   concluida,
   isDesktop,
+  onAlternarFavorito,
+  onAlternarConcluido,
 }: {
   obra: ObraRanking;
   posicao: number;
@@ -56,9 +58,9 @@ export function RankingCard({
   favorita: boolean;
   concluida: boolean;
   isDesktop: boolean;
+  onAlternarFavorito: (obraId: string) => void;
+  onAlternarConcluido: (obraId: string) => void;
 }) {
-  void favorita;
-  void concluida;
 
   const router = useRouter();
   const mostrarClassificacao =
@@ -100,16 +102,8 @@ export function RankingCard({
       className="historietas-ranking-card historietas-ranking-work-card"
       data-ranking-level={temaPosicao.nome.toLowerCase()}
       style={criarCardRankingStyle(posicao, obra.disponivel, tipo, isDesktop)}
-      role="link"
-      tabIndex={0}
-      aria-label={`Abrir página da obra ${obra.titulo}`}
+      aria-label={obra.titulo}
       onClick={abrirObra}
-      onKeyDown={(event) => {
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          abrirObra();
-        }
-      }}
     >
       <div style={criarRankingCoverStyle(obra.capa, isDesktop)}>
         {null}
@@ -117,7 +111,16 @@ export function RankingCard({
 
       <div style={isDesktop ? desktopCardContentStyle : cardContentStyle}>
         <div style={cardTopStyle}>
-          <h3 data-historietas-i18n-ignore="true" style={criarObraCardTitleRankingStyle()}>{obra.titulo}</h3>
+          <h3 data-historietas-i18n-ignore="true" style={criarObraCardTitleRankingStyle()}>
+            <Link
+              href={obra.href}
+              aria-label={`Abrir página da obra ${obra.titulo}`}
+              style={{ color: "inherit", textDecoration: "none" }}
+              onClick={(event) => event.stopPropagation()}
+            >
+              {obra.titulo}
+            </Link>
+          </h3>
         </div>
 
         <Link
@@ -250,6 +253,30 @@ export function RankingCard({
             <span style={coroaNumberStyle}>{posicao}º</span>
             <span style={coroaNumberStyle}>{temaPosicao.nome}</span>
           </span>
+        </div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+          <button
+            type="button"
+            aria-pressed={favorita}
+            style={{ minHeight: 44, flex: "1 1 auto", cursor: "pointer" }}
+            onClick={(event) => {
+              event.stopPropagation();
+              onAlternarFavorito(obra.storageId);
+            }}
+          >
+            {favorita ? "Favoritada" : "Favoritar"}
+          </button>
+          <button
+            type="button"
+            aria-pressed={concluida}
+            style={{ minHeight: 44, flex: "1 1 auto", cursor: "pointer" }}
+            onClick={(event) => {
+              event.stopPropagation();
+              onAlternarConcluido(obra.storageId);
+            }}
+          >
+            {concluida ? "Concluída" : "Concluir"}
+          </button>
         </div>
       </div>
     </article>

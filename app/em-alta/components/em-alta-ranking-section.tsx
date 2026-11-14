@@ -32,8 +32,8 @@ export function RankingSection({
   tipo,
   obrasFavoritas,
   obrasConcluidas,
-  onAlternarFavorito: _onAlternarFavorito,
-  onAlternarConcluido: _onAlternarConcluido,
+  onAlternarFavorito,
+  onAlternarConcluido,
   isDesktop,
 }: {
   titulo: string;
@@ -46,8 +46,6 @@ export function RankingSection({
   onAlternarConcluido: (obraId: string) => void;
   isDesktop: boolean;
 }) {
-  void _onAlternarFavorito;
-  void _onAlternarConcluido;
 
   const tema = obterTemaRanking(tipo);
   const carrosselRef = useRef<HTMLDivElement | null>(null);
@@ -157,6 +155,8 @@ export function RankingSection({
                 tipo={tipo}
                 favorita={listaTemRankingObra(obra, obrasFavoritas)}
                 concluida={listaTemRankingObra(obra, obrasConcluidas)}
+                onAlternarFavorito={onAlternarFavorito}
+                onAlternarConcluido={onAlternarConcluido}
                 isDesktop={isDesktop}
               />
             ))}

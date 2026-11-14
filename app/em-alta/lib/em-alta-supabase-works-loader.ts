@@ -19,6 +19,7 @@ import { converterObraSupabaseParaLocal } from "./em-alta-supabase-work-normaliz
 export async function carregarObrasSupabasePublicadas(
   obrasLocais: ObraLocal[],
   userId = "",
+  opcoes: { aoUsarAmostraLimitada?: () => void } = {},
 ) {
   try {
     let obraIdsCatalogo: readonly string[] = [];
@@ -39,6 +40,7 @@ export async function carregarObrasSupabasePublicadas(
       obraIdsCatalogo = selecao.obraIds;
     } catch (error) {
       catalogoDisponivel = false;
+      opcoes.aoUsarAmostraLimitada?.();
       console.warn(
         "O ranking paginado ainda não está disponível; usando uma amostra limitada:",
         error,
@@ -104,10 +106,7 @@ export async function carregarObrasSupabasePublicadas(
               .range(inicio, fim),
         });
     } catch (error) {
-      console.warn(
-        "Não consegui carregar capítulos publicados do ranking:",
-        error,
-      );
+      throw error;
     }
     const capituloIds = capitulosSupabase
       .map((capitulo) => capitulo.id)
@@ -120,6 +119,7 @@ export async function carregarObrasSupabasePublicadas(
       }),
       carregarProfilesAutoresRanking(autorIds),
     ]);
+    if (!metricas.carregado) throw new Error("Métricas do ranking indisponíveis.");
     const curtidasUnicasPorObra: Record<string, number> = {};
     const comentariosTotaisPorObra: Record<string, number> = {};
     const salvosUnicosPorObra: Record<string, number> = {};
@@ -214,6 +214,6 @@ export async function carregarObrasSupabasePublicadas(
       .filter((obra) => obra.capitulos.length > 0 || Boolean(obra.arquivoObra));
   } catch (error) {
     console.warn("Não consegui acessar o Supabase no Em Alta agora:", error);
-    return [] as ObraLocal[];
+    throw error;
   }
 }

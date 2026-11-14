@@ -137,7 +137,7 @@ test("loader preserva query paginada e normaliza IDs de favoritos", async () => 
   ]);
 });
 
-test("loader preserva concluidas e fallback com aviso literal", async () => {
+test("loader propaga erro de concluidas para o fallback controlado da coleção", async () => {
   resetarEstado();
   estado.respostas.push({ error: new Error("indisponível") });
   const avisoOriginal = console.warn;
@@ -145,10 +145,7 @@ test("loader preserva concluidas e fallback com aviso literal", async () => {
   console.warn = (...argumentos) => avisos.push(argumentos);
 
   try {
-    assert.deepEqual(
-      await carregarIdsColecaoUsuarioSupabaseEmAlta("concluidas", "usuario-2"),
-      [],
-    );
+    await assert.rejects(carregarIdsColecaoUsuarioSupabaseEmAlta("concluidas", "usuario-2"), /indisponível/);
   } finally {
     console.warn = avisoOriginal;
   }
@@ -159,17 +156,14 @@ test("loader preserva concluidas e fallback com aviso literal", async () => {
   assert.ok(avisos[0][1] instanceof Error);
 });
 
-test("loader preserva fallback quando a paginação lança", async () => {
+test("loader propaga erro de paginação sem certificar vazio", async () => {
   resetarEstado();
   estado.falharPaginacao = new Error("paginação indisponível");
   const avisoOriginal = console.warn;
   console.warn = () => {};
 
   try {
-    assert.deepEqual(
-      await carregarIdsColecaoUsuarioSupabaseEmAlta("favoritos", "usuario-3"),
-      [],
-    );
+    await assert.rejects(carregarIdsColecaoUsuarioSupabaseEmAlta("favoritos", "usuario-3"), /paginação indisponível/);
   } finally {
     console.warn = avisoOriginal;
   }
