@@ -409,3 +409,44 @@ test("remoção confirmada usa a conta e obra esperadas; falha anterior não blo
   c.falhar(null);assert.equal((await c.sincronizarColecaoRankingSupabase("concluidas",{storageId:"obra"},false,"A")).ok,true);
   assert.equal(c.linhas.has("concluidas:A:obra"),false);assert.ok(c.chamadas.every(chamada=>chamada.operacao==="delete"));
 });
+
+// Percorre a árvore JSX real; eventos são simulados, sem um navegador instalado.
+function botoesRanking(c,isDesktop) {
+  const acao=c.render(),navegacoes=[];
+  const {RankingSection}=loadApplicationModule("app/em-alta/components/em-alta-ranking-section.tsx",{
+    react:{...React,useRef:()=>({current:null})},"../../../lib/utils":utils,
+    "next/link":{default:({children,...props})=>React.createElement("a",props,children)},
+    "next/navigation":{useRouter:()=>({push:href=>navegacoes.push(href)})},
+  });
+  const item={...obra("local-obra"),storageId:"obra",href:"/obra/obra",tipo:"supabase",status:"Publicado",disponivel:true,views:0,curtidas:0,comentarios:0,salvos:0,capitulos:1,mediaAvaliacao:0,pontuacao:0};
+  function expandir(node){if(!React.isValidElement(node))return node;if(typeof node.type==="function")return expandir(node.type(node.props));return React.cloneElement(node,{},...React.Children.toArray(node.props.children).map(expandir));}
+  const tree=expandir(RankingSection({titulo:"Ranking Mestre",descricao:"",obras:[item],tipo:"geral",obrasFavoritas:c.favoritas,obrasConcluidas:c.concluidas,onAlternarFavorito:acao.alternarFavorito,onAlternarConcluido:acao.alternarConcluido,isDesktop}));
+  const nodes=[];function visitar(n){if(React.isValidElement(n)){nodes.push(n);React.Children.forEach(n.props.children,visitar);}}visitar(tree);
+  const buttons=nodes.filter(n=>n.type==="button"),article=nodes.find(n=>n.type==="article");
+  return{buttons,nodes,html:renderToStaticMarkup(tree),clicar(indice){let parou=false;buttons[indice].props.onClick({stopPropagation(){parou=true;}});if(!parou)article.props.onClick();assert.equal(parou,true);assert.deepEqual(navegacoes,[]);}};
+}
+for(const isDesktop of [false,true])for(const [indice,colecao]of [[0,"favoritos"],[1,"concluidas"]]){
+  test(`card ${isDesktop?"desktop":"mobile"}: ${colecao} conecta inclusão/remoção, falha e A→B`,async t=>{
+    const c=acoes(t),ui=botoesRanking(c,isDesktop);
+    assert.equal(ui.buttons.length,2);assert.equal(ui.buttons[indice].props["aria-pressed"],false);
+    assert.equal(ui.nodes.find(n=>n.type==="article").props.role,undefined);
+    assert.ok(ui.nodes.some(n=>n.type==="a"&&n.props.href==="/obra/obra"));
+    assert.match(ui.html,/type="button" aria-pressed="false"/);ui.clicar(indice);await tick();
+    assert.equal(c.escritas[0].args[0],colecao);assert.equal(c.escritas[0].args[1].storageId,"obra");
+    assert.equal(botoesRanking(c,isDesktop).buttons[indice].props["aria-pressed"],false);
+    c.escritas[0].resposta.resolve({ok:false,erro:"offline"});await tick();assert.match(c.render().mensagemColecao,/Não foi possível/);
+    botoesRanking(c,isDesktop).clicar(indice);await tick();c.escritas[1].resposta.resolve({ok:true});await tick();
+    assert.equal(botoesRanking(c,isDesktop).buttons[indice].props["aria-pressed"],true);
+    botoesRanking(c,isDesktop).clicar(indice);await tick();assert.equal(c.escritas[2].args[2],false);c.escritas[2].resposta.resolve({ok:true});await tick();
+    assert.equal(botoesRanking(c,isDesktop).buttons[indice].props["aria-pressed"],false);
+    botoesRanking(c,isDesktop).clicar(indice);await tick();const cacheAntes=c.cache.length;c.trocar("B");c.render();c.escritas[3].resposta.resolve({ok:true});await tick();
+    assert.equal(c.cache.length,cacheAntes);assert.equal(botoesRanking(c,isDesktop).buttons[indice].props["aria-pressed"],false);
+  });
+}
+
+test("ações dos cards têm rótulos traduzidos nos dois estados",()=>{
+  const {traduzirTextoEmAlta}=loadApplicationModule("app/em-alta/lib/em-alta-translations.ts");
+  for(const [pt,en,es]of [["Favoritar","Favorite","Añadir a favoritos"],["Favoritada","Favorited","En favoritos"],["Concluir","Mark as completed","Marcar como terminada"],["Concluída","Completed","Terminada"]]){
+    assert.equal(traduzirTextoEmAlta(pt,"en"),en);assert.equal(traduzirTextoEmAlta(pt,"es"),es);
+  }
+});
