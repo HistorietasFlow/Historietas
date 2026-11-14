@@ -17,7 +17,7 @@ const pagina = readFileSync(
 test("Perfil memoiza o estado-alvo para não reiniciar o Diário em renders internos", () => {
   assert.match(
     pagina,
-    /import \{ Suspense, useMemo, useRef, useState \} from "react";/,
+    /import \{ Suspense, useCallback, useMemo, useRef, useState \} from "react";/,
   );
   assert.match(
     pagina,
@@ -38,7 +38,9 @@ test("hook preserva fallback e fonte do Diário", () => {
   assert.match(source, /if \(!perfilAtual\)/);
   assert.match(source, /setDiarioPerfil\(diarioPerfilVazio\)/);
   assert.match(source, /bibliotecaPerfilVisivel/);
-  assert.match(source, /abaPerfil === "biblioteca"/);
+  assert.match(source, /const userIdFonteDiario = userIdPerfil;/);
+  assert.match(source, /const incluirItensPrivados = podeEditarPerfil && estaVendoProprioPerfil;/);
+  assert.doesNotMatch(source, /bibliotecaUsaUsuarioLogado/);
   assert.match(source, /usuarioIdLogado\.trim\(\)/);
   assert.match(source, /podeEditarPerfil/);
   assert.match(source, /criarEstadoDiarioPerfilVazio\(\)/);

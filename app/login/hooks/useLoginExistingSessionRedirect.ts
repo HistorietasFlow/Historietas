@@ -1,14 +1,10 @@
 import { useEffect } from "react";
 import { supabase } from "../../../lib/supabase/client";
-import { obterRedirectToAtual } from "../lib/login-redirect-utils";
-import { sincronizarStorageUsuarioLogin } from "../lib/login-storage-sync";
-import { aguardarLogin } from "../lib/login-timing-utils";
 
 type UseLoginExistingSessionRedirectParams = {
-  router: {
-    replace: (href: string) => void;
-    refresh: () => void;
-  };
+  capturarNavegacao: () => () => boolean;
+  finalizarLogin: (userId: string) => void;
+  prepararContinuacao: (userId: string) => void;
   salvarProfile: (
     userId: string,
     nomeInformado: string,
@@ -20,35 +16,39 @@ type UseLoginExistingSessionRedirectParams = {
 };
 
 export function useLoginExistingSessionRedirect({
-  router,
+  capturarNavegacao,
+  finalizarLogin,
+  prepararContinuacao,
   salvarProfile,
   t,
   setErro,
 }: UseLoginExistingSessionRedirectParams) {
   useEffect(() => {
     let componenteAtivo = true;
+    const consultaVigente = capturarNavegacao();
+    const vigente = () => componenteAtivo && consultaVigente();
 
     async function redirecionarUsuarioJaLogado() {
       try {
-        const { data } = await supabase.auth.getUser();
+        if (!vigente()) return;
+        const { data, error } = await supabase.auth.getUser();
 
-        if (componenteAtivo && data.user) {
+        if (!error && vigente() && data.user) {
           const resultadoPerfil = await salvarProfile(
             data.user.id,
             "",
             data.user.email || "",
             data.user.user_metadata,
           );
+          if (!vigente()) return;
 
-          if (!resultadoPerfil.ok && componenteAtivo) {
+          if (!resultadoPerfil.ok) {
             setErro(t("profileSyncWarning"));
-            await aguardarLogin(1600);
+            prepararContinuacao(data.user.id);
+            return;
           }
 
-          sincronizarStorageUsuarioLogin(data.user.id);
-
-          router.replace(obterRedirectToAtual("/perfil-autor"));
-          router.refresh();
+          finalizarLogin(data.user.id);
         }
       } catch {
         // A página de login deve continuar acessível se a verificação falhar.
@@ -60,5 +60,5 @@ export function useLoginExistingSessionRedirect({
     return () => {
       componenteAtivo = false;
     };
-  }, [router, salvarProfile, t, setErro]);
+  }, [capturarNavegacao, finalizarLogin, prepararContinuacao, salvarProfile, t, setErro]);
 }

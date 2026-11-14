@@ -171,3 +171,18 @@ test("home-storage-utils preserva escrita e a fronteira da Home", () => {
   assert.match(modulo, /JSON\.stringify/);
   assert.doesNotMatch(modulo, /supabase|useEffect|useState/);
 });
+
+test("storage inválido ou indisponível preserva fallback e sinaliza falha", () => {
+  for (const raw of ["{bad", "{}", "null"]) {
+    let falhas = 0;
+    comStorage({ getItem: () => raw }, () => {
+      assert.deepEqual(carregarListaIdsHome("favoritos", "A", ["old"], () => falhas++), ["old"]);
+    });
+    assert.equal(falhas, 1);
+  }
+  let falhas = 0;
+  comStorage({ getItem: () => { throw Error("denied"); } }, () => {
+    assert.deepEqual(carregarListaIdsHome("favoritos", "A", ["old"], () => falhas++), ["old"]);
+  });
+  assert.equal(falhas, 1);
+});

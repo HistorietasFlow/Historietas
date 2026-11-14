@@ -41,6 +41,6 @@ export async function carregarIdsColecaoUsuarioSupabaseEmAlta(
     );
   } catch (error) {
     console.warn(`Não consegui acessar ${tabela} no Em Alta:`, error);
-    return [] as string[];
+    throw error;
   }
 }

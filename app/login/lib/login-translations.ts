@@ -50,7 +50,8 @@ export type LoginTranslationKey =
   | "privacyPrefix"
   | "privacyLink"
   | "consentRequired"
-  | "profileSyncWarning";
+  | "profileSyncWarning"
+  | "continueWithSession";
 
 export const LOGIN_TRANSLATIONS: Record<
   HistorietasLanguage,
@@ -119,6 +120,7 @@ export const LOGIN_TRANSLATIONS: Record<
     privacyLink: "Política de Privacidade",
     consentRequired:
       "Para criar a conta, aceite os Termos e as Diretrizes e confirme que leu a Política de Privacidade.",
+    continueWithSession: "Continuar com a sessão",
     profileSyncWarning:
       "Sua conta foi acessada, mas o perfil não pôde ser sincronizado agora. Tentaremos novamente automaticamente no próximo acesso.",
   },
@@ -184,6 +186,7 @@ export const LOGIN_TRANSLATIONS: Record<
     privacyLink: "Privacy Policy",
     consentRequired:
       "To create the account, accept the Terms and Guidelines and confirm that you have read the Privacy Policy.",
+    continueWithSession: "Continue with this session",
     profileSyncWarning:
       "Your account was accessed, but the profile could not be synchronized right now. We will automatically try again the next time you sign in.",
   },
@@ -250,6 +253,7 @@ export const LOGIN_TRANSLATIONS: Record<
     privacyLink: "Política de Privacidad",
     consentRequired:
       "Para crear la cuenta, acepta los Términos y las Normas y confirma que leíste la Política de Privacidad.",
+    continueWithSession: "Continuar con la sesión",
     profileSyncWarning:
       "Se accedió a tu cuenta, pero el perfil no pudo sincronizarse ahora. Lo intentaremos de nuevo automáticamente en el próximo acceso.",
   },

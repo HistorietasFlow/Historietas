@@ -69,7 +69,7 @@ test("persistência local preserva as cinco coleções do snapshot", () => {
 
   assert.match(
     carregador,
-    /salvarDadosLocaisSeguindo\(\{[\s\S]*?userId: usuarioLogadoId,[\s\S]*?obras: obrasNormalizadas,[\s\S]*?obrasSeguidas: seguindoNormalizado,[\s\S]*?autoresSeguidos: autoresNormalizados,[\s\S]*?obrasFavoritas: favoritasNormalizadas,[\s\S]*?obrasConcluidas: concluidasNormalizadas,[\s\S]*?\}\);/,
+    /salvarDadosLocaisSeguindo\(\{[\s\S]*?userId: usuarioLogadoId,[\s\S]*?obras: dadosRemotosPreparados\.obras,[\s\S]*?obrasSeguidas: dadosRemotosPreparados\.obrasSeguidas,[\s\S]*?autoresSeguidos: autoresNormalizados,[\s\S]*?obrasFavoritas: dadosRemotosPreparados\.obrasFavoritas,[\s\S]*?obrasConcluidas: dadosRemotosPreparados\.obrasConcluidas,[\s\S]*?\}\);/,
   );
 });
 

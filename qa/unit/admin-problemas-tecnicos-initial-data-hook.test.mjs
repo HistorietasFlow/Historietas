@@ -11,7 +11,7 @@ const hook = readFileSync(
 test("hook preserva o carregamento e o mapa de nomes dos problemas técnicos", () => {
   assert.match(hook, /const carregarNomes = useCallback/);
   assert.match(hook, /new Set\(userIds\.map\(\(id\) => id\.trim\(\)\)\.filter\(Boolean\)\)/);
-  assert.match(hook, /if \(ids\.length === 0\) \{\s*setNomesUsuarios\(\{\}\);\s*return;/);
+  assert.match(hook, /if \(ids\.length === 0\) \{\s*return \{\};/);
   assert.match(hook, /buscarPerfisProblemasTecnicosAdmin\(ids\)/);
   assert.match(hook, /porUserId\.error/);
   assert.match(hook, /porId\.error/);
@@ -20,6 +20,7 @@ test("hook preserva o carregamento e o mapa de nomes dos problemas técnicos", (
   assert.match(hook, /pt: "Usuário"/);
   assert.match(hook, /mapa\[perfil\.user_id\.trim\(\)\] = nome/);
   assert.match(hook, /mapa\[perfil\.id\.trim\(\)\] = nome/);
+  assert.match(hook, /return mapa/);
   assert.match(hook, /setNomesUsuarios\(mapa\)/);
   assert.match(hook, /const carregarProblemas = useCallback/);
   assert.match(hook, /setErro\(""\)/);
@@ -43,7 +44,7 @@ test("hook preserva o carregamento e o mapa de nomes dos problemas técnicos", (
     "registro.criado_em",
     "registro.atualizado_em",
   ].forEach((campo) => assert.ok(hook.includes(campo), campo));
-  assert.match(hook, /setProblemas\(registros\)/);
+  assert.match(hook, /setProblemas\(atuais => mesmaExecucao\(\) \? registros : atuais\)/);
   assert.match(hook, /setObservacoes\(/);
   assert.match(hook, /await carregarNomes\(registros\.map\(\(problema\) => problema\.userId\)\)/);
 });
@@ -60,13 +61,16 @@ test("hook preserva lifecycle administrativo, cancelamento e contrato da página
   assert.match(hook, /setEhAdmin\(false\)/);
   assert.match(hook, /router\.replace\(criarLoginHrefAdminProblemasTecnicos\(\)\)/);
   assert.match(hook, /verificarAdministradorProblemasTecnicos\(\)/);
-  assert.match(hook, /if \(cancelado\) return/);
+  assert.match(hook, /if \(!atual\(\)\) return/);
+  assert.match(hook, /execucaoChamadosEstaAtual\(contextoRef, execucao\)/);
+  assert.match(hook, /onAuthStateChange/);
+  assert.match(hook, /subscription\.unsubscribe\(\)/);
   assert.match(hook, /setUsuarioId\(usuario\.id\)/);
   assert.match(hook, /setEhAdmin\(adminConfirmado\)/);
   assert.match(hook, /if \(adminConfirmado\) \{\s*await carregarProblemas\(\);/);
   assert.match(hook, /criarMensagemErro\("Erro ao carregar problemas técnicos", error\)/);
   assert.match(hook, /setCarregando\(false\)/);
-  assert.match(hook, /void iniciar\(\)/);
+  assert.match(hook, /void iniciar\(inicial\)/);
   assert.match(hook, /return \(\) => \{\s*cancelado = true;/);
   assert.match(page, /import \{ useAdminProblemasTecnicosInitialData \} from "\.\/hooks\/use-admin-problemas-tecnicos-initial-data";/);
   assert.match(page, /useAdminProblemasTecnicosInitialData\(\{/);
@@ -74,5 +78,5 @@ test("hook preserva lifecycle administrativo, cancelamento e contrato da página
   assert.doesNotMatch(page, /const carregarProblemas = useCallback/);
   assert.doesNotMatch(page, /useEffect\(\(\) => \{/);
   assert.match(page, /useAdminProblemasTecnicosActions/);
-  assert.match(page, /recarregarProblemasTecnicos\(carregarProblemas\)/);
+  assert.match(page, /recarregarProblemasTecnicos\(carregarProblemas, capturarExecucao\(\)\)/);
 });

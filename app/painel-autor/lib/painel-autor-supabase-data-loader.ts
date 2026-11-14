@@ -26,11 +26,15 @@ export async function carregarPainelAutorSupabase(
   obrasFavoritasLocais: string[],
   obrasConcluidasLocais: string[],
   onRascunhosConfirmados?: (confirmacao: ConfirmacaoRascunhosPainel) => void,
+  opcoes: { usuarioIdEsperado?: string; onFalha?: () => void } = {},
 ) {
   try {
     const { data: usuarioData } = await supabase.auth.getUser();
     const userId = usuarioData.user?.id || "";
 
+    if (opcoes.usuarioIdEsperado && userId !== opcoes.usuarioIdEsperado) {
+      throw new Error("A identidade do carregamento do Painel do Autor mudou.");
+    }
     if (!userId) {
       return {
         obras: [],
@@ -93,7 +97,8 @@ export async function carregarPainelAutorSupabase(
         const slugLocal = obraAtual.slug || criarSlugBase(obraAtual.titulo);
         const slugBanco = obraBanco.slug?.trim() || criarSlugBase(obraBanco.titulo || "");
 
-        return obraAtual.id === obraBanco.id || slugLocal === slugBanco;
+        return Boolean(obraAtual.id && obraAtual.id === obraBanco.id) ||
+          ((!obraAtual.id || !obraBanco.id) && slugLocal === slugBanco);
       });
 
       const capitulosDaObra = capitulosSupabaseBanco.filter(
@@ -128,8 +133,10 @@ export async function carregarPainelAutorSupabase(
     if (capitulosConfirmados) {
       onRascunhosConfirmados?.(confirmarRascunhosPainel(userId, obrasSupabaseBanco, capitulosSupabaseBanco));
     }
+    if (!capitulosConfirmados || metricas.carregado === false) opcoes.onFalha?.();
     return resultado;
   } catch (error) {
+    opcoes.onFalha?.();
     console.warn("Não consegui acessar o Supabase no Painel do Autor:", error);
 
     return {

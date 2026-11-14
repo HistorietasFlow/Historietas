@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { criarMensagemErro } from "../lib/admin-problemas-tecnicos-error-utils";
 
 type CarregarProblemasTecnicos = () => Promise<void>;
 
 export function useAdminProblemasTecnicosActionState() {
+  const recargaRef = useRef<(() => boolean) | null>(null);
   const [chamadoAbertoId, setChamadoAbertoId] = useState("");
   const [acaoEmAndamento, setAcaoEmAndamento] = useState("");
   const [erro, setErro] = useState("");
@@ -19,7 +20,10 @@ export function useAdminProblemasTecnicosActionState() {
 
   async function recarregarProblemasTecnicos(
     carregarProblemas: CarregarProblemasTecnicos,
+    atual: () => boolean,
   ) {
+    if (!atual() || recargaRef.current?.()) return;
+    recargaRef.current = atual;
     setAcaoEmAndamento("recarregar");
     setErro("");
     setSucesso("");
@@ -27,14 +31,15 @@ export function useAdminProblemasTecnicosActionState() {
     try {
       await carregarProblemas();
     } catch (error) {
-      setErro(
+      if (atual()) setErro(
         criarMensagemErro(
           "Erro ao atualizar problemas técnicos",
           error,
         ),
       );
     } finally {
-      setAcaoEmAndamento("");
+      if (recargaRef.current === atual) recargaRef.current = null;
+      if (atual()) setAcaoEmAndamento(acaoAtual => acaoAtual === "recarregar" ? "" : acaoAtual);
     }
   }
 

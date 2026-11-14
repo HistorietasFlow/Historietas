@@ -14,8 +14,10 @@ test("finalização preserva storage e redirect ordenados", () => {
   assert.doesNotMatch(source, /try|catch|useState|useEffect|supabase|<[A-Z][A-Za-z0-9]*/);
   assert.doesNotMatch(page, /sincronizarStorageUsuarioLogin\(/);
   assert.doesNotMatch(page, /router\.replace\(obterRedirectToAtual\("\/perfil-autor"\)\)/);
-  assert.equal((submitActionSource.match(/finalizarAutenticacaoLogin\(\{ userId: data\.user\.id, router \}\)/g) || []).length, 2);
+  assert.equal((submitActionSource.match(/finalizarLogin\(data\.user\.id\)/g) || []).length, 2);
+  assert.match(submitActionSource, /fluxo\.current\.redirecionado = true;[\s\S]*finalizarAutenticacaoLogin\(\{ userId, router \}\)/);
   assert.match(page, /salvarProfile/);
   assert.match(submitActionSource, /registrarAceiteTermosPublicacao/);
-  assert.match(submitActionSource, /aguardarLogin\(1600\)/);
+  assert.doesNotMatch(submitActionSource, /aguardarLogin|1600/);
+  assert.match(submitActionSource, /prepararContinuacao\(data\.user\.id\)/);
 });

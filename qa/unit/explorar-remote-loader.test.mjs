@@ -121,6 +121,7 @@ function preparar() {
     async carregarMetricasConteudos(argumentos) {
       configuracao.eventos.push("metricas");
       configuracao.argumentosMetricas = argumentos;
+      await configuracao.metricasGate;
       if (falhas.metricas) throw falhas.metricas;
       return configuracao.metricas;
     },
@@ -475,4 +476,40 @@ test("Explorar preserva falha, identidade do storage e retry depois de rejeiçã
     assert.equal((await modulo.carregarObrasPublicadasSupabase([], "B")).falhaTemporaria, false);
     assert.equal(c.gravacoes[1][2], "B");
   } finally { console.warn = warn; }
+});
+
+test("página pessoal vazia preserva obras acumuladas, cursor terminal e ausência de gravações", async () => {
+  const c = preparar(); const obras = [obra("p1")];
+  c.paginasCatalogo = [{ obraIds: [], proximoCursor: null, temMais: false }];
+  const resultado = await modulo.carregarObrasPublicadasSupabase(obras, "A",
+    [{ cursor: { valor: 1, data: "2026-01-01", id: "p1" } }],
+    { tipo: "favoritas", obraIds: ["p1"] }, true);
+  assert.deepEqual(resultado.obras, obras);
+  assert.deepEqual(resultado.pagina, { obraIds: [], proximoCursor: null, temMais: false });
+  assert.equal(resultado.falhaTemporaria, false);
+  assert.deepEqual(c.gravacoes, []);
+  const inicial = await modulo.carregarObrasPublicadasSupabase(obras, "A", [{}],
+    { tipo: "favoritas", obraIds: [] });
+  assert.deepEqual(inicial.obras, []);
+});
+
+test("respostas fora de ordem não gravam cache obsoleto após perfis, capítulos ou métricas pendentes", async () => {
+  for (const lento of ["perfis", "capitulos", "metricas"]) {
+    const c = preparar(); let liberar;
+    c[`${lento}Gate`] = new Promise(resolve => { liberar = resolve; });
+    c.selecao = { obraIds: ["o1"], paginas: [] };
+    c.banco.obras = [{ id: "o1", user_id: "a1" }];
+    c.banco.capitulos = [{ id: "c1", obra_id: "o1" }];
+    let atual = true;
+    const antiga = modulo.carregarObrasPublicadasSupabase([], "A", [{}], null, false, () => atual);
+    await new Promise(resolve => setImmediate(resolve));
+    atual = false;
+    c[`${lento}Gate`] = null;
+    const nova = await modulo.carregarObrasPublicadasSupabase([], "B", [{}], null, false, () => true);
+    assert.equal(nova.falhaTemporaria, false);
+    const gravacoesNovas = [...c.gravacoes];
+    liberar(); await antiga;
+    assert.deepEqual(c.gravacoes, gravacoesNovas);
+    assert.deepEqual(c.gravacoes.map(item => item[2]), ["B", "B"]);
+  }
 });

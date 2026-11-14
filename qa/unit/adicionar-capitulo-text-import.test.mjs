@@ -223,11 +223,11 @@ test("Adicionar Capítulo delega a preparação de importação e mantém a orqu
   );
   assert.match(
     pageSource,
-    /onChange=\{\(event\) => \{\s*setTitulo\(event\.target\.value\);\s*limparFeedback\(\);\s*setArquivoImportadoErro\(""\);\s*\}\}/,
+    /onChange=\{\(event\) => \{\s*\+\+edicaoRascunhoRef\.current;\s*setTitulo\(event\.target\.value\);\s*limparFeedback\(\);\s*setArquivoImportadoErro\(""\);\s*\}\}/,
   );
   assert.match(
     pageSource,
-    /onChange=\{\(event\) => \{\s*setTexto\(event\.target\.value\);\s*limparFeedback\(\);\s*setArquivoImportadoErro\(""\);\s*\}\}/,
+    /onChange=\{\(event\) => \{\s*\+\+edicaoRascunhoRef\.current;\s*setTexto\(event\.target\.value\);\s*limparFeedback\(\);\s*setArquivoImportadoErro\(""\);\s*\}\}/,
   );
   assert.match(pageSource, /accept="\.txt,\.md,text\/plain,text\/markdown"/);
   assert.match(pageSource, /onChange=\{importarArquivoTexto\}/);

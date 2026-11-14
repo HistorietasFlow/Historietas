@@ -19,7 +19,7 @@ export function criarStorageKeyUsuarioPainel(chave: string, userId: string) {
   return usuarioId ? `${chave}:${usuarioId}` : "";
 }
 
-export function lerStorageUsuarioPainel(chave: string, userId: string) {
+export function lerStorageUsuarioPainel(chave: string, userId: string, onFalha?: () => void) {
   const userIdLimpo = userId.trim();
 
   if (typeof window === "undefined" || !userIdLimpo) {
@@ -31,6 +31,7 @@ export function lerStorageUsuarioPainel(chave: string, userId: string) {
 
     return chaveStorage ? localStorage.getItem(chaveStorage) : null;
   } catch {
+    onFalha?.();
     return null;
   }
 }

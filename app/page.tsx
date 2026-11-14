@@ -53,6 +53,7 @@ import {
 import useHomeInitialData, {
   FAVORITES_STORAGE_KEY,
 } from "./hooks/use-home-initial-data";
+import HomeDataWarning from "./components/home-data-warning";
 import useHomeCatalogSearch from "./hooks/use-home-catalog-search";
 import type { AutorHome } from "./lib/home-author-composition-utils";
 import { criarAutoresParaConhecerHome } from "./lib/home-author-list-utils";
@@ -107,6 +108,8 @@ export default function Home() {
     obrasFavoritas,
     perfisAutores,
     dadosHomeCarregados,
+    erroCarregamentoHome,
+    recarregarDadosHome,
     setObrasLocais,
     setObrasFavoritas,
   } = useHomeInitialData(usuarioIdLogado, obrasCacheLocalHomeRef);
@@ -131,7 +134,7 @@ export default function Home() {
   }, [obrasLocais]);
 
   const homeSemObrasReais =
-    dadosHomeCarregados && !termoBusca && obrasPublicadas.length === 0;
+    dadosHomeCarregados && !erroCarregamentoHome && !termoBusca && obrasPublicadas.length === 0;
 
   const obrasHero = useMemo(() => {
     return criarObrasHeroHome(obrasPublicadas, termoBusca);
@@ -363,6 +366,7 @@ export default function Home() {
         usuarioLogado={usuarioLogado}
       />
       <div style={isDesktop ? desktopContainerStyle : containerStyle}>
+        {erroCarregamentoHome && <HomeDataWarning language={language} onRetry={recarregarDadosHome} />}
         <HomeHero
           isDesktop={isDesktop}
           language={language}

@@ -59,12 +59,18 @@ export default function RedefinirSenhaPage() {
   const [erro, setErro] = useState("");
   const [salvando, setSalvando] = useState(false);
 
-  useRedefinirSenhaRecoveryValidation(setEstadoLink);
+  const limparCamposRecuperacao = useCallback(() => {
+    setNovaSenha("");
+    setConfirmacao("");
+    setErro("");
+  }, []);
+  const contextoRecuperacaoRef = useRedefinirSenhaRecoveryValidation(setEstadoLink, limparCamposRecuperacao);
 
   const { salvarNovaSenha } = useRedefinirSenhaSaveAction({
     router,
     salvando,
     estadoLink,
+    contextoRecuperacaoRef,
     novaSenha,
     confirmacao,
     t,
@@ -104,6 +110,11 @@ export default function RedefinirSenhaPage() {
         </header>
 
         <section style={cardStyle}>
+          {estadoLink !== "valido" && erro && (
+            <span role="alert" aria-live="assertive" style={errorStyle}>
+              {erro}
+            </span>
+          )}
           {estadoLink === "verificando" ? (
             <p
               role="status"
@@ -113,7 +124,7 @@ export default function RedefinirSenhaPage() {
               {t("checking")}
             </p>
           ) : estadoLink === "invalido" ? (
-            <div style={contentStyle}>
+            <div role="alert" aria-live="assertive" style={contentStyle}>
               <h1
                 className="historietas-theme-title"
                 style={titleStyle}
@@ -147,6 +158,7 @@ export default function RedefinirSenhaPage() {
 
               <form
                 onSubmit={salvarNovaSenha}
+                aria-busy={salvando}
                 style={formStyle}
               >
                 <label style={fieldStyle}>

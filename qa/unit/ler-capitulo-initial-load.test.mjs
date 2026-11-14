@@ -2,6 +2,9 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import typescript from "typescript";
+// Inclui navegação/progresso no gate existente de posttest:pagination da CI.
+import "./ler-capitulo-navigation-actions.test.mjs";
+import "./use-ler-capitulo-scroll-progress.test.mjs";
 
 const ler = (path) => readFileSync(new URL(path, import.meta.url), "utf8").replace(/\r\n/g, "\n");
 const fonte = ler("../../app/ler-capitulo/hooks/use-ler-capitulo-initial-load.ts");

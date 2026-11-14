@@ -82,14 +82,18 @@ export default function AdminProblemasTecnicosPage() {
     observacoes,
     setObservacoes,
     carregarProblemas,
+    contextoRef,
+    capturarExecucao,
   } = useAdminProblemasTecnicosInitialData({
     router,
     t,
+    setAcaoEmAndamento,
     setErro,
     setSucesso,
   });
 
   const { atualizarChamado } = useAdminProblemasTecnicosActions({
+    contextoRef,
     usuarioId,
     ehAdmin,
     t,
@@ -229,7 +233,7 @@ export default function AdminProblemasTecnicosPage() {
               className="admin-tech-primary-button"
               disabled={acaoEmAndamento === "recarregar"}
               onClick={() =>
-                void recarregarProblemasTecnicos(carregarProblemas)
+                void recarregarProblemasTecnicos(carregarProblemas, capturarExecucao())
               }
             >
               {acaoEmAndamento === "recarregar"
