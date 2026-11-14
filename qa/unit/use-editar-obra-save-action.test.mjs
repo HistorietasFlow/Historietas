@@ -113,7 +113,7 @@ test("o fluxo preserva assets, rollback, atualização, backup e Diário", () =>
   assert.doesNotMatch(source, /salvarObrasDoUsuarioPreservandoOutrasContas\(/);
   assert.doesNotMatch(source, /salvarArquivoObraNoBackup\(/);
   assert.match(localPersistenceSource, /atualizarObraNaListaLocalEdicao\(\{/);
-  assert.match(localPersistenceSource, /salvarObrasDoUsuarioPreservandoOutrasContas\(novasObras, userId\)/);
+  assert.match(localPersistenceSource, /salvarObrasDoUsuarioPreservandoOutrasContas\(novasObras, userId, dadosAtualizacao\.obraId\)/);
   assert.match(localPersistenceSource, /salvarArquivoObraNoBackup\(/);
   assert.match(source, /sincronizarDiarioEdicaoObra\(\{/);
   assert.doesNotMatch(source, /registrarDiarioEdicaoObra\(/);
@@ -126,3 +126,5 @@ test("o fluxo preserva assets, rollback, atualização, backup e Diário", () =>
   antes("const novasObrasDoUsuario = persistirObraLocalEBackupEdicaoObra", "sincronizarDiarioEdicaoObra");
   antes("sincronizarDiarioEdicaoObra", "setSalvou(true)");
 });
+
+import "./editar-obra-safe-save.test.mjs";

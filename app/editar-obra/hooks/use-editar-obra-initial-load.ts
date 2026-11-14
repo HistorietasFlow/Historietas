@@ -255,9 +255,12 @@ export function useEditarObraInitialLoad({
 
         if (cancelado || !carga.atual()) return;
         carga.confirmar(obraSupabase);
+        // Falha do cache não deve esconder a obra confirmada remotamente.
+        setObras(obrasAtualizadas);
+        aplicarObraNoFormulario(obraSupabaseComAutorProfile, nomeProfileUsuario);
 
         const obrasAtualizadasDoUsuario =
-          salvarObrasDoUsuarioPreservandoOutrasContas(obrasAtualizadas, userId);
+          salvarObrasDoUsuarioPreservandoOutrasContas(obrasAtualizadas, userId, obraIdParam);
 
         sincronizarBackupArquivosObras(obrasAtualizadasDoUsuario, userId);
 
