@@ -129,3 +129,15 @@ test("leitura divergente após reabertura recupera RPC sem sobrescrever versão 
   assert.equal(record(h).diario[0].estado, "confirmado"); assert.equal(h.state.salvou, false);
   assert.match(h.state.erro, /versão carregada difere/);
 });
+
+test("confirmação de nova versão invalida conclusão antiga mesmo se o cache falhar", async t => {
+  const h = criarEdicaoHarness(t, {publicado: true}); await h.save();
+  const titleA = h.params.titulo, textA = h.params.texto, savedA = h.state.obras[0];
+  const saveB = h.render({obras: h.state.obras, obraAtual: savedA, capituloAtual: savedA.capitulos[0], texto: "Versão B confirmada no servidor antes da falha de cache."});
+  h.falhas.set("cache", true); await saveB({preventDefault() {}});
+  assert.equal(h.row.texto, "Versão B confirmada no servidor antes da falha de cache.");
+  assert.equal(count(h, "capitulos:update"), 2); h.falhas.delete("cache");
+  const restoreA = h.render({titulo: titleA, texto: textA}); await restoreA({preventDefault() {}});
+  assert.equal(count(h, "capitulos:update"), 3, "restaurar A é nova escrita explícita baseada em B");
+  assert.equal(h.row.texto, textA.trim()); assert.equal(h.state.salvou, true);
+});

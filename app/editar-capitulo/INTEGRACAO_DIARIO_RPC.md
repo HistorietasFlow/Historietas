@@ -105,19 +105,23 @@ contra backend real. Data API/Playwright e ativação conjunta continuam pendent
 
 ## Evidências locais desta branch
 
-Node 22.23.5; 92/92 testes focados passaram, incluindo SDK real sobre fetch simulado,
-PATCH compatível sem coluna/token, RPC ausente/gate off, retorno vazio/nulo,
-reabertura sem GET, leitura divergente, quota e troca de identidade. Typecheck,
-ESLint focado dos arquivos alterados e diff check passaram. As regressões novas
-entram no gate existente pelo teste de mutação local; nenhum workflow foi alterado.
+Node 22.23.5; revisão final com **244/244 testes** de Editar Capítulo aprovados,
+incluindo as regressões importadas pelo gate. Typecheck, ESLint focado e diff check
+passaram. Os quatro testes estruturais antigos foram corrigidos para conferir a
+delegação aos hooks e seus consumidores reais: callbacks de importação/exclusão,
+confirmação por idioma e estilos desktop/mobile, sem exigir funções inline ou
+contagem arbitrária de ocorrências de `isDesktop`.
 
-A rodada ampliada `qa/unit/editar-capitulo-*.test.mjs` teve 238/242 aprovações. As
-mesmas quatro falhas foram reproduzidas no checkout isolado da base #2307
-`53893883b5cb291fc6fd9ca114157bb0fea55942` (190/194): asserts antigos de funções
-inline de exclusão/importação e contagem de `isDesktop` nos testes delete-action,
-delete-message, desktop-mode e terceiro teste de save-action. Não foram relaxados.
-A assert de ordenação afetada pela nova função de recuperação foi atualizada para
-conferir cache → sincronização do Diário → notificação.
+A revisão reproduziu e corrigiu uma confirmação falsa: salvar A, confirmar B no
+servidor e falhar no cache deixava a conclusão de A ativa. Voltar o formulário para
+A podia indicar salvo sem novo PATCH, embora o servidor estivesse em B. A conclusão
+anterior agora é invalidada imediatamente após confirmar qualquer nova versão,
+antes de cache/Diário. Restaurar A passa a exigir uma nova escrita explícita, com
+CAS baseado em B; resposta incerta continua bloqueada. A regressão conferiu três
+PATCHs confirmados para as intenções A → B → A.
+
+Comando ampliado aprovado:
+`node --import ./qa/scripts/test-source-newlines.mjs --test qa/unit/editar-capitulo-*.test.mjs`.
 
 ```sh
 node --import ./qa/scripts/test-source-newlines.mjs --test \

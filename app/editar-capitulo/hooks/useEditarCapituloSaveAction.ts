@@ -209,6 +209,9 @@ export function useEditarCapituloSaveAction({
             }
             throw new Error(contexto.bloqueio || resultado.mensagem || "Não consegui salvar o capítulo agora.");
           }
+          // Outra versão confirmada torna a conclusão anterior obsoleta, mesmo
+          // quando cache/Diário falharem antes de concluir a nova intenção.
+          contexto.concluido = "";
           contexto.base = resultado.referencia;
           contexto.baseConfirmada = true;
           if (resultado.versaoDiario && !contexto.diario.some(item => item.versao === resultado.versaoDiario)) {
