@@ -679,18 +679,7 @@ export default function ObraDinamicaPage({ snapshotInicial }: { snapshotInicial?
         )
       : null;
 
-  if (erroAutenticacao) {
-    return (
-      <main data-historietas-obra-dinamica-root="true" style={pageThemeStyle}>
-        <style>{`${historietasThemeCss}${obraPageCss}`}</style>
-        <ObraDinamicaLanguageBridge />
-        <p role="alert">Não foi possível confirmar sua sessão agora.</p>
-        <button type="button" onClick={tentarAutenticacaoNovamente}>Tentar novamente</button>
-      </main>
-    );
-  }
-
-  if ((snapshotInicial ? publica.carregando : carregandoObras) && !obra) {
+  if (!erroAutenticacao && (snapshotInicial ? publica.carregando : carregandoObras) && !obra) {
     return (
       <main data-historietas-obra-dinamica-root="true" style={pageThemeStyle} aria-busy="true">
         <style>{`${historietasThemeCss}${obraPageCss}`}</style>
@@ -702,16 +691,17 @@ export default function ObraDinamicaPage({ snapshotInicial }: { snapshotInicial?
     );
   }
 
-  if (!obra) {
+  if (erroAutenticacao || !obra) {
     return (
-      <main data-historietas-obra-dinamica-root="true" style={pageThemeStyle} aria-busy={snapshotInicial ? publica.validando : false}
-        data-public-work-state={snapshotInicial ? publica.erro ? "erro" : "ausente" : undefined}>
+      <main data-historietas-obra-dinamica-root="true" style={pageThemeStyle} aria-busy={!erroAutenticacao && Boolean(snapshotInicial && publica.validando)}
+        data-public-work-state={erroAutenticacao ? "erro" : snapshotInicial ? publica.erro ? "erro" : "ausente" : undefined}>
         <style>{`${historietasThemeCss}${obraPageCss}`}</style>
 
         <ObraDinamicaLanguageBridge />
 
         <section style={isDesktop ? desktopContainerStyle : containerStyle}>
           <p
+            role={erroAutenticacao ? "alert" : undefined}
             style={{
               margin: "10px 0 0",
               color: "#FFFFFF",
@@ -720,11 +710,15 @@ export default function ObraDinamicaPage({ snapshotInicial }: { snapshotInicial?
               textAlign: "center",
             }}
           >
-            {(snapshotInicial ? publica.erro : erroCarregamentoObra)
+            {erroAutenticacao
+              ? "Não foi possível confirmar sua sessão agora."
+              : (snapshotInicial ? publica.erro : erroCarregamentoObra)
               ? "Não foi possível carregar a obra agora."
               : "Obra não encontrada"}
           </p>
-          {snapshotInicial && publica.erro ? <button type="button" onClick={publica.tentarNovamente}>Tentar novamente</button> : null}
+          {erroAutenticacao || (snapshotInicial && publica.erro) ? (
+            <button type="button" onClick={erroAutenticacao ? tentarAutenticacaoNovamente : publica.tentarNovamente}>Tentar novamente</button>
+          ) : null}
         </section>
       </main>
     );

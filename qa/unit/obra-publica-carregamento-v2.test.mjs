@@ -32,3 +32,17 @@ test('troca de identidade e unmount invalidam resposta, timers e loading antigos
 test('falha remota encerra loading com erro explícito',async()=>{const h=workHarness(()=>[]);h.start('a');h.pending[0].resolve({obras:[],status:'erro'});await flush();h.tick();assert.equal(h.state.erro,true);assert.equal(h.state.loading,false);h.stop()});
 
 test('retry manual recupera falha Auth sem confirmar sessão em erro',async()=>{let fail=true;const h=authHarness(async()=>fail?auth(null,{name:'AuthRetryableFetchError'}):auth('A'));await flush();assert.equal(h.render().erroAutenticacao,true);fail=false;h.retry();await flush();assert.equal(h.render().erroAutenticacao,false);assert.equal(h.render().autenticacaoCarregada,true);assert.equal(h.render().usuarioIdLogado,'A');h.stop()});
+
+test('erro Auth oculta inclusive snapshot existente e usa estado de erro sem busy',()=>{
+ const source=readFileSync(new URL('app/obra/[slug]/ObraDinamicaClient.tsx',root),'utf8');
+ const ast=ts.createSourceFile('Obra.tsx',source,ts.ScriptTarget.Latest,true,ts.ScriptKind.TSX);
+ let guard;
+ function visit(node){if(ts.isIfStatement(node)&&node.thenStatement.getText(ast).includes('data-public-work-state='))guard=node;ts.forEachChild(node,visit)}
+ visit(ast);assert.ok(guard,'estado de resultado público deve ter guard explícito');
+ const hidden=new Function('erroAutenticacao','obra',`return ${guard.expression.getText(ast)}`);
+ assert.equal(hidden(true,{id:'snapshot-anterior'}),true);
+ assert.equal(hidden(false,null),true);
+ assert.equal(hidden(false,{id:'publica-confirmada'}),false);
+ assert.match(guard.thenStatement.getText(ast),/aria-busy=\{!erroAutenticacao/);
+ assert.match(guard.thenStatement.getText(ast),/erroAutenticacao \? tentarAutenticacaoNovamente : publica.tentarNovamente/);
+});

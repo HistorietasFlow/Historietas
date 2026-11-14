@@ -56,3 +56,34 @@ Escopo somente `app/obra/[slug]/**` e um teste específico novo. Nenhum teste
 compartilhado da #2315 foi editado; nenhuma dependência de outro agente.
 Por essa restrição, evidências ficam aqui em vez de editar Memory Bank/docs
 compartilhados. Sem Docker, SQL, merge, deploy ou produção.
+
+## Correção da falha de Tests da PR #2317
+
+CI `43558685193`, job `132337250140`: o gate de sessão falhou em
+`obra-page-css.test.mjs:69`. Minha alteração adicionava uma quinta raiz com o
+CSS, enquanto o contrato compartilhado exige quatro consumidores. A falha
+`5 !== 4` foi reproduzida localmente, sem classificar como preexistente.
+
+O erro Auth agora usa o bloco de resultado/erro existente. Não foi removido
+CSS nem alterado o teste para contornar a asserção. O guard desse bloco inclui
+erro Auth mesmo com snapshot presente; o guard do spinner exclui erro Auth.
+A raiz sinaliza erro e aria-busy=false; o alerta e o retry de sessão continuam
+acessíveis, sem mostrar conteúdo antigo durante falha de autenticação.
+
+Regressão nova no arquivo próprio avalia o guard real do ramo de resultado,
+extraído pela AST TSX: snapshot presente com falha deve entrar no erro;
+snapshot válido sem falha não deve entrar. Também verifica busy e seleção do
+retry. Teste compartilhado da #2315 intacto.
+
+Validação focada: **14/14** (três testes CSS existentes + onze regressões
+próprias). Typecheck, Lint focado, Build e diff check aprovados. Logs em
+`/workspace/work/obra-ci-repro.log`, `obra-ci-focused.log`,
+`obra-ci-typecheck.log`, `obra-ci-lint.log`, `obra-ci-build.log` e
+`obra-ci-session-final.log`. Playwright/Axe e backend real continuam pendentes;
+não declarar homologação de interface completa ou RLS. A CI remota completa
+permanece necessária, sem rerun manual ou polling após o próximo push.
+
+Gate completo final `npm run test:session` aprovado: **2040/2040**, incluindo
+pre (387), principal (1513) e post (140), zero falhas/skips. A execução final
+ocorreu depois de concluir o ajuste do guard; não substitui os gates remotos
+posteriores que foram pulados na CI interrompida.
