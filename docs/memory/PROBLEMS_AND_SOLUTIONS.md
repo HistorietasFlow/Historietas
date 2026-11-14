@@ -536,6 +536,21 @@ de loading também é um `main`, e o rótulo da bottom nav pode estar oculto no
 desktop. Não usar esse rótulo nem o título exclusivo do desktop como prontidão.
 O estado vazio legítimo também é um feed carregado, não um skeleton.
 
+## E2E local: encerramento do servidor Playwright no Windows
+
+O `webServer` gerenciado pelo Playwright podia concluir os testes e manter a
+árvore do Next ativa no Windows. Nesse sistema, o runner local deve iniciar o
+CLI do Next diretamente, sem shell intermediário, executar o Playwright com
+`E2E_SERVER_EXTERNALLY_MANAGED=true` e encerrar exatamente a árvore do PID
+criado com `taskkill /pid <pid> /t /f`, aguardando a saída antes de retornar.
+
+A configuração recusa o lifecycle gerenciado diretamente no Windows e orienta
+o uso de `qa/scripts/run-playwright-local.mjs`. Não substituir esse controle por
+timeout maior, retry ou encerramento amplo por nome de processo. Ao validar uma
+falha E2E, confirme também que a porta local foi liberada; instabilidade do
+Supabase local continua sendo reportada separadamente, sem ser ocultada pelo
+cleanup do servidor.
+
 Os downloads oficiais de k6 e Gitleaks tiveram HTTP 504/503, conexão interrompida
 e timeout antes de executar as ferramentas. O instalador compartilhado usa
 arquivos oficiais com versão, tamanho e SHA-256 fixos, cache separado por
