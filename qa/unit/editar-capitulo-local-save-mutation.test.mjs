@@ -2,6 +2,10 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import typescript from "typescript";
+import "./editar-capitulo-save-recovery.test.mjs";
+import "./editar-capitulo-remote-save.test.mjs";
+import "./editar-capitulo-initial-recovery.test.mjs";
+import "./editar-capitulo-diary-action.test.mjs";
 
 const mutationSource = readFileSync(
   new URL(

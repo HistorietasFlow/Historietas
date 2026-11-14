@@ -7,6 +7,7 @@ const hookPath = new URL(
   import.meta.url,
 );
 const hookSource = readFileSync(hookPath, "utf8");
+const remoteSource = readFileSync(new URL("../../app/editar-capitulo/lib/editar-capitulo-remote-save.ts", import.meta.url), "utf8");
 const pageSource = readFileSync(
   new URL("../../app/editar-capitulo/page.tsx", import.meta.url),
   "utf8",
@@ -26,7 +27,7 @@ test("useEditarCapituloSaveAction preserva a ação de salvar edição", () => {
   assert.match(hookSource, /event\.preventDefault\(\)/);
   assert.match(
     hookSource,
-    /if \(processando \|\| excluindo \|\| !obraAtual \|\| !capituloAtual\) \{\s*return;/,
+    /if \(!contexto\?\.ativo \|\| contexto\.emCurso \|\| processando \|\| excluindo \|\| !obraAtual \|\| !capituloAtual\) return;/,
   );
   assert.match(hookSource, /const erroValidacao = validarCapitulo\([\s\S]*?titulo,[\s\S]*?texto,[\s\S]*?numeroCapitulo,/);
   assert.match(hookSource, /const tituloFinal = titulo\.trim\(\) \|\| `Capítulo \$\{numeroCapitulo \|\| 1\}`/);
@@ -37,8 +38,13 @@ test("useEditarCapituloSaveAction preserva a ação de salvar edição", () => {
   assert.match(hookSource, /carregarNomeProfileEditarCapitulo\(userId\)/);
   assert.match(hookSource, /idObraSupabaseValido\(obraId\) && idObraSupabaseValido\(capituloId\)/);
   assert.match(hookSource, /\.from\("obras"\)[\s\S]*?\.select\("id"\)[\s\S]*?\.eq\("id", obraId\)[\s\S]*?\.eq\("user_id", userId\)[\s\S]*?\.limit\(1\)[\s\S]*?\.maybeSingle\(\)/);
-  assert.match(hookSource, /\.from\("capitulos"\)[\s\S]*?\.update\(\{[\s\S]*?titulo: tituloFinal,[\s\S]*?texto: textoFinal,[\s\S]*?atualizado_em: atualizadoEm,[\s\S]*?\}\)[\s\S]*?\.eq\("id", capituloId\)[\s\S]*?\.eq\("obra_id", obraId\)[\s\S]*?\.eq\("user_id", userId\)[\s\S]*?\.select\("id, ordem"\)[\s\S]*?\.maybeSingle\(\)/);
-  assert.match(hookSource, /Number\.isInteger\(capituloAtualizado\.ordem\)/);
+  assert.match(hookSource, /await salvarTextoCapituloRemoto\(base, tituloFinal, textoFinal\)/);
+  assert.match(remoteSource, /\.from\("capitulos"\)\.update/);
+  for (const coluna of ["id", "obra_id", "user_id", "atualizado_em", "ordem", "publicado"]) {
+    assert.ok(remoteSource.includes(`.eq("${coluna}", referencia.`), `CAS preserva ${coluna}`);
+  }
+  assert.match(remoteSource, /\.filter\("tipo_conteudo", "eq", "texto"\)/);
+  assert.match(hookSource, /numeroCapituloFinal = contexto\.base!\.ordem/);
   assert.match(hookSource, /aplicarEdicaoCapituloNasObrasLocais\(/);
   assert.match(hookSource, /carregarBackupArquivosObras\(userId\)/);
   assert.match(hookSource, /restaurarArquivoObraComBackup\([\s\S]*?normalizarObra\(obra, index\),[\s\S]*?backupArquivos/);
@@ -46,19 +52,19 @@ test("useEditarCapituloSaveAction preserva a ação de salvar edição", () => {
   assert.match(hookSource, /setObras\(novasObrasDoUsuario\)/);
   assert.match(hookSource, /await registrarDiarioEdicaoCapitulo\(/);
   assert.match(hookSource, /await atualizarNotificacaoCapituloSupabase\(/);
-  assert.match(hookSource, /setSalvou\(true\)/);
+  assert.match(hookSource, /setSalvou\(ultimosRef\.current\.titulo === titulo && ultimosRef\.current\.texto === texto\)/);
   assert.match(hookSource, /window\.scrollTo\(\{[\s\S]*?behavior: "smooth"/);
-  assert.match(hookSource, /finally \{\s*setProcessando\(false\);/);
+  assert.match(hookSource, /finally \{\s*contexto\.emCurso = false;\s*if \(contexto\.ativo\) setProcessando\(false\);/);
 });
 
 test("useEditarCapituloSaveAction preserva a ordem sensível do salvamento", () => {
   assert.ok(indice("const erroValidacao = validarCapitulo") < indice("setProcessando(true)"));
   assert.ok(indice("await supabase.auth.getUser()") < indice('.from("obras")'));
-  assert.ok(indice('.from("capitulos")') < hookSource.lastIndexOf("aplicarEdicaoCapituloNasObrasLocais"));
+  assert.ok(indice("await salvarTextoCapituloRemoto") < hookSource.lastIndexOf("aplicarEdicaoCapituloNasObrasLocais"));
   assert.ok(hookSource.lastIndexOf("salvarObrasEditarCapituloStorage") < indice("setObras(novasObrasDoUsuario)"));
   assert.ok(indice("setObras(novasObrasDoUsuario)") < indice("await registrarDiarioEdicaoCapitulo"));
   assert.ok(indice("await registrarDiarioEdicaoCapitulo") < indice("await atualizarNotificacaoCapituloSupabase"));
-  assert.ok(indice("await atualizarNotificacaoCapituloSupabase") < indice("setSalvou(true)"));
+  assert.ok(indice("await atualizarNotificacaoCapituloSupabase") < hookSource.lastIndexOf("setSalvou(ultimosRef.current.titulo"));
 });
 
 test("Editar Capítulo mantém estado, JSX e exclusão na página", () => {

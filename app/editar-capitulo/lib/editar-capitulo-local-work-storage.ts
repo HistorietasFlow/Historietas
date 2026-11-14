@@ -81,6 +81,7 @@ export function carregarObrasLocaisNormalizadas(userId = "") {
 export function salvarObrasEditarCapituloStorage(
   obrasDoUsuario: (ObraParaNormalizar & ObraComAutorId)[],
   userId: string,
+  exigirConfirmacao = false,
 ) {
   const usuarioId = userId.trim();
 
@@ -101,11 +102,14 @@ export function salvarObrasEditarCapituloStorage(
     .filter((obra) => obraPertenceAoUsuarioEditarCapitulo(obra, usuarioId));
 
   sincronizarBackupArquivosObras(obrasDoUsuarioNormalizadas, usuarioId);
-  salvarJsonStorageUsuarioEditarCapitulo(
+  const gravou = salvarJsonStorageUsuarioEditarCapitulo(
     STORAGE_KEY,
     usuarioId,
     obrasDoUsuarioNormalizadas,
   );
+  if (exigirConfirmacao && !gravou) {
+    throw new Error("Não consegui salvar a cópia local. O texto de recuperação foi preservado nesta aba.");
+  }
 
   return obrasDoUsuarioNormalizadas;
 }

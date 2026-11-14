@@ -31,18 +31,20 @@ export function salvarJsonStorageUsuarioEditarCapitulo(
   const userIdLimpo = userId.trim();
 
   if (typeof window === "undefined" || !userIdLimpo) {
-    return;
+    return false;
   }
 
   try {
     const chaveStorage = criarStorageKeyUsuarioEditarCapitulo(chave, userIdLimpo);
 
     if (!chaveStorage) {
-      return;
+      return false;
     }
 
     localStorage.setItem(chaveStorage, JSON.stringify(valor));
+    return true;
   } catch {
     // localStorage é fallback; a edição continua com o estado em memória.
+    return false;
   }
 }
