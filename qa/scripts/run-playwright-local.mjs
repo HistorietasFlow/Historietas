@@ -40,16 +40,48 @@ async function aguardarServidor(processo, timeoutMs = 120_000) {
   throw new Error(`O servidor Next não respondeu em ${baseUrl.origin}.`);
 }
 
+function aguardarSaida(processo, timeoutMs = 5_000) {
+  if (processo.exitCode !== null) return Promise.resolve(true);
+
+  return new Promise((resolve) => {
+    const concluir = (saiu) => {
+      clearTimeout(limite);
+      processo.off("exit", aoSair);
+      resolve(saiu);
+    };
+    const aoSair = () => concluir(true);
+    const limite = setTimeout(() => concluir(false), timeoutMs);
+
+    processo.once("exit", aoSair);
+  });
+}
+
+async function encerrarArvoreWindows(processo) {
+  const terminador = iniciar(
+    "taskkill.exe",
+    ["/pid", String(processo.pid), "/t", "/f"],
+    { stdio: "ignore" },
+  );
+
+  await new Promise((resolve) => terminador.once("exit", resolve));
+}
+
 async function encerrar(processo) {
   if (processo.exitCode !== null) return;
 
-  processo.kill();
-  await Promise.race([
-    new Promise((resolve) => processo.once("exit", resolve)),
-    new Promise((resolve) => setTimeout(resolve, 5_000)),
-  ]);
+  if (process.platform === "win32") {
+    await encerrarArvoreWindows(processo);
+  } else {
+    processo.kill();
+  }
 
-  if (processo.exitCode === null) processo.kill("SIGKILL");
+  if (await aguardarSaida(processo)) return;
+
+  processo.kill("SIGKILL");
+
+  if (!(await aguardarSaida(processo))) {
+    throw new Error(`O servidor Next não encerrou (PID ${processo.pid}).`);
+  }
 }
 
 const servidor = iniciar(

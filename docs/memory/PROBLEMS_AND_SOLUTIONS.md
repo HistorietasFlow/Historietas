@@ -536,6 +536,21 @@ de loading também é um `main`, e o rótulo da bottom nav pode estar oculto no
 desktop. Não usar esse rótulo nem o título exclusivo do desktop como prontidão.
 O estado vazio legítimo também é um feed carregado, não um skeleton.
 
+## E2E local: encerramento do servidor Playwright no Windows
+
+O `webServer` gerenciado pelo Playwright podia concluir os testes e manter a
+árvore do Next ativa no Windows. Nesse sistema, o runner local deve iniciar o
+CLI do Next diretamente, sem shell intermediário, executar o Playwright com
+`E2E_SERVER_EXTERNALLY_MANAGED=true` e encerrar exatamente a árvore do PID
+criado com `taskkill /pid <pid> /t /f`, aguardando a saída antes de retornar.
+
+A configuração recusa o lifecycle gerenciado diretamente no Windows e orienta
+o uso de `qa/scripts/run-playwright-local.mjs`. Não substituir esse controle por
+timeout maior, retry ou encerramento amplo por nome de processo. Ao validar uma
+falha E2E, confirme também que a porta local foi liberada; instabilidade do
+Supabase local continua sendo reportada separadamente, sem ser ocultada pelo
+cleanup do servidor.
+
 Os downloads oficiais de k6 e Gitleaks tiveram HTTP 504/503, conexão interrompida
 e timeout antes de executar as ferramentas. O instalador compartilhado usa
 arquivos oficiais com versão, tamanho e SHA-256 fixos, cache separado por
@@ -546,3 +561,22 @@ O cache contém somente arquivos verificados, nunca credenciais ou binários
 extraídos. Instalar k6 antes da suíte evita gastar toda a execução quando o
 download está indisponível. Scans/baselines continuam obrigatórios; falha na
 instalação nunca significa aprovação de k6, ZAP ou Gitleaks.
+
+## Paginação anônima de comentários e custo da RLS
+
+A policy compartilhada de `comunidade_comentarios` chamava
+`comunidade_pode_ver_comentario(id)` para `anon` e `authenticated`. Para cada
+linha candidata, essa função relia o próprio comentário por chave primária antes
+de consultar a visibilidade do post. Em uma página com 2.501 candidatos, esse
+caminho ficou sem margem para o `statement_timeout` original de três segundos.
+
+Para `anon`, `auth.uid()` é nulo e a parte da regra que verifica bloqueio com o
+autor do comentário é necessariamente verdadeira. A policy anônima pode,
+portanto, consultar diretamente `comunidade_pode_ver_post(post_id)`. A policy de
+`authenticated` continua usando a função completa, preservando autoria,
+moderação, relações de seguimento e bloqueios nos dois sentidos.
+
+Não substituir a regra autenticada pela variante anônima, não tornar a função
+privada uma RPC e não elevar timeouts. A regressão deve cobrir, no mínimo,
+comentário público e privado para `anon`, bloqueio entre contas autenticadas e o
+acesso do autor ao próprio post privado.
