@@ -3111,3 +3111,11 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Performance — Fase 1: filtros avançados do Explorar
 
 - A composição visual dos filtros avançados de `/explorar` passou a ser carregada em um chunk sob demanda, preservando na página os estados, regras de negócio, body lock e callbacks existentes.
+
+## Diário de edição de capítulo — contrato independente
+
+Preparada infraestrutura de `editou_capitulo` com gate desligado, RPC por versão,
+recibo/tombstone transacional e leitura condicionada ao conteúdo atual. Preservados
+os tipos anteriores e suas policies. Sem integração automática, alteração da #2307,
+aplicação remota ou ativação. Contratos e rollback em
+[Diário de edição](diario-edicao-evento-seguro.md).
