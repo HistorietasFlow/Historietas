@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
+import "./comunidade-user-search-concurrency.test.mjs";
 
 const hook = readFileSync(
   new URL(
@@ -24,15 +25,15 @@ test("useComunidadeUserSearchSync preserva o lifecycle de usuarios seguidos", ()
   );
   assert.match(
     hook,
-    /void carregarUsuariosSeguidosComunidade\(userId\)\.then\(\(idsSeguidos\) => \{[\s\S]*?setUsuariosSeguidosIds\(idsSeguidos\);/,
+    /void carregarUsuariosSeguidosComunidade\(userId\)\.then\(\(idsSeguidos\) => \{[\s\S]*?setUsuariosSeguidosIds\(aplicarAlteracoesSeguimentoComunidade\(/,
   );
-  assert.match(hook, /\}, \[usuarioId, setUsuariosSeguidosIds\]\);/);
+  assert.match(hook, /\}, \[usuarioId, contextoSeguimento, setUsuariosSeguidosIds\]\);/);
 });
 
 test("useComunidadeUserSearchSync preserva normalizacao, debounce e combinacao da busca", () => {
   assert.match(
     hook,
-    /const termoLimpo = normalizarTermoBuscaUsuariosComunidade\(termoBuscaAdiado\);/,
+    /const termoLimpo = normalizarTermoBuscaUsuariosComunidade\(termoBusca\);/,
   );
   assert.match(
     hook,
@@ -42,6 +43,8 @@ test("useComunidadeUserSearchSync preserva normalizacao, debounce e combinacao d
     hook,
     /setUsuariosBuscaComunidade\(\[\]\);[\s\S]*?setCarregandoUsuariosBuscaComunidade\(false\);/,
   );
+  assert.match(hook, /contextoSeguimento\.vigente\(\)/);
+  assert.match(hook, /\.catch\(\(\) =>/);
   assert.match(hook, /const buscaTimer = window\.setTimeout\(/);
   assert.match(hook, /\}, 220\);/);
   assert.match(
@@ -70,7 +73,7 @@ test("Comunidade delega apenas a sincronizacao de busca de usuarios ao hook", ()
   );
   assert.match(
     pagina,
-    /useComunidadeUserSearchSync\(\{[\s\S]*?buscaComunidadeAberta,[\s\S]*?posts,[\s\S]*?termoBuscaAdiado,[\s\S]*?usuarioId: usuario\?\.id,[\s\S]*?setUsuariosBuscaComunidade,[\s\S]*?setCarregandoUsuariosBuscaComunidade,[\s\S]*?setUsuariosSeguidosIds,[\s\S]*?\}\);/,
+    /useComunidadeUserSearchSync\(\{[\s\S]*?buscaComunidadeAberta,[\s\S]*?posts,[\s\S]*?termoBusca,[\s\S]*?usuarioId: usuario\?\.id,[\s\S]*?setUsuariosBuscaComunidade,[\s\S]*?setCarregandoUsuariosBuscaComunidade,[\s\S]*?setUsuariosSeguidosIds,[\s\S]*?\}\);/,
   );
   assert.doesNotMatch(pagina, /void buscarUsuariosComunidadeSupabase\(/);
   assert.doesNotMatch(pagina, /void carregarUsuariosSeguidosComunidade\(/);

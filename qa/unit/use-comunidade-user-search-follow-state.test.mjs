@@ -10,35 +10,25 @@ const hook = ler(
 );
 const pagina = ler("../../app/comunidade/page.tsx");
 
-test("hook centraliza somente o estado de busca e seguimento de usuários", () => {
+test("hook associa resultados e seguimento ao termo e à versão autenticada", () => {
   assert.match(hook, /^"use client";/);
-  assert.match(hook, /import \{ useState \} from "react";/);
+  assert.match(hook, /import \{ useCallback, useMemo, useState \} from "react";/);
   assert.match(
     hook,
     /import type \{ UsuarioBuscaComunidade \} from "\.\.\/components\/community-user";/,
   );
-  assert.match(hook, /export function useComunidadeUserSearchFollowState\(\)/);
+  assert.match(hook, /export function useComunidadeUserSearchFollowState\(\{/);
   assert.match(
     hook,
     /buscaComunidadeAberta, setBuscaComunidadeAberta\] = useState\(false\)/,
   );
-  assert.match(
-    hook,
-    /usuariosBuscaComunidade, setUsuariosBuscaComunidade\][\s\S]*?useState<[\s\S]*?UsuarioBuscaComunidade\[\][\s\S]*?>\(\[\]\)/,
-  );
-  assert.match(
-    hook,
-    /carregandoUsuariosBuscaComunidade, setCarregandoUsuariosBuscaComunidade\][\s\S]*?useState\(false\)/,
-  );
-  assert.match(
-    hook,
-    /usuariosSeguidosIds, setUsuariosSeguidosIds\] = useState<string\[\]>\(\[\]\)/,
-  );
-  assert.match(
-    hook,
-    /usuarioSeguindoId, setUsuarioSeguindoId\] = useState<string \| null>\(null\)/,
-  );
-  assert.doesNotMatch(hook, /useEffect|useMemo|supabase|localStorage|router|return\s*\(\s*</);
+  for (const campo of ["usuariosBuscaComunidade", "carregandoUsuariosBuscaComunidade", "usuariosSeguidosIds", "usuarioSeguindoId"]) {
+    assert.ok(hook.includes(campo));
+  }
+  assert.match(hook, /estado\.contexto === contexto/);
+  assert.match(hook, /autenticacaoComunidadeVersaoRef\.current === versao/);
+  assert.match(hook, /contextoBusca = useMemo/);
+  assert.doesNotMatch(hook, /supabase|localStorage|router|return\s*\(\s*</);
 });
 
 test("página delega o estado e preserva sincronização, follow e consumidores", () => {
@@ -46,7 +36,7 @@ test("página delega o estado e preserva sincronização, follow e consumidores"
     pagina,
     /import \{ useComunidadeUserSearchFollowState \} from "\.\/hooks\/use-comunidade-user-search-follow-state";/,
   );
-  assert.match(pagina, /\} = useComunidadeUserSearchFollowState\(\);/);
+  assert.match(pagina, /\} = useComunidadeUserSearchFollowState\(\{[\s\S]*?usuarioId: usuario\?\.id,[\s\S]*?versaoAutenticacao,[\s\S]*?\}\);/);
 
   for (const estadoLocal of [
     "const [buscaComunidadeAberta, setBuscaComunidadeAberta]",
@@ -60,7 +50,7 @@ test("página delega o estado e preserva sincronização, follow e consumidores"
 
   assert.match(
     pagina,
-    /useComunidadeAuthAccountLifecycle\(\{[\s\S]*?setUsuariosSeguidosIds,[\s\S]*?setUsuarioSeguindoId,[\s\S]*?\}\);/,
+    /useComunidadeAuthAccountLifecycle\(\{[\s\S]*?setVersaoAutenticacao,[\s\S]*?\}\);/,
   );
   assert.match(
     pagina,

@@ -49,6 +49,10 @@ test("useComunidadeAuthAccountLifecycle preserva o carregamento autenticado e os
     /!usuarioConfirmado \|\|\s*usuarioConfirmado\.id !== user\.id/,
   );
   assert.match(hook, /setCarregandoUsuario\(false\);/);
+  assert.match(hook, /autenticacaoComunidadeVersaoRef\.current = versaoCarregamento;\s*setVersaoAutenticacao\(versaoCarregamento\);/);
+  assert.match(hook, /autenticacaoComunidadeVersaoRef\.current \+= 1;\s*setVersaoAutenticacao\(autenticacaoComunidadeVersaoRef\.current\);/);
+  // Os setters contextualizados não podem reiniciar o efeito Auth a cada versão.
+  assert.doesNotMatch(hook, /setUsuariosSeguidosIds|setUsuarioSeguindoId/);
 });
 
 test("useComunidadeAuthAccountLifecycle preserva reset, recarga e cleanup na troca de conta", () => {

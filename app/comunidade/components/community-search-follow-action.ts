@@ -9,6 +9,7 @@ import type {
   UsuarioBuscaComunidade,
   UsuarioComunidade,
 } from "./community-user";
+import type { ContextoSeguimentoComunidade } from "./community-user-follow-context";
 
 type SetState<T> = Dispatch<SetStateAction<T>>;
 
@@ -16,6 +17,7 @@ type AlternarSeguirUsuarioBuscaComunidadeParams = {
   usuarioAlvo: UsuarioBuscaComunidade;
   exigirLogin: () => boolean;
   usuario: UsuarioComunidade | null;
+  contextoSeguimento: ContextoSeguimentoComunidade;
   acoesComunidadeRef: { current: Set<string> };
   usuariosSeguidosIds: string[];
   setUsuariosSeguidosIds: SetState<string[]>;
@@ -29,6 +31,7 @@ export async function alternarSeguirUsuarioBuscaComunidade({
   usuarioAlvo,
   exigirLogin,
   usuario,
+  contextoSeguimento,
   acoesComunidadeRef,
   usuariosSeguidosIds,
   setUsuariosSeguidosIds,
@@ -37,11 +40,12 @@ export async function alternarSeguirUsuarioBuscaComunidade({
   setFeedbackAcao,
   feedbackTimerRef,
 }: AlternarSeguirUsuarioBuscaComunidadeParams) {
+  if (!contextoSeguimento.vigente()) return;
   if (!exigirLogin() || !usuario) {
     return;
   }
 
-  if (usuarioAlvo.id === usuario.id) {
+  if (contextoSeguimento.usuarioId !== usuario.id || usuarioAlvo.id === usuario.id) {
     return;
   }
 
@@ -51,26 +55,40 @@ export async function alternarSeguirUsuarioBuscaComunidade({
     return;
   }
 
-  const estavaSeguindo = usuariosSeguidosIds.includes(usuarioAlvo.id);
+  const alteracaoAnterior = contextoSeguimento.alteracoes.get(usuarioAlvo.id);
+  const estavaSeguindo = alteracaoAnterior ?? usuariosSeguidosIds.includes(usuarioAlvo.id);
   const deveSeguir = !estavaSeguindo;
-  const idsAnteriores = usuariosSeguidosIds;
+
+  function aplicarSeguimento(ativo: boolean) {
+    setUsuariosSeguidosIds((idsAtuais) => ativo
+      ? Array.from(new Set([...idsAtuais, usuarioAlvo.id]))
+      : idsAtuais.filter((id) => id !== usuarioAlvo.id));
+  }
+
+  function reverterSeguimento() {
+    if (alteracaoAnterior === undefined) contextoSeguimento.alteracoes.delete(usuarioAlvo.id);
+    else contextoSeguimento.alteracoes.set(usuarioAlvo.id, alteracaoAnterior);
+    // Uma leitura inicial pode ter terminado durante a escrita. Use essa
+    // confirmação sem desfazer alterações de outros alvos ou ações anteriores.
+    aplicarSeguimento(alteracaoAnterior ??
+      contextoSeguimento.idsCarregados?.includes(usuarioAlvo.id) ?? estavaSeguindo);
+  }
 
   setUsuarioSeguindoId(usuarioAlvo.id);
-  setUsuariosSeguidosIds((idsAtuais) =>
-    deveSeguir
-      ? Array.from(new Set([...idsAtuais, usuarioAlvo.id]))
-      : idsAtuais.filter((id) => id !== usuarioAlvo.id)
-  );
+  contextoSeguimento.alteracoes.set(usuarioAlvo.id, deveSeguir);
+  aplicarSeguimento(deveSeguir);
 
   try {
     const resultado = await salvarSeguindoUsuarioComunidade(
       usuario.id,
       usuarioAlvo.id,
-      deveSeguir
+      deveSeguir,
+      contextoSeguimento
     );
 
+    if (!contextoSeguimento.vigente()) return;
     if (!resultado.ok) {
-      setUsuariosSeguidosIds(idsAnteriores);
+      reverterSeguimento();
       setErro(
         resultado.erro || "Não foi possível atualizar este usuário agora."
       );
@@ -79,11 +97,8 @@ export async function alternarSeguirUsuarioBuscaComunidade({
 
     const seguindoAgora = resultado.estado === "seguindo";
 
-    setUsuariosSeguidosIds((idsAtuais) =>
-      seguindoAgora
-        ? Array.from(new Set([...idsAtuais, usuarioAlvo.id]))
-        : idsAtuais.filter((id) => id !== usuarioAlvo.id)
-    );
+    contextoSeguimento.alteracoes.set(usuarioAlvo.id, seguindoAgora);
+    aplicarSeguimento(seguindoAgora);
     setErro("");
     emitirFeedbackAcao(setFeedbackAcao, feedbackTimerRef,
       resultado.estado === "solicitado"
@@ -92,10 +107,17 @@ export async function alternarSeguirUsuarioBuscaComunidade({
         ? `Você começou a seguir ${usuarioAlvo.nome}.`
         : `Você deixou de seguir ${usuarioAlvo.nome}.`
     );
+  } catch {
+    if (contextoSeguimento.vigente()) {
+      reverterSeguimento();
+      setErro("Não foi possível atualizar este usuário agora.");
+    }
   } finally {
-    finalizarAcaoComunidade(acoesComunidadeRef, chaveAcao);
-    setUsuarioSeguindoId((idAtual) =>
-      idAtual === usuarioAlvo.id ? null : idAtual
-    );
+    if (contextoSeguimento.vigente()) {
+      finalizarAcaoComunidade(acoesComunidadeRef, chaveAcao);
+      setUsuarioSeguindoId((idAtual) =>
+        idAtual === usuarioAlvo.id ? null : idAtual
+      );
+    }
   }
 }
