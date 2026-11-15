@@ -166,7 +166,10 @@ for (const device of [{ name: "desktop", viewport: { width: 1440, height: 900 } 
     const cookies = await page.context().cookies();
     expect(cookies.some(cookie => cookie.name === `sb-${new URL(API).hostname.split(".")[0]}-auth-token`)).toBe(true);
     await navigate(page, routeFor(B));
-    await expect(page.getByText("Carregando lista...", { exact: true })).toBeVisible();
+    // Rota B remonta o loader, mas reutiliza a sessão já validada (#2330).
+    // Confirmar que a requisição retida do perfil B começou antes de validar o loading.
+    await expect.poll(() => f.requests.some(r => r.table === "profiles_publicos" && r.owner === B)).toBe(true);
+    await expect(page.getByText("Organizando a lista...", { exact: true })).toBeVisible();
     await expect(page.getByText(title(A), { exact: true })).toHaveCount(0);
     await expect(page.getByRole("heading", { name: new RegExp(name(A)) })).toHaveCount(0);
     // Keep checking painted frames while B's target profile request is held.
