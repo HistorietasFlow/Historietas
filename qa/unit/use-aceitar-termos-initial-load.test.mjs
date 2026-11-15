@@ -16,7 +16,7 @@ const hookSource = readFileSync(
 
 test("lifecycle inicial de Aceitar Termos preserva autenticação, redirect e cleanup", () => {
   assert.match(hookSource, /export function useAceitarTermosInitialLoad\(/);
-  assert.match(hookSource, /useEffect\(\(\) => \{/);
+  assert.match(hookSource, /useLayoutEffect\(\(\) => \{/);
   assert.match(hookSource, /let ativo = true;/);
   assert.match(
     hookSource,
@@ -28,7 +28,7 @@ test("lifecycle inicial de Aceitar Termos preserva autenticação, redirect e cl
   );
   assert.match(hookSource, /setRedirectTo\(destino\);/);
   assert.match(hookSource, /supabase\.auth\.getUser\(\)/);
-  assert.match(hookSource, /if \(!ativo\) \{\s*return;\s*\}/);
+  assert.match(hookSource, /if \(!atual\(\)\) return;/);
   assert.match(hookSource, /if \(error \|\| !data\.user\)/);
   assert.match(hookSource, /redirectTo: `\/aceitar-termos\?\$\{/);
   assert.match(hookSource, /router\.replace\(`\/login\?\$\{paramsLogin\.toString\(\)\}`\);/);
@@ -39,9 +39,9 @@ test("lifecycle inicial de Aceitar Termos preserva autenticação, redirect e cl
     /setErro\(status\.erro && !status\.aceito \? status\.erro : ""\);/,
   );
   assert.match(hookSource, /setCarregando\(false\);/);
-  assert.match(hookSource, /void carregar\(\);/);
-  assert.match(hookSource, /return \(\) => \{\s*ativo = false;\s*\};/);
-  assert.match(hookSource, /\}, \[router\]\);/);
+  assert.match(hookSource, /void carregar\(inicial\);/);
+  assert.match(hookSource, /return \(\) => \{\s*ativo = false;\s*contextoRef\.current\.ativo = false;\s*subscription\.unsubscribe\(\);\s*\};/);
+  assert.match(hookSource, /\}, \[router, tentativa,/);
 
   assert.ok(
     hookSource.indexOf("setRedirectTo(destino)") <
@@ -56,7 +56,7 @@ test("página delega apenas o lifecycle inicial ao hook", () => {
   );
   assert.match(
     pageSource,
-    /useAceitarTermosInitialLoad\(\{\s*router,\s*setRedirectTo,\s*setJaAceito,\s*setErro,\s*setCarregando,\s*\}\);/,
+    /useAceitarTermosInitialLoad\(\{\s*router,\s*setRedirectTo,\s*setJaAceito,\s*setErro,\s*setCarregando,[\s\S]*?setConfirmouTermos,[\s\S]*?setConfirmouPrivacidade,[\s\S]*?\}\);/,
   );
   assert.doesNotMatch(pageSource, /useEffect\(/);
   assert.doesNotMatch(pageSource, /supabase\.auth\.getUser/);
