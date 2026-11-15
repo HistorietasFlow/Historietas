@@ -88,9 +88,12 @@ async function setup(page, baseURL, server, { privateProfiles = [A, B], holdProf
     requests, release: gate.resolve,
     recover() { failed = ""; },
     async switchViewer(owner, event = owner ? "SIGNED_IN" : "SIGNED_OUT") {
-      const validacoesAntes = requests.filter(request => request.table === "user").length;
       viewer = owner;
       const next = session(owner);
+      const validacaoConcluida = owner ? page.waitForResponse(response => {
+        const url = new URL(response.url());
+        return response.request().method() === "GET" && url.pathname === "/auth/v1/user";
+      }) : null;
       await page.evaluate(({ key, next, event }) => {
         document.cookie = next
           ? `${key}=base64-${btoa(JSON.stringify(next)).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "")}; path=/; SameSite=Lax`
@@ -99,9 +102,11 @@ async function setup(page, baseURL, server, { privateProfiles = [A, B], holdProf
         channel.postMessage({ event, session: next });
         channel.close();
       }, { key, next, event });
-      if (owner) {
-        await expect.poll(() => requests.filter(request => request.table === "user").length)
-          .toBeGreaterThan(validacoesAntes);
+      if (validacaoConcluida) {
+        const response = await validacaoConcluida;
+        expect(await response.finished()).toBeNull();
+        expect(response.status()).toBe(200);
+        expect((await response.json()).id).toBe(owner);
       }
     },
   };
