@@ -1,15 +1,18 @@
 export const SAFE_FLOW_MARKER = "HISTORIETAS_QA_SAFE_FLOW ";
 
-const SCENARIOS = new Set(["editorial-status", "listas-identity"]);
-const ENDPOINTS = new Set(["auth-token", "auth-user", "works", "chapters", "profiles", "favorites", "permissions"]);
+const SCENARIOS = new Set(["editorial-status", "listas-identity", "canonical-reader-progress", "reading-progress-cross-device"]);
+const ENDPOINTS = new Set(["auth-token", "auth-user", "works", "chapters", "profiles", "favorites", "permissions", "public-reader", "content-metrics", "reading-progress"]);
 const METHODS = new Set(["GET", "POST", "PATCH", "DELETE"]);
-const ROUTES = new Set(["login", "editor", "lists", "public-work", "other"]);
+const ROUTES = new Set(["login", "editor", "lists", "public-work", "reader", "home", "library", "other"]);
 const READY_STATES = new Set(["loading", "interactive", "complete", "unavailable"]);
 const AUTH_STATES = new Set(["unknown", "transition", "authenticated", "anonymous"]);
 const RENDERED_STATES = new Set([
   "loading", "editor-enabled", "updated", "public-confirmed", "private", "target", "previous", "organizing", "error",
 ]);
+const READER_PHASES = new Set(["start", "navigation", "identity-ready", "mark-read", "sync-read", "home", "library", "unmark-read", "sync-unread", "final"]);
 const PHASES = {
+  "canonical-reader-progress": READER_PHASES,
+  "reading-progress-cross-device": READER_PHASES,
   "editorial-status": new Set(["start", "after-login", "editor-navigation", "editor-ready", "save-confirmed", "public-confirmed", "final"]),
   "listas-identity": new Set(["start", "account-a-ready", "signed-out", "account-b-authenticated", "route-b", "favorites", "final"]),
 };
@@ -40,6 +43,7 @@ export function sanitizeSafeFlowDiagnostic(input) {
     network.push({
       endpoint,
       method,
+      ...(["matched", "other", "unavailable"].includes(entry?.payloadMatch) && ["public-reader", "content-metrics"].includes(endpoint) ? {payloadMatch: entry.payloadMatch} : {}),
       requestCount: boundedInteger(entry?.requestCount),
       failedCount: boundedInteger(entry?.failedCount),
       statuses,
@@ -64,5 +68,5 @@ export function sanitizeSafeFlowDiagnostic(input) {
     });
   }
 
-  return { schemaVersion: 1, scenario, network, snapshots };
+  return { schemaVersion: 1, scenario, ...(["desktop", "mobile"].includes(input?.device) ? {device: input.device} : {}), network, snapshots };
 }
