@@ -561,10 +561,12 @@ preservadas pela condição de falha do job.
 
 O artefato não deve incluir o relatório bruto, HTML, traces nem contexto de erro,
 pois esses formatos podem conter URLs, headers, cookies, tokens ou payloads. O
-resumo usa uma allowlist com arquivo, posição, projeto, status, duração, retry,
-categoria fixa de erro e contagens de erros/anexos. Somente screenshots e vídeos
-das fixtures locais acompanham esse resumo. Não resolver perda de diagnóstico
-aumentando retries ou timeouts.
+resumo usa uma allowlist com índices numéricos de origem/teste, posição, projeto,
+status, duração, retry, categoria fixa de erro e contagens de erros/anexos.
+Títulos, caminhos, mensagens livres, screenshots e vídeos não acompanham o
+resumo: o conteúdo de uma mídia não pode ser considerado seguro apenas pelo MIME
+ou pelo teste que a produziu. Não resolver perda de diagnóstico aumentando
+retries ou timeouts.
 
 Os downloads oficiais de k6 e Gitleaks tiveram HTTP 504/503, conexão interrompida
 e timeout antes de executar as ferramentas. O instalador compartilhado usa

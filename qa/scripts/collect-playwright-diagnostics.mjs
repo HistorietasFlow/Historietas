@@ -4,9 +4,11 @@ import { fileURLToPath } from "node:url";
 
 const TEST_OUTCOMES = new Set(["expected", "flaky", "skipped", "unexpected"]);
 const RESULT_STATUSES = new Set(["failed", "interrupted", "passed", "skipped", "timedOut"]);
+const EXPECTED_STATUSES = new Set(["failed", "passed", "skipped"]);
+const PROJECT_NAMES = new Set(["desktop", "mobile"]);
 
-function boundedNumber(value) {
-  return Number.isFinite(value) && value >= 0 ? value : 0;
+function boundedInteger(value, maximum = 1_000_000) {
+  return Number.isSafeInteger(value) && value >= 0 && value <= maximum ? value : 0;
 }
 
 function safeOutcome(value) {
@@ -17,8 +19,13 @@ function safeResultStatus(value) {
   return RESULT_STATUSES.has(value) ? value : "unknown";
 }
 
-function safeFileName(value) {
-  return typeof value === "string" ? value.replaceAll("\\", "/").split("/").at(-1) : "unknown";
+function safeExpectedStatus(value) {
+  return EXPECTED_STATUSES.has(value) ? value : "unknown";
+}
+
+function safeProjectName(value) {
+  if (value === "") return "default";
+  return PROJECT_NAMES.has(value) ? value : "unknown";
 }
 
 function attachmentKind(attachment) {
@@ -69,27 +76,24 @@ function classifyTest(test) {
   return matches.slice(0, -1).some((matchesExpected) => !matchesExpected) ? "flaky" : "passed";
 }
 
-function collectSpecs(suite, parents, destination) {
-  const title = typeof suite?.title === "string" && suite.title ? suite.title : null;
-  const nextParents = title ? [...parents, title] : parents;
-
+function collectSpecs(suite, destination) {
   for (const spec of Array.isArray(suite?.specs) ? suite.specs : []) {
-    destination.push({ spec, parents: nextParents });
+    destination.push(spec);
   }
   for (const child of Array.isArray(suite?.suites) ? suite.suites : []) {
-    collectSpecs(child, nextParents, destination);
+    collectSpecs(child, destination);
   }
 }
 
-function summarizeTest(spec, test, parents, classification) {
+function summarizeTest(spec, test, classification, sourceIndex, testIndex) {
   const results = Array.isArray(test?.results) ? test.results : [];
   const attempts = results.map((result, index) => {
     const errors = Array.isArray(result?.errors) ? result.errors : [];
     return {
       attempt: index + 1,
-      retry: Number.isInteger(result?.retry) && result.retry >= 0 ? result.retry : index,
+      retry: Number.isSafeInteger(result?.retry) && result.retry >= 0 && result.retry <= 10 ? result.retry : index,
       status: safeResultStatus(result?.status),
-      durationMs: boundedNumber(result?.duration),
+      durationMs: boundedInteger(result?.duration, 86_400_000),
       errorCount: errors.length,
       errorKinds: summarizeErrorKinds(errors, result?.status),
       attachments: summarizeAttachments(result?.attachments),
@@ -97,12 +101,12 @@ function summarizeTest(spec, test, parents, classification) {
   });
 
   return {
-    file: safeFileName(spec?.file),
-    line: boundedNumber(spec?.line),
-    column: boundedNumber(spec?.column),
-    title: [...parents, typeof spec?.title === "string" ? spec.title : "unknown"],
-    project: typeof test?.projectName === "string" ? test.projectName : "unknown",
-    expectedStatus: typeof test?.expectedStatus === "string" ? test.expectedStatus : "passed",
+    sourceIndex,
+    testIndex,
+    line: boundedInteger(spec?.line),
+    column: boundedInteger(spec?.column),
+    project: safeProjectName(test?.projectName),
+    expectedStatus: safeExpectedStatus(test?.expectedStatus),
     classification,
     attempts,
   };
@@ -110,19 +114,20 @@ function summarizeTest(spec, test, parents, classification) {
 
 export function buildSafeSummary(report) {
   const specs = [];
-  for (const suite of Array.isArray(report?.suites) ? report.suites : []) collectSpecs(suite, [], specs);
+  for (const suite of Array.isArray(report?.suites) ? report.suites : []) collectSpecs(suite, specs);
 
   const totals = { tests: 0, passed: 0, flaky: 0, failed: 0, skipped: 0, attempts: 0 };
   const diagnostics = [];
 
-  for (const { spec, parents } of specs) {
-    for (const test of Array.isArray(spec?.tests) ? spec.tests : []) {
+  for (const [sourceIndex, spec] of specs.entries()) {
+    const tests = Array.isArray(spec?.tests) ? spec.tests : [];
+    for (const [testIndex, test] of tests.entries()) {
       const classification = classifyTest(test);
       totals.tests++;
       totals[classification]++;
       totals.attempts += Array.isArray(test?.results) ? test.results.length : 0;
       if (classification === "flaky" || classification === "failed") {
-        diagnostics.push(summarizeTest(spec, test, parents, classification));
+        diagnostics.push(summarizeTest(spec, test, classification, sourceIndex, testIndex));
       }
     }
   }
@@ -135,7 +140,7 @@ export function buildSafeSummary(report) {
       : "passed";
 
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     classification,
     shouldUpload: classification === "flaky" || classification === "failed",
     totals,
@@ -158,7 +163,7 @@ export async function collectDiagnostics(reportPath, outputPath) {
   } catch (error) {
     const unavailableReason = error?.code === "ENOENT" ? "report_missing" : "report_invalid";
     summary = {
-      schemaVersion: 1,
+      schemaVersion: 2,
       classification: "unavailable",
       shouldUpload: false,
       unavailableReason,

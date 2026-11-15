@@ -63,9 +63,7 @@ test("official image matches the locked Playwright and stays immutable/isolated 
   const upload = job.steps.find((step) => step.with?.name === "playwright-diagnostics");
   assert.equal(upload.if, "${{ failure() || steps.playwright_diagnostics.outputs.should_upload == 'true' }}");
   assert.match(upload.with.path, /qa\/reports\/playwright-diagnostics\/summary\.json/);
-  assert.match(upload.with.path, /qa\/test-results\/\*\*\/\*\.png/);
-  assert.match(upload.with.path, /qa\/test-results\/\*\*\/\*\.webm/);
-  assert.doesNotMatch(upload.with.path, /playwright-report|playwright-results\.json|trace\.zip|error-context/);
+  assert.doesNotMatch(upload.with.path, /test-results|\.png|\.webm|playwright-report|playwright-results\.json|trace\.zip|error-context/);
   assert.equal(job.steps.find((step) => step.name === "Remover servidor Chromium").if, "${{ always() }}");
   assert.ok(job.steps.some((step) => step.run === "lhci autorun"));
 });

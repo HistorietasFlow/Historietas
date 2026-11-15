@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtemp, readFile } from "node:fs/promises";
+import { mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { test } from "node:test";
@@ -8,24 +8,26 @@ import { buildSafeSummary, collectDiagnostics } from "../scripts/collect-playwri
 function reportWith(testCase, resultOverrides = {}) {
   return {
     config: {
-      metadata: { password: "fixture-password" },
+      metadata: { password: "fixture-password", person: "Maria Silva" },
       projects: [{ retries: 2, use: { extraHTTPHeaders: { authorization: "Bearer secret-token" } } }],
     },
     suites: [{
-      title: "suite",
+      title: "suite Maria Silva maria@example.com",
       specs: [{
-        title: "changes accounts",
-        file: "C:\\runner\\work\\qa\\tests\\lists.spec.mjs",
+        title: "changes account for Maria Silva using password fixture-password",
+        file: "C:\\Users\\Maria Silva\\maria@example.com.spec.mjs",
         line: 42,
         column: 3,
         tests: [{
           projectName: "desktop",
           expectedStatus: "passed",
+          title: "personal phone +55 11 99999-9999",
+          annotations: [{ description: "Rua Privada, 123" }],
           ...testCase,
           results: (testCase.results ?? []).map((result) => ({
             errors: [],
             stdout: ["password=fixture-password"],
-            stderr: ["cookie=session-secret"],
+            stderr: ["cookie=session-secret; person=maria@example.com"],
             attachments: [],
             ...result,
             ...resultOverrides,
@@ -68,7 +70,12 @@ test("flaky run requests an upload and keeps only allowlisted attempt metadata",
 
   assert.equal(summary.classification, "flaky");
   assert.equal(summary.shouldUpload, true);
-  assert.equal(summary.tests[0].file, "lists.spec.mjs");
+  assert.equal(summary.schemaVersion, 2);
+  assert.equal(summary.tests[0].sourceIndex, 0);
+  assert.equal(summary.tests[0].testIndex, 0);
+  assert.deepEqual(Object.keys(summary.tests[0]).sort(), [
+    "attempts", "classification", "column", "expectedStatus", "line", "project", "sourceIndex", "testIndex",
+  ]);
   assert.equal(summary.tests[0].attempts[0].status, "failed");
   assert.equal(summary.tests[0].attempts[0].errorCount, 1);
   assert.deepEqual(summary.tests[0].attempts[0].errorKinds, ["other"]);
@@ -76,9 +83,35 @@ test("flaky run requests an upload and keeps only allowlisted attempt metadata",
   assert.equal(summary.tests[0].attempts[1].status, "passed");
 
   const serialized = JSON.stringify(summary);
-  for (const secret of ["fixture-password", "secret-token", "session-secret", "C:\\secret", "authorization", "cookie"]) {
+  for (const secret of [
+    "fixture-password", "secret-token", "session-secret", "C:\\secret", "authorization", "cookie",
+    "Maria Silva", "maria@example.com", "+55 11 99999-9999", "Rua Privada, 123", "title", "path",
+  ]) {
     assert.ok(!serialized.includes(secret), `summary exposed ${secret}`);
   }
+});
+
+test("unknown free-form metadata is reduced to closed enums and numeric fields", () => {
+  const report = reportWith({
+    status: "flaky",
+    projectName: "maria@example.com",
+    expectedStatus: "Bearer personal-token",
+    results: [{ status: "failed", retry: 5511999999999, duration: 5511999999999 }],
+  });
+  report.suites[0].specs[0].line = 5511999999999;
+  report.suites[0].specs[0].column = -123;
+  const summary = buildSafeSummary(report);
+
+  assert.equal(summary.tests[0].project, "unknown");
+  assert.equal(summary.tests[0].expectedStatus, "unknown");
+  assert.equal(summary.tests[0].line, 0);
+  assert.equal(summary.tests[0].column, 0);
+  assert.equal(summary.tests[0].attempts[0].retry, 0);
+  assert.equal(summary.tests[0].attempts[0].durationMs, 0);
+  assert.deepEqual(Object.keys(summary.tests[0].attempts[0]).sort(), [
+    "attachments", "attempt", "durationMs", "errorCount", "errorKinds", "retry", "status",
+  ]);
+  assert.doesNotMatch(JSON.stringify(summary), /maria@example\.com|personal-token/);
 });
 
 test("definitive failure still requests an upload", () => {
@@ -114,10 +147,10 @@ test("collector writes the same outputs consumed by the workflow", async () => {
   process.env.GITHUB_OUTPUT = githubOutput;
 
   try {
-    await import("node:fs/promises").then(({ writeFile }) => writeFile(reportPath, JSON.stringify(reportWith({
+    await writeFile(reportPath, JSON.stringify(reportWith({
       status: "flaky",
       results: [{ status: "failed" }, { status: "passed", retry: 1 }],
-    }))));
+    })));
     await collectDiagnostics(reportPath, summaryPath);
 
     const summary = JSON.parse(await readFile(summaryPath, "utf8"));

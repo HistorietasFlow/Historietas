@@ -382,10 +382,7 @@ jobs:
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: playwright-diagnostics
-          path: |
-            qa/reports/playwright-diagnostics/summary.json
-            qa/test-results/**/*.png
-            qa/test-results/**/*.webm
+          path: qa/reports/playwright-diagnostics/summary.json
           if-no-files-found: ignore
           retention-days: 7
 
