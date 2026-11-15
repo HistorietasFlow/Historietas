@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
+import {loadApplicationModule} from "../helpers/load-application-module.mjs";
 
 const source = readFileSync(
   new URL(
@@ -20,6 +21,32 @@ const carregador = readFileSync(
   ),
   "utf8",
 );
+
+test("consultas sociais preservam contexto e não carregam solicitações privadas de outro perfil", async () => {
+  for (const perfilSocialId of ["", "A", "B"]) {
+    const calls = [];
+    const query = (name, result) => async (...args) => {calls.push([name, ...args]); return result;};
+    const {carregarDadosRemotosSeguindo} = loadApplicationModule("app/seguindo/lib/seguindo-remote-data-utils.ts", {
+      "./seguindo-work-loader": {carregarSeguindoSupabase: query("obras", {obras: []})},
+      "./seguindo-social-query-utils": {
+        carregarUsuariosSeguidosSupabase: query("seguidos", [{id: "seguido"}]),
+        carregarUsuariosSeguidoresSupabase: query("seguidores", [{id: "seguidor"}]),
+        carregarSolicitacoesSeguidoresSupabase: query("recebidas", [{id: "pendente"}]),
+        carregarIdsSolicitacoesEnviadasSupabase: query("enviadas", ["destinatario"]),
+      },
+    });
+    const result = await carregarDadosRemotosSeguindo({obrasLocais: [], obrasSeguidasLocais: ["local"],
+      obrasFavoritasLocais: [], obrasConcluidasLocais: [], perfilSocialId, usuarioLogadoId: "A"});
+    const proprio = perfilSocialId !== "B";
+    assert.deepEqual(calls.filter(call => call[0] !== "obras"), [
+      ["seguidos", perfilSocialId || "A"], ["seguidores", perfilSocialId || "A"],
+      ...(proprio ? [["recebidas", "A"], ["enviadas", "A"]] : []),
+    ]);
+    assert.deepEqual(calls[0][2], perfilSocialId ? [] : ["local"]);
+    assert.deepEqual(result.solicitacoesEnviadasSupabase, proprio ? ["destinatario"] : []);
+    assert.deepEqual(result.solicitacoesSeguidoresSupabase, proprio ? [{id: "pendente"}] : []);
+  }
+});
 
 test("carregamento remoto preserva perfil social e consultas paralelas", () => {
   assert.match(

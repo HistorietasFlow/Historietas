@@ -45,7 +45,8 @@ export function obterIdentidadeHistoricoLeitor(
 
   const { obraId, capituloId } = identidade as Record<string, unknown>;
 
-  return typeof obraId === "string" && typeof capituloId === "string"
+  return typeof obraId === "string" && Boolean(obraId.trim()) &&
+    typeof capituloId === "string" && Boolean(capituloId.trim())
     ? { obraId, capituloId }
     : null;
 }
@@ -66,13 +67,25 @@ export function criarAcaoTrocaCapituloLeitor({
   function trocarCapitulo(
     novoCapituloId: string,
   ) {
-    if (!obraAtual) {
+    if (
+      !obraAtual ||
+      novoCapituloId === capituloId ||
+      !obraAtual.capitulos.some((capitulo) => capitulo.id === novoCapituloId)
+    ) {
       return;
     }
 
     // Um commit inicial do Next pode ter substituído o estado da entrada.
     // Identifique a origem antes de criar a próxima entrada do histórico.
     const identidadeAtual = obterIdentidadeHistoricoLeitor(window.history.state);
+    // Dois acionamentos antes do próximo render não devem duplicar a entrada.
+    if (
+      identidadeAtual?.obraId === obraAtual.id &&
+      identidadeAtual.capituloId === novoCapituloId
+    ) {
+      return;
+    }
+
     if (
       identidadeAtual?.obraId !== obraAtual.id ||
       identidadeAtual.capituloId !== capituloId
@@ -85,10 +98,6 @@ export function criarAcaoTrocaCapituloLeitor({
         "",
       );
     }
-
-    setCapituloId(
-      novoCapituloId,
-    );
 
     window.history.pushState(
       // O Next copia seu estado interno ao receber uma navegação externa.
@@ -103,6 +112,8 @@ export function criarAcaoTrocaCapituloLeitor({
         novoCapituloId,
       ),
     );
+
+    setCapituloId(novoCapituloId);
 
     window.scrollTo({
       top: 0,

@@ -1,114 +1,77 @@
 "use client";
 
-import { useEffect } from "react";
-import { supabase } from "../../../lib/supabase/client";
+import { useEffect, useState, type RefObject } from "react";
+import type { IdentidadeEmAlta } from "./use-em-alta-auth-session";
 import type { ObraLocal } from "../lib/em-alta-models";
 import { carregarColecoesRankingEmAlta } from "../lib/em-alta-ranking-collections-loader";
 import { carregarInteracoesLocaisRankingEmAlta } from "../lib/em-alta-ranking-local-interactions";
 import { carregarObrasSupabasePublicadas } from "../lib/em-alta-supabase-works-loader";
+import { obterVersaoColecoesEmAlta } from "../lib/em-alta-collection-supabase-sync";
 
 export function useEmAltaRankingLoader({
-  usuarioLogadoId,
-  setCarregandoRanking,
-  setUsuarioLogado,
-  setUsuarioLogadoId,
-  setObrasLocais,
-  setObrasFavoritas,
-  setObrasConcluidas,
-  setVisualizacoesRegistradas,
-  setAvaliacoesLocaisRegistradas,
+  usuarioLogadoId, autenticacaoCarregada, versaoIdentidade, identidadeSessaoRef,
+  setCarregandoRanking, setObrasLocais, setObrasFavoritas, setObrasConcluidas,
+  setVisualizacoesRegistradas, setAvaliacoesLocaisRegistradas,
 }: {
   usuarioLogadoId: string;
+  autenticacaoCarregada: boolean;
+  versaoIdentidade: number;
+  identidadeSessaoRef: RefObject<IdentidadeEmAlta>;
   setCarregandoRanking: (valor: boolean) => void;
-  setUsuarioLogado: (valor: boolean) => void;
-  setUsuarioLogadoId: (valor: string) => void;
   setObrasLocais: (valor: ObraLocal[]) => void;
   setObrasFavoritas: (valor: string[]) => void;
   setObrasConcluidas: (valor: string[]) => void;
   setVisualizacoesRegistradas: (valor: Record<string, number>) => void;
   setAvaliacoesLocaisRegistradas: (valor: Record<string, number>) => void;
 }) {
+  const [tentativa, setTentativa] = useState(0);
+  const [erroRanking, setErroRanking] = useState(false);
+  const [identidadeAplicada, setIdentidadeAplicada] = useState<{ usuarioId: string; versao: number } | null>(null);
   useEffect(() => {
+    if (!autenticacaoCarregada) return;
     let cancelado = false;
-
+    const atual = () => !cancelado && identidadeSessaoRef.current.usuarioId === usuarioLogadoId &&
+      identidadeSessaoRef.current.versao === versaoIdentidade;
     async function carregarRanking() {
-      window.setTimeout(() => {
-        if (!cancelado) {
-          setCarregandoRanking(true);
-        }
-      }, 0);
-
+      setCarregandoRanking(true);
+      setErroRanking(false);
+      if (identidadeAplicada?.usuarioId !== usuarioLogadoId || identidadeAplicada.versao !== versaoIdentidade) {
+        setObrasLocais([]); setObrasFavoritas([]); setObrasConcluidas([]);
+        setVisualizacoesRegistradas({}); setAvaliacoesLocaisRegistradas({});
+      }
       try {
-        const obrasNormalizadas: ObraLocal[] = [];
-        let userIdAtual = usuarioLogadoId;
-
-        if (!userIdAtual) {
-          try {
-            const { data } = await supabase.auth.getUser();
-            userIdAtual = data.user?.id || "";
-          } catch {
-            userIdAtual = "";
-          }
+        let amostraLimitada = false;
+        const [colecoes, obras] = await Promise.allSettled([
+          carregarColecoesRankingEmAlta(usuarioLogadoId, atual),
+          carregarObrasSupabasePublicadas([], usuarioLogadoId, { aoUsarAmostraLimitada: () => { amostraLimitada = true; } }),
+        ]);
+        if (!atual()) return;
+        const interacoes = carregarInteracoesLocaisRankingEmAlta(usuarioLogadoId);
+        setVisualizacoesRegistradas(interacoes.visualizacoesNormalizadas);
+        setAvaliacoesLocaisRegistradas(interacoes.avaliacoesLocaisNormalizadas);
+        if (colecoes.status === "fulfilled" && !colecoes.value.obsoletas &&
+            colecoes.value.versao === obterVersaoColecoesEmAlta(usuarioLogadoId)) {
+          setObrasFavoritas(colecoes.value.obrasFavoritasNormalizadas);
+          setObrasConcluidas(colecoes.value.obrasConcluidasNormalizadas);
         }
-
-        const {
-          obrasFavoritasNormalizadas,
-          obrasConcluidasNormalizadas,
-        } = await carregarColecoesRankingEmAlta(userIdAtual);
-
-        const {
-          visualizacoesNormalizadas,
-          avaliacoesLocaisNormalizadas,
-        } = carregarInteracoesLocaisRankingEmAlta(userIdAtual);
-
-        window.setTimeout(() => {
-          if (!cancelado) {
-            setUsuarioLogado(Boolean(userIdAtual));
-            setUsuarioLogadoId(userIdAtual);
-            setObrasLocais(obrasNormalizadas);
-            setObrasFavoritas(obrasFavoritasNormalizadas);
-            setObrasConcluidas(obrasConcluidasNormalizadas);
-            setVisualizacoesRegistradas(visualizacoesNormalizadas);
-            setAvaliacoesLocaisRegistradas(avaliacoesLocaisNormalizadas);
-          }
-        }, 0);
-
-        const obrasComSupabase =
-          await carregarObrasSupabasePublicadas(
-            obrasNormalizadas,
-            userIdAtual,
-          );
-
-        window.setTimeout(() => {
-          if (!cancelado) {
-            setObrasLocais(obrasComSupabase);
-          }
-        }, 0);
+        if (colecoes.status === "rejected") { setObrasFavoritas([]); setObrasConcluidas([]); }
+        setObrasLocais(obras.status === "fulfilled" ? obras.value : []);
+        setErroRanking(amostraLimitada || obras.status === "rejected" || colecoes.status === "rejected" ||
+          (colecoes.status === "fulfilled" && colecoes.value.falhaTemporaria));
       } catch {
-        window.setTimeout(() => {
-          if (!cancelado) {
-            setObrasLocais([]);
-            setObrasFavoritas([]);
-            setObrasConcluidas([]);
-            setVisualizacoesRegistradas({});
-            setAvaliacoesLocaisRegistradas({});
-          }
-        }, 0);
+        if (atual()) { setErroRanking(true); setObrasLocais([]); }
       } finally {
-        window.setTimeout(() => {
-          if (!cancelado) {
-            setCarregandoRanking(false);
-          }
-        }, 0);
+        if (atual()) {
+          setIdentidadeAplicada({ usuarioId: usuarioLogadoId, versao: versaoIdentidade });
+          setCarregandoRanking(false);
+        }
       }
     }
-
     void carregarRanking();
-
-    return () => {
-      cancelado = true;
-    };
-    // Os setters recebidos são os setters estáveis dos estados da página.
+    return () => { cancelado = true; };
+    // Os setters da página e a ref da sessão são estáveis.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [usuarioLogadoId]);
+  }, [usuarioLogadoId, autenticacaoCarregada, versaoIdentidade, tentativa]);
+  return { erroRanking, tentarCarregarRanking: () => setTentativa(valor => valor + 1),
+    dadosDaIdentidadeAtual: autenticacaoCarregada && identidadeAplicada?.usuarioId === usuarioLogadoId && identidadeAplicada.versao === versaoIdentidade };
 }

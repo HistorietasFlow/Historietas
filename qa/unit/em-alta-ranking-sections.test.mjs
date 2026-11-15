@@ -44,10 +44,8 @@ test("RankingSection preserva composição, rolagem, posições e acessibilidade
   ]) {
     assert.ok(rankingSection.includes(prop));
   }
-  assert.match(rankingSection, /onAlternarFavorito: _onAlternarFavorito,/);
-  assert.match(rankingSection, /onAlternarConcluido: _onAlternarConcluido,/);
-  assert.match(rankingSection, /void _onAlternarFavorito;/);
-  assert.match(rankingSection, /void _onAlternarConcluido;/);
+  assert.match(rankingSection, /onAlternarFavorito=\{onAlternarFavorito\}/);
+  assert.match(rankingSection, /onAlternarConcluido=\{onAlternarConcluido\}/);
   assert.match(rankingSection, /const tema = obterTemaRanking\(tipo\);/);
   assert.match(rankingSection, /useRef<HTMLDivElement \| null>\(null\)/);
   assert.match(rankingSection, /posicao: index \+ 1,/);

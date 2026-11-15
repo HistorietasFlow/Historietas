@@ -18,7 +18,9 @@ test("o hook preserva o lifecycle, a leitura e a mutation do suporte técnico", 
   [
     "export function useAjudaTechnicalSupport",
     "useEffect(() => {",
-    "let cancelado = false",
+    "subscription.unsubscribe()",
+    "identidade.current.versao",
+    "envio.current = operacao",
     "window.location.href",
     "supabase.auth.getUser()",
     '"listar_meus_problemas_tecnicos"',
@@ -48,7 +50,7 @@ test("a página permanece responsável pela composição visual do suporte", () 
     "AjudaSupportMessages",
     "AjudaTechnicalSupportForm",
     "AjudaSupportTickets",
-    "usuarioAutenticado &&",
+    "usuarioAutenticado || carregandoChamados || erroChamados",
     "onSubmit={enviarProblemaTecnico}",
   ].forEach((contract) => assert.ok(page.includes(contract), contract));
   [

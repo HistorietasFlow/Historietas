@@ -1,3 +1,4 @@
+import { observeSafeFlow } from "./playwright-safe-flow-diagnostics.mjs";
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { createClient } from "@supabase/supabase-js";
@@ -10,7 +11,8 @@ const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT
 let author, userId;
 const works = [];
 const check = (response) => { expect(response.error).toBeNull(); return response.data; };
-const reader = (page) => page.locator('main[data-historietas-ler-capitulo-root="true"]');
+// Next streaming may retain an offscreen copy; target the sole visible reader.
+const reader = (page) => page.locator('main[data-historietas-ler-capitulo-root="true"]:visible');
 const apiResponse = (page) => page.waitForResponse(r => new URL(r.url()).pathname === "/api/leitura-publica");
 // Exercita também no Windows a animação nativa observada no Chromium da CI Linux.
 test.use({ launchOptions: { args: ["--enable-smooth-scrolling"] } });
@@ -107,6 +109,7 @@ for (const device of ["desktop", "mobile"]) {
       const f = await fixture();
       const hydration = apiResponse(page);
       await page.goto(f.path); await hydration;
+      await expect(reader(page)).toHaveCount(1);
       await expect(reader(page).getByText("Texto público antes da edição.")).toBeVisible();
       await page.route("**/api/leitura-publica?**", route => route.fulfill({ status: 503, json: { erro: "Temporário" } }));
       const failure = apiResponse(page);
@@ -190,7 +193,7 @@ for (const device of ["desktop", "mobile"]) {
 
 test("progresso canônico entre desktop/mobile usa duas sessões reais e aguarda identidade aplicada", async ({ browser, baseURL }) => {
   expect(["127.0.0.1", "localhost", "[::1]"]).toContain(new URL(baseURL).hostname);
-  const f = await fixture(), contexts = [], clients = [];
+  const f = await fixture(), contexts = [], clients = [], diagnostics = new Map();
   check(await author.from("capitulos").update({ publicado: true }).eq("id", f.two));
   async function device(width) {
     const client = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } });
@@ -206,15 +209,23 @@ test("progresso canônico entre desktop/mobile usa duas sessões reais e aguarda
     contexts.push(context);
     // Sessão validada pelo Auth local; cookies só em memória, nunca em relatórios/arquivos.
     await context.addCookies([...cookies.values()].filter(c => c.value).map(c => ({ name: c.name, value: c.value, url: baseURL, sameSite: "Lax" })));
-    return context.newPage();
+    const page = await context.newPage();
+    const diagnostic = observeSafeFlow(page, "canonical-reader-progress", {
+      readerTarget: {slug: f.slug, chapterId: f.one}, device: width === 390 ? "mobile" : "desktop",
+    });
+    diagnostics.set(page, diagnostic);
+    await diagnostic.capture("start", {authState: "authenticated"});
+    return page;
   }
   async function open(page, reload = false) {
     const ready = page.waitForResponse(r => new URL(r.url()).pathname.endsWith("/rpc/obter_metricas_conteudos") && r.ok() &&
       (r.request().postDataJSON()?.p_obra_ids || []).length === 0 &&
       (r.request().postDataJSON()?.p_capitulo_ids || []).includes(f.one));
+    await diagnostics.get(page).capture("navigation", {authState: "authenticated"});
     if (reload) await page.reload({ waitUntil: "domcontentloaded" });
     else await page.goto(f.path, { waitUntil: "domcontentloaded" });
     await ready;
+    await diagnostics.get(page).capture("identity-ready", {authState: "authenticated", rendered: {target: reader(page)}});
   }
   try {
     const desktop = await device(1440), mobile = await device(390);
@@ -223,14 +234,22 @@ test("progresso canônico entre desktop/mobile usa duas sessões reais e aguarda
     await desktop.getByRole("button", { name: "Marcar capítulo como lido", exact: true }).click();
     expect((await save).ok()).toBe(true);
     await expect(desktop.getByRole("button", { name: "Marcar capítulo como não lido", exact: true })).toBeVisible();
+    await diagnostics.get(desktop).capture("mark-read", {authState: "authenticated"});
     await open(mobile, true);
     await expect(mobile.getByRole("button", { name: "Marcar capítulo como não lido", exact: true })).toBeVisible();
+    await diagnostics.get(mobile).capture("sync-read", {authState: "authenticated"});
     const undo = mobile.waitForResponse(r => r.url().includes("/rpc/salvar_progresso_leitura"));
     await mobile.getByRole("button", { name: "Marcar capítulo como não lido", exact: true }).click();
     expect((await undo).ok()).toBe(true);
+    await diagnostics.get(mobile).capture("unmark-read", {authState: "authenticated"});
     await open(desktop, true);
     await expect(desktop.getByRole("button", { name: "Marcar capítulo como lido", exact: true })).toBeVisible();
+    await diagnostics.get(desktop).capture("sync-unread", {authState: "authenticated"});
   } finally {
+    for (const [page, diagnostic] of diagnostics) {
+      try { await diagnostic.capture("final", {rendered: {target: reader(page), error: page.getByRole("alert")}}); }
+      finally { diagnostic.emit(); diagnostic.dispose(); }
+    }
     for (const context of contexts) await context.close();
     for (const client of clients) await client.auth.signOut({ scope: "local" });
   }

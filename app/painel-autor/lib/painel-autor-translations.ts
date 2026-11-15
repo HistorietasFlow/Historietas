@@ -12,6 +12,9 @@ export const PAINEL_AUTOR_UI_TRANSLATIONS: Record<
   "Todas as obras": { en: "All works", es: "Todas las obras" },
   "Publicadas": { en: "Published", es: "Publicadas" },
   "Rascunhos": { en: "Drafts", es: "Borradores" },
+  "Com capítulos em rascunho": { en: "With draft chapters", es: "Con capítulos en borrador" },
+  "Confirmação de rascunhos limitada": { en: "Limited draft confirmation", es: "Confirmación de borradores limitada" },
+  "Exibimos somente obras com capítulos em rascunho confirmados nesta atualização. Outras obras podem não ter sido confirmadas.": { en: "Only works with draft chapters confirmed in this update are shown. Other works may not have been confirmed.", es: "Solo mostramos obras con capítulos en borrador confirmados en esta actualización. Es posible que otras obras no se hayan confirmado." },
   "Sem capítulos": { en: "Without chapters", es: "Sin capítulos" },
   "Na lista": { en: "In the list", es: "En la lista" },
   "Concluídas": { en: "Completed", es: "Completadas" },
@@ -66,6 +69,8 @@ export const PAINEL_AUTOR_UI_TRANSLATIONS: Record<
   "Ajuste a busca ou limpe os filtros para voltar a ver suas obras.": { en: "Adjust your search or clear the filters to see your works again.", es: "Ajusta la búsqueda o limpia los filtros para volver a ver tus obras." },
   "Por": { en: "By", es: "Por" },
   "Editar capítulo": { en: "Edit chapter", es: "Editar capítulo" },
+  "Continuar rascunho": { en: "Continue draft", es: "Continuar borrador" },
+  "Ver comentários": { en: "View comments", es: "Ver comentarios" },
   "Continuar leitura": { en: "Continue reading", es: "Continuar leyendo" },
   "Ler capítulo": { en: "Read chapter", es: "Leer capítulo" },
   "Editar obra": { en: "Edit work", es: "Editar obra" },
@@ -122,7 +127,21 @@ export function traduzirTextoPainelAutor(
     return `${inicio}${traducaoExata[idioma]}${fim}`;
   }
 
-  let correspondencia = /^Abrir opções de (.+)$/.exec(conteudo);
+  let correspondencia = /^Continuar rascunho — ([\s\S]+)$/.exec(conteudo);
+  if (correspondencia) {
+    return `${inicio}${idioma === "en" ? "Continue draft" : "Continuar borrador"} — ${correspondencia[1]}${fim}`;
+  }
+
+  correspondencia = /^(\d+) (capítulo|capítulos) em rascunho$/.exec(conteudo);
+  if (correspondencia) {
+    const quantidade = correspondencia[1];
+    const singular = quantidade === "1";
+    return idioma === "en"
+      ? `${inicio}${quantidade} draft ${singular ? "chapter" : "chapters"}${fim}`
+      : `${inicio}${quantidade} ${singular ? "capítulo en borrador" : "capítulos en borrador"}${fim}`;
+  }
+
+  correspondencia = /^Abrir opções de (.+)$/.exec(conteudo);
   if (correspondencia) {
     return idioma === "en"
       ? `${inicio}Open options for ${correspondencia[1]}${fim}`

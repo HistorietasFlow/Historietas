@@ -19,8 +19,9 @@ test("entrada por senha preserva ação e orquestração", () => {
   assert.match(submitActionSource, /if \(error\)/);
   assert.match(submitActionSource, /if \(!data\.user\)/);
   assert.match(submitActionSource, /salvarProfile/);
-  assert.match(submitActionSource, /aguardarLogin\(1600\)/);
-  assert.match(submitActionSource, /finalizarAutenticacaoLogin\(\{ userId: data\.user\.id, router \}\)/);
+  assert.doesNotMatch(submitActionSource, /aguardarLogin|1600/);
+  assert.match(submitActionSource, /prepararContinuacao\(data\.user\.id\)/);
+  assert.match(submitActionSource, /finalizarLogin\(data\.user\.id\)/);
   assert.doesNotMatch(page, /from "..\/..\/lib\/supabase\/client"/);
   assert.doesNotMatch(source, /useState|useEffect|router|localStorage|<[A-Z][A-Za-z0-9]*/);
 });

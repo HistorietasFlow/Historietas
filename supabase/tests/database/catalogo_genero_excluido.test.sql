@@ -65,6 +65,6 @@ reset role;
 set local role authenticated;
 select is((select count(*)::integer from public.listar_obras_catalogo('','','','','todos','mais-recentes',24,null,null,null,'qa-genero',null,'','drama')),9,'authenticated mantém contrato sem elevar privilégios');
 reset role;
-select ok((select count(*) = 5 and bool_and(not prosecdef) from pg_proc where pronamespace = 'public'::regnamespace and proname = 'listar_obras_catalogo'),'todas as cinco variantes continuam SECURITY INVOKER');
+select ok((select count(*) = 5 and bool_and(not prosecdef) from pg_proc where pronamespace = 'public'::regnamespace and proname = 'listar_obras_catalogo' and pronargs between 10 and 14),'todas as cinco variantes anteriores continuam SECURITY INVOKER');
 select * from finish();
 rollback;

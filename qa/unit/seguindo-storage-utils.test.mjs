@@ -2,6 +2,12 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import typescript from "typescript";
+// O gate test:session já executa este arquivo. Manter as regressões de busca e
+// isolamento de carga ligadas a ele sem alterar scripts fora do escopo.
+import "./seguindo-user-search-utils.test.mjs";
+import "./seguindo-user-search-sync.test.mjs";
+import "./seguindo-data-loader.test.mjs";
+import "./seguindo-remote-data-utils.test.mjs";
 
 const source = readFileSync(
   new URL(

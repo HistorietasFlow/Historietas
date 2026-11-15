@@ -126,6 +126,8 @@ export type SnapshotObraPublica = {
   slug: string;
   obra: {
     titulo: string; autor: string; autorId: string; genero: string; formato: string;
+    // Ausente = resposta legada; null = ausencia confirmada no snapshot remoto.
+    statusEditorial?: "em_andamento" | "concluida" | "pausada" | null;
     classificacaoIndicativa: string; avisosConteudo: string[]; sinopse: string;
     tags: string[]; capa: string; capaNome: string; criadaEm: string;
   };
@@ -145,8 +147,17 @@ function capaSemAssinatura(valor: unknown) {
   } catch { return ""; }
 }
 
+function statusEditorialPublico(campos: Record<string, unknown>): Pick<SnapshotObraPublica["obra"], "statusEditorial"> {
+  if (!Object.hasOwn(campos, "statusEditorial")) return {};
+  const valor = campos.statusEditorial;
+  if (valor === null || valor === "em_andamento" || valor === "concluida" || valor === "pausada") {
+    return { statusEditorial: valor };
+  }
+  throw new Error("Status editorial da projecao publica invalido.");
+}
+
 export const obterSnapshotObraPublica = (slug: string): Promise<SnapshotObraPublica | null> =>
-  comProjecao(slug, "obra-leve-v1", null, async (projecao) => {
+  comProjecao(slug, "obra-leve-status-editorial-v2", null, async (projecao) => {
     const supabase = criarSupabasePublicClient({ fetch: (input, init) => fetch(input, { ...init, cache: "no-store" }) });
     let cursor: { ordem: number; id: string } | null = null;
     let anexo: SnapshotObraPublica["anexo"] = null;
@@ -190,6 +201,7 @@ export const obterSnapshotObraPublica = (slug: string): Promise<SnapshotObraPubl
     const lista = (valor: unknown): string[] => Array.isArray(valor) ? valor.filter((v): v is string => typeof v === "string") : [];
     return { obraId: projecao.obraId, geracao: projecao.geracao, revisao: projecao.revisao, slug: projecao.slug,
       obra: { titulo: texto(campos.titulo) || "Obra sem título", autor: texto(campos.autor) || "",
+        ...statusEditorialPublico(campos),
         autorId: texto(campos.autorId) || "", genero: texto(campos.genero) || "", formato: texto(campos.formato) || "",
         classificacaoIndicativa: texto(campos.classificacaoIndicativa) || "", avisosConteudo: lista(campos.avisosConteudo),
         sinopse: texto(campos.sinopse) || "", tags: lista(campos.tags), capa: capaSemAssinatura(campos.capa),

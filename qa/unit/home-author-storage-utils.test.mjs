@@ -199,3 +199,13 @@ test("home-author-storage-utils estabelece a fronteira de persistência", () => 
   assert.match(modulo, /\[\s*perfil\.userId,\s*perfil\.nome,\s*normalizarChaveAutor\(perfil\.nome\),\s*perfil\.nome\.trim\(\)\.replace\(\/\\s\+\/g, " "\)\.toLowerCase\(\),\s*\]/);
   assert.doesNotMatch(modulo, /supabase|useEffect|useState/);
 });
+
+test("perfis inválidos sinalizam indisponibilidade sem vazar outro namespace", () => {
+  for (const raw of ["{bad", "null", "[]"]) {
+    let falhas = 0;
+    comStorage({ getItem: key => { assert.equal(key, "historietas-perfis-autores:A"); return raw; } }, () => {
+      assert.deepEqual(carregarPerfisAutoresHomeSalvos("A", () => falhas++), {});
+    });
+    assert.equal(falhas, 1);
+  }
+});

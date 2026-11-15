@@ -1,3 +1,6 @@
+import { StoryStatusField } from "../../../components/StoryStatusField";
+import type { IntervaloPalavrasTexto } from "../../../lib/catalogo-palavras";
+import { ExplorarWordRangeFilter } from "./explorar-word-range-filter";
 import { categorias } from "../lib/explorar-categories";
 import { normalizarGeneroExcluido } from "../../../lib/catalogo-genero";
 import type { HistorietasLanguage } from "../../../lib/i18n";
@@ -24,7 +27,11 @@ type ExplorarAdvancedFiltersCompositionProps = {
   filtroTag: string;
   tagExcluida: string;
   generoExcluido: string;
+  statusEditorial: string;
+  onSelecionarStatusEditorial: (valor: string) => void;
   notaMinima: number | null;
+  intervaloPalavras: IntervaloPalavrasTexto;
+  onAplicarPalavras: (intervalo: IntervaloPalavrasTexto) => void;
   filtroClassificacao: string;
   mostrarConfirmacaoConteudo18: boolean;
   confirmouIdadeConteudo18: boolean;
@@ -55,7 +62,11 @@ export default function ExplorarAdvancedFiltersComposition({
   filtroTag,
   tagExcluida,
   generoExcluido,
+  statusEditorial,
+  onSelecionarStatusEditorial,
   notaMinima,
+  intervaloPalavras,
+  onAplicarPalavras,
   filtroClassificacao,
   mostrarConfirmacaoConteudo18,
   confirmouIdadeConteudo18,
@@ -110,6 +121,10 @@ export default function ExplorarAdvancedFiltersComposition({
 
       {!mostrarConfirmacaoConteudo18 && (
         <>
+          {modoConteudo === "obras" && <StoryStatusField id="explorar-status-editorial" idioma={language}
+            value={statusEditorial} onChange={onSelecionarStatusEditorial} filtro />}
+          {modoConteudo === "obras" && <ExplorarWordRangeFilter
+            intervalo={intervaloPalavras} language={language} onAplicar={onAplicarPalavras} />}
           <ExplorarFormatFilterOptions
             filtroFormato={filtroFormato}
             language={language}

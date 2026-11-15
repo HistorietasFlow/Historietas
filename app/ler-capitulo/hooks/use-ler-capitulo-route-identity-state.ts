@@ -15,6 +15,22 @@ export function useLerCapituloRouteIdentityState({
 } = {}) {
   const [obraId, setObraId] = useState(obraIdInicial);
   const [capituloId, setCapituloId] = useState(capituloIdInicial);
+  const [identidadeInicial, setIdentidadeInicial] = useState({
+    obraId: obraIdInicial,
+    capituloId: capituloIdInicial,
+  });
+
+  // O App Router pode reutilizar este componente em outra rota canônica.
+  // Reconcilie antes dos efeitos para não identificar a nova entrada com IDs antigos.
+  // Props iguais (refresh/revalidação) não desfazem uma troca local de capítulo.
+  if (
+    identidadeInicial.obraId !== obraIdInicial ||
+    identidadeInicial.capituloId !== capituloIdInicial
+  ) {
+    setIdentidadeInicial({ obraId: obraIdInicial, capituloId: capituloIdInicial });
+    setObraId(obraIdInicial);
+    setCapituloId(capituloIdInicial);
+  }
 
   useEffect(() => {
     if (!obraId || !capituloId) {
@@ -42,21 +58,36 @@ export function useLerCapituloRouteIdentityState({
   }, [obraId, capituloId]);
 
   useEffect(() => {
-    function sincronizarIdentidadeComHistorico(event: PopStateEvent) {
-      const identidade = obterIdentidadeHistoricoLeitor(event.state);
+    function sincronizarIdentidadeComHistorico(event: { state: unknown }) {
+      let identidade = obterIdentidadeHistoricoLeitor(event.state);
 
-      if (!identidade) {
-        return;
+      // A URL interna também corrige entradas antigas sem marcação ou divergentes.
+      // Queries nunca definem a identidade de uma rota canônica pública.
+      if (window.location.pathname === "/ler-capitulo") {
+        const params = new URLSearchParams(window.location.search);
+        identidade = {
+          obraId: params.get("obraId") || "",
+          capituloId: params.get("capituloId") || "",
+        };
       }
 
-      setObraId(identidade.obraId);
-      setCapituloId(identidade.capituloId);
+      // Sem identidade confirmada, aguarde o carregador público existente.
+      setObraId(identidade?.obraId || "");
+      setCapituloId(identidade?.capituloId || "");
+    }
+
+    function restaurarIdentidade(event: PageTransitionEvent) {
+      if (event.persisted) {
+        sincronizarIdentidadeComHistorico({ state: window.history.state });
+      }
     }
 
     window.addEventListener("popstate", sincronizarIdentidadeComHistorico);
+    window.addEventListener("pageshow", restaurarIdentidade);
 
     return () => {
       window.removeEventListener("popstate", sincronizarIdentidadeComHistorico);
+      window.removeEventListener("pageshow", restaurarIdentidade);
     };
   }, []);
 

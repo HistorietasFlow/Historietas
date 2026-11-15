@@ -1,6 +1,501 @@
 # Estado atual
 
-Atualizado em: 2026-11-09
+Atualizado em: 2026-11-13
+
+### Capas privadas — integração de código para validação, sem ativação
+
+As PRs #2290 (contrato SQL), #2291 (entrega HTTP desativada) e #2289
+(adaptadores de upload desativados) foram reunidas em uma branch de
+integração de testes, sem merge na `main`. A versão esperada do protocolo
+de upload foi alinhada ao `BIGINT` decimal do banco, sem converter para
+número JavaScript. O endpoint retorna 503; uploads retornam `disabled`.
+Ainda não há produtor de referência, adaptadores SQL/Storage, controle físico
+das quotas, validação CDN ou autorização para ativação/migration remota.
+Ver [revisão conjunta](CAPAS_PRIVADAS_REVISAO_CONJUNTA.md).
+
+### Capas privadas — PR 1, somente contrato SQL
+
+Sobre `98be8c31`, preparada migration `20261113190105` com geracao/versao
+proprias, referencias internas imutaveis e recibo UUID atomico/idempotente.
+Sem backfill, Storage novo ou interface. Escritas legadas invalidam CAS;
+vinculo gerenciado exige operacao versionada. Origem publica/incerta permanece
+marcada mesmo apos limpar URL. Transicao 18+ com capa continua bloqueada.
+Local: pgTAP 1.143/1.143, integracao focada 10/10 e unitarios 39/39; regressoes
+editoriais/publicas aprovadas. Lint SQL global limitado por cinco dependencias
+Cron ausentes em funcoes nao alteradas; nucleo novo sem erros de lint SQL.
+Contratos, validacao e limites em [TRANSICAO_18_COM_CAPA.md](TRANSICAO_18_COM_CAPA.md#pr-1--contrato-transacional-privado-13112026).
+
+### Investigação — transição 18+ com capa existente
+
+Sobre `main` `a5ac96c7`, em branch independente da #2286: **sem solução
+comprovadamente segura nos contratos examinados**. Entrega original exclusivamente documental;
+guard de recusa preservado. Ordem DELETE/PATCH, outbox, cópia privada e remoção
+manual prévia não comprovam atomicidade, retirada pública ou terminalidade.
+Token editorial não versiona capa/classificação; URLs públicas e cache de até
+um ano exigem análise própria. O guard do formulário não é garantia global
+contra DML direto ou escritores concorrentes.
+Ver [evidências, proposta e critérios de aceitação](TRANSICAO_18_COM_CAPA.md).
+Regressões locais existentes: 39/39 no Node 22.23.5. pgTAP, Data API/Storage
+e Playwright não executados: sem Supabase local preparado, sem autorização
+para iniciar Docker/Supabase ou instalar navegador. Sem migrations, backfill,
+remoção de arquivos, ativação, merge ou alteração de produção.
+
+### Explorar — intervalo de palavras disponiveis (Etapa 2)
+
+UI somente Obras, minimo/maximo inclusivos seguros, zero distinto de vazio,
+aplicacao atomica, PT/EN/ES, URL, chip unico removivel e confirmacao remota por
+consulta/identidade. Falha nao busca amostra ampla nem certifica cache. Neutro
+preserva seis RPCs/variantes antigas; link com intervalo faz uma RPC filtrada.
+Sem SQL/migration nova. Historico **sem backfill**, NULL nao e zero: manter PR
+em draft ate revisao de cobertura e autorizacao separada de implantacao.
+Instalacao remota/timestamps distintos foram informados pelo responsavel, nao
+consultados nesta tarefa. Ver [contratos e evidencias](FILTRO_TAMANHO_PALAVRAS.md).
+
+Validacao local: unitarios/regressoes 130/130, pgTAP palavras 44/44, cliente real
+Data API 1/1 (52 obras, alvo fora da primeira pagina) e 12 cenarios distintos
+Playwright aprovados apos ajustes diagnosticados de QA, workers=1/retries=0,
+desktop/mobile. Inclui sessao real entre abas, falha/retry, cache, paginacao,
+historico, foco/axe e contagem de consultas. Lint focado, Typecheck, Build e diff
+check aprovados; cobertura completa permanece na CI. Detalhes das falhas iniciais
+e limites no documento acima; nenhuma garantia de producao/capacidade fisica.
+
+### Tamanho da obra — Etapa 1, palavras no banco
+
+Contador nullable protegido por trigger, variante paginada de 17 argumentos e
+preenchimento administrativo limitado preparados sobre #2284. Sem interface,
+backfill remoto, mudancas de RLS ou ativacoes. Anexos/mistos/medicao parcial
+nao certificam tamanho; seis variantes antigas preservadas. Evidencias, custos
+locais e procedimento em [FILTRO_TAMANHO_PALAVRAS.md](FILTRO_TAMANHO_PALAVRAS.md).
+
+### Status editorial — integração da aplicação concluída na #2284
+
+Criação opcional, edição com CAS real/reconciliação explícita, metadado público
+confirmado e filtro paginado compartilhável de Obras implementados sobre #2283.
+Sem migration nova ou consultas extras nos fluxos normais. Resposta perdida não
+autoriza cleanup nem sucesso. Transição 18+ com capa remota existente permanece
+**bloqueada**: falta atomicidade entre Storage e UPDATE; não declarar esse fluxo
+resolvido. As duas migrations anteriores foram informadas como aplicadas pelo
+responsável; nenhuma nova consulta remota foi feita nesta etapa de palavras.
+Ver [contratos, testes e limites](STATUS_EDITORIAL_ETAPA2.md).
+
+### Status editorial — token protegido, antes da interface
+
+Nova migration acrescenta versão UUID nullable sem backfill, gerada pelo banco
+em INSERT/recriação e mudança efetiva de status. Trigger privado invoker, sem
+grants novos, UPDATE da versão ou RPC de escrita. Contrato Data API com ID,
+proprietário e token (IS NULL no legado) preparado; testes de ABA, concorrência,
+rollback e resposta perdida. UPDATE sem CAS continua permitido e renova token:
+adoção na interface foi concluída na #2284; não representa CAS geral para clientes antigos.
+Ver [contrato e evidências](STATUS_EDITORIAL_ETAPA1.md#proteção-de-versão-editorial--base-ad9a0188-2282).
+Validação local: pgTAP 1.039/1.039, Data API/regressões 27/27, unitários 14/14,
+Lint focado, auditoria 199/199, SQL público/trigger novo e diff check aprovados.
+Lint privado global apontou cinco dependências antigas de tabelas Cron ausentes;
+não foi instalado Cron nem alterado o agendamento para contornar os apontamentos.
+
+### Status editorial — contrato de banco, sem interface
+
+Etapa 1 adiciona persistência nullable sem inferência, UPDATE somente da nova
+coluna, guard de termos, sexta variante paginada e projeção pública aditiva.
+Sem alterar RLS, interface ou agendamento. pgTAP completo 1.002/1.002,
+integrações de projeção/snapshot 16/16 e unitários 14/14 locais aprovados.
+Lint focado/SQL, Typecheck, Build, auditoria estática 199/199 e diff check passaram.
+**Histórico da Etapa 1:** revisão pública não é acessível em drafts/18+; timestamp
+e valor anterior não garantiam versão/ABA. Token/CAS próprios foram concluídos
+nas #2283/#2284. Ver [contratos, evidências e recuperação](STATUS_EDITORIAL_ETAPA1.md).
+
+### QA — CI da #2281, raízes públicas durante streaming
+
+CI `43323946415`, job `131551528152`: 171 passes, uma falha definitiva em
+`smoke-routes.spec.mjs:106` (main global ambíguo nas três tentativas) e duas
+falhas recuperadas no retry: texto global do Leitor no axe e timeout de
+`Acesso negado` no histórico administrativo. Os 14 testes dos indicadores
+passaram. Banco/integrações/preparo passaram; Lighthouse/k6/ZAP posteriores
+não executaram. Os três arquivos envolvidos eram idênticos à base `40a5d759`.
+
+Smoke original passou na única tentativa local; isso não prova estabilidade.
+MutationObserver no build da PR capturou, desktop/mobile, loading visível junto
+da Obra/Leitor sob `div#S:*[hidden]`, incluindo cópia oculta do texto após a
+resposta pública. HTTP 200 e apenas uma raiz visível confirmada ao estabilizar:
+evidência de seletor amplo/transição, não de duas páginas ativas da aplicação.
+QA agora aguarda Obra confirmada, sem busy/inert; axe usa texto/título do Leitor
+visível único após a resposta pública correspondente. Confere também um único
+main visível, sem aceitar duplicação ativa; axe continua na página inteira.
+
+Validação afetada: 6/6 Playwright, workers=1/retries=0, smoke Obra e axe Leitor
+desktop/mobile, smoke capítulo e teste administrativo intacto. Lint focado e
+diff check aprovados. Build da PR reutilizado, apenas QA alterado; sem repetir
+as suítes de banco ou os 14 testes dos indicadores já verdes na CI. Timeout
+administrativo não reproduzido, causa ainda inconclusiva, sem atribuir ao
+ambiente ou aos indicadores nem alterar autorização/fixture por suposição.
+
+### Explorar — filtros selecionados e remoção individual
+
+Indicadores compactos acima dos resultados mostram somente formato, tag
+incluída/excluída, gênero excluído e avaliação mínima normalizados. Cada remoção
+chama seu handler existente com o neutro, sem limpar outras escolhas. Autores
+mantém somente formato e tag incluída; controles bloqueados não são reativados.
+Normalização de formato apenas exportada do helper atual, sem novo parser.
+
+Componente de apresentação com props/callbacks explícitos; nenhum fetch, efeito
+de histórico, estado paralelo ou persistência. Tags são texto literal, nunca
+traduzidas/interpretadas; rótulos e vocabulário em PT/EN/ES. Foco visível passa
+ao próximo indicador, anterior ou acionador de filtros quando remove o último.
+Seleção não comprova sucesso da consulta; aviso de falha e retry permanecem.
+Regras push/replace, filtros pessoais, cache/identidade, cursores, rankings e
+filtragem no banco não foram alterados. Painel avançado continua lazy.
+
+Validação: 29/29 unitários focados (incluindo cards, traduções e URL); novos
+casos ligados ao gate existente de cards. Playwright 14/14 na primeira rodada,
+desktop/mobile, build de produção, workers=1/retries=0: 12 casos com HTTP
+controlado e dois com RPC Supabase local real. Dez comparações dos cinco
+filtros confirmam uma RPC por remoção e payload idêntico ao painel. Re-render
+dos indicadores/traduções não consulta. Histórico push/replace, reload,
+Autores, foco visível/próximo/anterior/acionador, tags longas literais, falha,
+overflow e axe sem violações graves/críticas cobertos. Lint focado, Typecheck,
+Build e diff check aprovados; suíte completa fica para a CI. Somente banco
+descartável 58421, sem homologar produção/Storage ou refazer testes de RLS.
+
+### Painel do autor — filtro de obras com capítulos em rascunho
+
+Filtro `Com capítulos em rascunho` reutiliza exclusivamente o mapa transitório
+da #2278: entrada confirmada com total > 0, inclusive em obra publicada. Mapa
+opcional na função pura e na memoização; não inferir confirmação pelos capítulos
+mesclados/cache. `Rascunhos` continua sendo o status da obra, e `Em leitura`,
+busca, ordenações e resumo geral permanecem inalterados. Cards e os dois atalhos
+de edição não foram modificados. Sem consultas, persistência ou escritas novas.
+
+Confirmação ausente ou sem entrada para alguma obra carregada mostra aviso de
+cobertura limitada e o controle existente de limpar filtros, mesmo havendo
+resultados confirmados. Não afirma ausência de rascunhos, nem inventa causa da
+indisponibilidade. Zero confirmado é distinto de entrada ausente. Estados
+selecionados acessíveis e controles/aviso em PT/EN/ES; conteúdo autoral intacto.
+Reutiliza os guards de identidade, paginação completa e respostas antigas da
+#2278, sem reestruturar o carregamento ou alterar regras de agendamento.
+
+Validação: 33/33 unitários focados e Playwright 4/4, desktop/mobile, build de
+produção local, workers=1/retries=0. Teclado, seleção acessível, axe sem violações
+graves/críticas, PT/EN/ES e falha 503 controlada com fallback. Alternar/limpar
+filtro: zero chamadas Data API; consulta inicial de capítulos continua única na
+fixture. Destinos de edição e texto/publicação/timestamp dos capítulos intactos.
+Lint focado, Typecheck, Build e diff check aprovados; suíte completa para a CI.
+Primeiro Build interrompido por fetch de fontes Geist no sandbox; concluído com
+rede autorizada, sem alterar fontes/configuração. Somente Supabase descartável
+58421 (Database/Auth/Data API); nenhuma homologação de produção ou Storage.
+
+### Painel do autor — continuar capítulos em rascunho
+
+Cards mostram a quantidade de capítulos em rascunho, separada do status da
+obra, apenas após paginação remota concluída e no contexto de identidade atual.
+O menu oferece `Continuar rascunho — título`, na rota existente de edição,
+para o primeiro `publicado=false` na ordem remota (obra/ordem/ID), sem inferir
+número pela posição. `Editar capítulo` continua apontando ao primeiro capítulo.
+Sem novas consultas, textos adicionais, RPCs, persistência ou prefetch do atalho.
+Mapa transitório separado das obras/cache: fallback, falha parcial, propriedade
+ou publicado desconhecidos não certificam zero; mudança de contexto e cleanup
+descartam confirmações antigas. Legados e obras/capítulos locais são preservados.
+Não publicado não significa não agendado; abrir o editor não altera o agendamento.
+
+Validação: 38/38 unitários focados (incluídos no gate de sessão existente),
+Playwright 4/4 em build de produção local, desktop/mobile, workers=1/retries=0,
+com teclado, PT/EN/ES, título longo, overflow, axe e falha remota com fallback.
+Consulta existente de capítulos: uma por carga na fixture; nenhuma adicional
+ao abrir opções/mostrar indicação. Texto, publicação e timestamp persistidos
+permaneceram intactos após abrir a edição. Lint focado, Typecheck e Build
+aprovados; suíte ampla permanece para a CI. Somente Supabase descartável 58421,
+Database/Auth/Data API; Storage/Realtime não foram homologados nesta tarefa.
+Confirmação é do carregamento atual, não acompanhamento em tempo real de
+edições em outra aba/dispositivo. Sem mudanças em schema/RLS ou produção.
+
+Correção QA da #2278: a CI `43302563475` teve uma única falha no gate de
+sessão (1490/1491), em `painel-autor-work-merge-utils.test.mjs:84`. A asserção
+exigia retorno direto da função de mesclagem; o agregador agora guarda o mesmo
+resultado para emitir a confirmação transitória antes de devolvê-lo. Reprodução
+local confirmou essa divergência estrutural, não uma falha funcional ou de Storage.
+Teste atualizado sem remover a garantia de delegação; regressão executável
+verifica uma única mesclagem, parâmetros, identidade do objeto retornado e
+confirmação posterior, preservando falha/fallback/sessão. Aplicação inalterada.
+Node 22.23.4: afetados 8/8; `npm run test:session` completo aprovado, incluindo
+pre/post (387 + 1491 + 140 = 2018/2018), sem skips/retries; Lint focado e diff
+check aprovados. Banco/Playwright não executaram na CI interrompida e não foram
+repetidos nesta correção exclusivamente QA; validação ampla permanece para a CI.
+
+### QA — navegação do Leitor canônico
+
+Ambiguidade da CI `43269859618` investigada sem alterar o Leitor. Inspeção
+local capturou texto duplicado em uma raiz visível e outra sob `div#S:1[hidden]`
+do streaming; não duas raízes ativas. O teste de histórico limita as asserções
+ao Leitor visível único e aguarda uma nova requisição/resposta pública da
+identidade/capítulo esperado em cada transição. Cópias controladas comprovam
+que conteúdo oculto não confunde a seleção e duplicação visível não é ignorada.
+SSR/metadata/404/query conflitante/leitor interno mantêm seus testes separados.
+Playwright focado 7/7, desktop/mobile, workers=1/retries=0, next start; Lint
+focado e diff check aprovados. Build equivalente à main reutilizado; somente
+Database/Auth/Data API locais, sem Storage/Realtime. Suíte completa para a CI;
+não declarar estabilidade absoluta por uma única rodada. Detalhes e limitações
+em `PROBLEMS_AND_SOLUTIONS.md`. Sem mudanças em produção, banco ou controles.
+
+### Publicar — prévia integral do primeiro capítulo importado
+
+`/publicar` encaminha `arquivoCapituloTexto` já validado pelo controlador para
+`PublicarWorkPreview`. O corpo usa `ChapterTextPreview`, compacto inicialmente,
+com rótulos opcionais PT/EN/ES; Adicionar/Editar mantêm os padrões anteriores.
+A leitura ocupa a largura disponível abaixo do card. O texto é simples,
+escapado, com o mesmo trim da publicação e as quebras/espaços internos da
+importação atual; não há interpretação HTML/Markdown nem releitura do arquivo.
+Seleção pendente ou erro de arquivo ocultam o corpo anterior sem apagar o buffer.
+Cancelar pode retomar a seleção válida anterior; remover e anexo completo não
+oferecem prévia de capítulo. Expandir/recolher não salva, publica ou persiste.
+Testes reproduziram callbacks de FileReader restaurando texto cancelado ou
+sobrescrevendo seleção nova. Uma revisão local invalida resultados/erros antigos
+após nova seleção, leitura, cancelamento ou remoção, inclusive no contrato de
+anexo completo. Normalizações, formatos, limites e publicação não mudaram.
+Sem novas consultas, dependências, schema/RLS ou alterações no agendamento.
+Validação: 53/53 unitários focados; Playwright 8/8 contra build de produção,
+workers=1/retries=0 (quatro novos e quatro regressões de Adicionar/Editar),
+desktop/mobile, teclado/foco, axe, PT/EN/ES, texto literal, overflow, substituição,
+remoção, anexo completo e callback real liberado depois de cancelar. Contadores
+confirmaram uma leitura do TXT, sem releitura, requisições ou persistência pela
+prévia. Fixtures usaram a prioridade publishable/anon da #2275, com ANON ausente.
+Lint focado, Typecheck e Build passaram. Suíte completa reservada à CI, conforme
+estratégia econômica autorizada nesta fase; nenhum gate removido ou relaxado.
+
+### Prévia integral de capítulos de texto
+
+Adicionar/Editar já possuíam prévia local, mas limitada visualmente a duas
+linhas, inclusive no desktop. O painel existente agora permite expandir e
+recolher o corpo completo com teclado e estado acessível, preservando parágrafos
+e espaços internos como no Leitor (`pre-wrap`, texto simples escapado).
+A prévia usa somente o buffer do formulário: não salva, publica, consulta ou
+altera o capítulo remoto. A expansão é local à obra/capítulo e o modo compacto
+continua sendo o inicial. Conteúdo autoral do corpo não é traduzido pelo bridge.
+Sem mudanças em rascunhos, RLS, agendamento, Leitor ou capítulos ilustrados.
+A prévia da criação inicial de obra (`/publicar`) continua resumindo o arquivo
+importado; não foi ampliada nesta alteração de Adicionar/Editar capítulo.
+Validação: quatro cenários novos Playwright passaram no build de produção local,
+desktop/mobile, workers=1/retries=0, com axe, teclado, EN/ES, texto literal,
+ausência de consultas adicionais e rascunho privado inalterado na Data API.
+Audit de produção, Lint, Typecheck, Build, gates static/pagination/session e
+antispam local passaram. As suítes Node dos gates rodaram em série por memória.
+Limitações independentes: paginação integrada voltou a atingir statement timeout
+na segunda página de comentários da Comunidade, já registrado neste descartável.
+O fluxo E2E longo de publicar/editar/excluir excedeu 45s (menu do painel consumiu
+14,7s na execução instrumentada); no build anterior, de código equivalente à
+main, esse fluxo falhou antes da prévia, no login. Isso não comprova causa comum
+nem autoriza declarar a regressão ampla aprovada. Nenhum timeout, retry,
+asserção ou fluxo de produção foi alterado para obter aprovação.
+
+Correção QA da #2275: a CI `43264952229` falhou no beforeAll, antes da
+prévia, porque a fixture exigia somente `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
+O preparo E2E exporta `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`; a fixture agora
+reutiliza a prioridade publishable/anon dos outros testes, preservando o guard
+de loopback, a identidade autenticada e o cleanup da própria obra privada.
+Revalidação com ANON ausente: Playwright 6/6 (quatro prévias e retry do
+Explorar desktop/mobile), workers=1/retries=0, mais 25/25 unitários e Lint focado.
+O retry mobile da CI manteve o aviso visível na primeira tentativa e passou
+no retry; só a tentativa aprovada tem trace de rede, com respostas HTTP 200.
+Explorar e seu teste são idênticos à main. Comparação local do build anterior
+atingiu timeout em outra etapa, antes do aviso inicial; não comprova a causa
+da falha original. Sem mudança nesse teste, sem atribuir causa de rede/banco
+sem evidência e sem declarar estabilidade apenas pelo retry aprovado.
+
+### Painel do autor — conversas sem resposta
+
+O menu da obra publicada passa a oferecer `Ver comentários`, reutilizando
+`comentarios=1` e o sheet atual, sem prefetch adicional. Conversas iniciadas por
+leitores recebem `Sem resposta do autor` somente para a identidade proprietária
+e após leitura remota confirmada da obra/versão de identidade atuais.
+Respostas do autor em qualquer nível contam, inclusive recolhidas; nomes iguais
+não comprovam autoria. Cache/fallback e comentários locais não certificam ausência.
+Não existe contador global nem varredura do catálogo: a indicação abrange apenas
+as conversas paginadas já carregadas. Novas respostas/remoções locais recalculam
+o marcador; alterações externas exigem nova leitura pelo fluxo existente.
+Comentários de capítulos, spoilers, RLS e agendamento não foram alterados.
+O deep link aguarda identidade e barreira pública antes de abrir: a limpeza
+inicial de conta fechava o sheet autenticado prematuramente. Reconfirmações não
+reabrem um sheet já fechado manualmente; Voltar/Avançar mantém a intenção da URL.
+Validação local: Playwright 9/9 (5 novos e 4 existentes), desktop/mobile,
+workers=1/retries=0, incluindo axe; autorização Data API 5/5 e auditoria estática
+199/199; unitários focados 27/27, Typecheck e Build passaram. Não houve
+migration, mudança de RLS ou nova consulta.
+Integrações amplas no descartável reutilizado não ficaram verdes: paginação
+57014 e antispam 28/60 curtidas aceitas; nenhuma regra/limite foi relaxado.
+Não atribuir essas falhas ao frontend nem declarar a suíte completa aprovada.
+Detalhes dos demais gates e limitações constam na PR correspondente.
+
+### PR #2273 — isolamento QA de notificacoes
+
+Run `43140137033`: primeira falha real em capacidade:167, notificacoes 0/2.
+Fixture anterior deixou capitulo vencido em erro; runner global publicou esse
+capitulo antes dos alvos da suite. Reproduzido em banco inicialmente vazio:
+13/17, mesma assercao, com captura de estados/notificacoes na ocorrencia.
+Correcao QA cancela somente agendamentos ativos proprios pela RPC autenticada
+e revisao/CAS, preservando obra, outbox, recibos, debitos e limites. Nenhuma
+alteracao adicional em migration, producao, locks/RLS ou controles administrativos.
+Em outro descartavel: pgTAP completo 954/954; sequencia notificacoes ->
+capacidade 18/18, serial e sem retries, mantendo todas as assercoes anteriores.
+Ver `QA_AGENDAMENTO_OUTBOX.md` e checks da propria PR para os gates completos.
+
+### PH-1 — capacidade fisica/WAL, reducao parcial
+
+Base `d7194237`. Fonte de disco gerenciada continua nao homologada; sem token
+de menor privilegio disponivel, nenhuma consulta/SQL/carga em producao.
+API oficial oferece timestamp/fs_avail; Metrics API tem series de filesystem,
+mas exemplo/HTTP recente nao certificam coleta nem reserva. PH-1 NAO APTO.
+Encontrado UPDATE sem debito na admissao privada 6D4. Migration dedicada
+`20261112013209_evitar_reescrita_saldo_notificacoes_vazio.sql` evita somente
+reescrita de plano vazio, apos validacoes e mesmos locks; nao recria saldo nem
+altera limites, grants/RLS, monitoramento, runner ou gates.
+Ensaio local de 100 chamadas: CTID variava antes e ficou estavel depois;
+WAL 202 registros/17.908 bytes (2 FPI) antes, 1/54 (0 FPI) depois. Amostras
+com cache/FPI diferentes, nao teto/percentual garantido. Rollback nao apaga WAL.
+Ver `AGENDAMENTO_CAPACIDADE_PH1.md`: fontes, demais escritores, evidencias,
+limites e proxima homologacao. Sem ativacao, ACK, purga ou mudanca de producao.
+Validacao isolada: pgTAP completo 954/954, integracao afetada 8/8 e smoke
+Playwright desktop/mobile 8/8 sem retries; Lint/Typecheck/Build/static/sessao
+e paginacao unitarias passaram. Integracao geral de paginacao ficou pendente
+por timeout na consulta de comentarios; nao mascarado. Volumes preservados e
+onze containers antigos restaurados. Detalhes/limites no relatorio PH-1.
+
+### Ressincronizacao SQL proposta, sem merge
+
+Apos #2271 na `main`, o cron SQL apareceu habilitado no GitHub, mas sem runs
+`schedule` nos horarios verificados. Preparada PR draft para trocar sintaxe
+`10,25,40,55 * * * *` por `10/15 * * * *`, com os mesmos quatro minutos UTC,
+para tentar ressincronizar o scheduler. Causa externa nao comprovada; nao
+prometer que mudanca corrige atraso. Watchdog permanece desautorizado
+(`false` informado pelo responsavel); cron watchdog e SQL v2 preservados.
+Sem merge autorizado nesta etapa, sem publicacao/runner/pg_cron.
+
+### Ensaio monitor SQL e Sentry — PR draft de cron, SEM MERGE
+
+Conferencia visual em 11/11: Sentry Developer gratuito, teste Business 5 dias,
+1/300 Cron Monitors (299 temporarios), gasto adicional US$ 0 e sem meio de
+pagamento. Developer inclui 1 monitor permanente; reutilizar o existente.
+Monitor `*/15` UTC, margem 10 min, runtime 3 min, limiares 1/1; alerta ativo,
+mas primeiro check-in/e-mail ainda nao comprovados.
+Branch draft prepara os crons SQL 10/25/40/55 e watchdog */15 em arquivos de
+workflow, sem tocar `main` nem gates remotos. Cron GitHub sera disparado apos
+merge, por isso ambos os gates devem ser conferidos false ANTES de autorizacao
+de merge; a PR NAO e autorizacao de ativacao. SQL v2, TLS, permissao read-only,
+alertas de capacidade e WAL preservados. Ensaio autorizado nos parametros:
+janela SQL 30 min e duracao 72 horas, execucao condicionada a preparacao
+administrativa e autorizacao separada. Nao habilitar runner, pg_cron ou publicacao.
+
+### Homologacao final Sentry/GitHub — preparacao, sem ativacao
+
+Base `aaf693fc`. Run real #43089501994, attempt 1: preflight/etapa v2 success,
+transporte de teste skipped. Job 19:41:17Z–19:41:27Z, SQL/entrega 19:41:21Z–24Z.
+Autenticacao SQL gerenciada aprovada; nao repetir auditoria de senha/ACL.
+Responsavel confirmou gate do monitor false. Sem novo SQL remoto/check-in.
+Proposta no patch INERTE: SQL 10/25/40/55 UTC, watchdog */15 (cadencia aprovada),
+janela SQL 30 min e ensaio 72 h sujeitos a aprovacao. Workflows reais manuais.
+Run manual nao mede fila periodica: GitHub pode atrasar/descartar; nao ha SLA.
+Plano unico, matriz de sucesso/falha/ausencia/timeout/recuperacao/e-mail e acoes
+administrativas em `docs/operacao/sentry-watchdog-homologacao.md`.
+Sentry ok significa SQL real fresco + entrega, nao saude/capacidade/WAL/runner.
+Periodicidade e recebimento reais seguem PENDENTES. Cron/runner/publicacao e
+uploads continuam bloqueados; nenhuma configuracao/secrets alterados.
+
+Validacao local Node 22.23.4/npm ci: 63/63 testes focados (CA/TLS loopback,
+monitor, watchdog e Sentry), auditoria estatica 199/199, paginacao/sessao,
+Lint, Typecheck, Build e audit de producao (zero vulnerabilidades) aprovados.
+git apply --check confirma o patch sem aplica-lo. Sem mudanca em app, SQL ou
+workflows ativos; pgTAP/Data API/Playwright amplos nao foram repetidos nesta
+preparacao de documentacao/QA. Testes locais nao certificam entrega remota.
+
+### TLS do monitor SQL — CA oficial explicita, 11/11/2026
+
+Base `0554750b`. O pooler real apresentou cadeia Supabase Root 2021 CA, ausente
+dos trust stores padrao testados (SELF_SIGNED_CERT_IN_CHAIN/UntrustedRoot).
+Versionada a CA publica obtida por HTTPS da URL publicada no codigo oficial
+do painel, tambem conferida com o download fornecido pelo responsavel.
+Workflow usa arquivo exclusivo, pin SHA-256 DER, assinatura e validade no
+preflight; TLS verify-full, hostname e LOGIN dedicado permanecem obrigatorios.
+Sem download em runtime, trust global, novo secret, senha ou ativacao.
+Ver `qa/certificates/README.md` e `docs/operacao/monitor-sql-login.md`.
+Validacao focada: 61/61 (CA, monitor, watchdog e Sentry), incluindo TLS real
+loopback com PKI sintetica apenas de teste. Pooler real: CA oficial aceita
+(TLS 1.3); CA invalida/ausente e hostname errado rejeitados. Psql Linux 17.6
+com verify-full repetiu os quatro casos: CA correta chegou apenas a exigencia
+de senha (`no password supplied`); demais casos falharam na CA/hostname.
+Nenhuma senha, autenticacao bem-sucedida, SQL remoto ou check-in foi enviado.
+Node 22.23.4/npm ci reproduzivel: Lint, Typecheck, Build, YAML, auditoria estatica
+199/199, paginacao/sessao e audit de producao (zero) aprovados. O primeiro Lint
+foi iniciado antes de terminar npm ci e encontrou modulo ainda incompleto;
+apos a instalacao terminar, o mesmo Lint passou sem alteracao de dependencias.
+O npm ci apontou advisories de desenvolvimento no lockfile existente; nao
+executado audit fix. Sem mudanca de app/SQL, pgTAP, Data API e Playwright amplos
+nao foram repetidos localmente nesta correcao TLS; checks da nova PR sao separados.
+Autenticacao SQL/entrega real v2 e homologacao Sentry continuam pendentes;
+um handshake sem credenciais nao comprova esses contratos.
+
+### Monitor SQL — identidade de conexao dedicada, 11/11/2026
+
+Base `main` `50dcd318`. Inventario remoto autorizado anterior confirmou que o
+papel usado pelo workflow era NOLOGIN. Preparado LOGIN separado, sem senha,
+sem heranca de privilegios e somente SET ROLE para o grupo do snapshot, que
+permanece NOLOGIN. Guard de ACL efetiva considera PUBLIC sem revogacoes globais.
+Workflow manual usa Shared Session pooler, usuario com project ref e TLS
+verify-full; consulta fixa comprova identidade, READ ONLY e timeouts.
+Provisionamento/segredos/rotacao e homologacao gerenciada exigem etapa propria;
+ver `docs/operacao/monitor-sql-login.md`. Resultados locais registrados na PR.
+Nenhuma credencial real, migration remota, schedule, runner, Cron ou upload ativado.
+
+Validacao local Node 22.23.4/CLI 2.116.0: pgTAP completo 936/936 (22 novos),
+unidades monitor/watchdog/Sentry 57/57, integracao LOGIN/TLS/Supavisor 9/9,
+snapshot/concorrencia 4/4 e anti-spam Data API 5/5. Lint, Typecheck, Build,
+test:static (199/199), paginacao/sessao unitarias e audit de producao (zero)
+aprovados. A primeira consulta do snapshot atingiu o timeout sob execucoes
+locais concorrentes; falhou fechada. Medicao isolada 2,70 s e integracao serial
+posterior aprovada, sem elevar os limites. Data API de paginacao teve timeout
+na pagina 6 de comentarios na primeira rodada; apos instalar a migration final
+em novo descartavel, os gates seriais passaram 14/14 + 5/5, sem alterar consultas
+ou timeouts. A rodada final usou core DB/Auth/Data API/pooler: Storage API teve
+healthcheck indisponivel na primeira inicializacao e nao e usado pelo ensaio SQL.
+Playwright amplo: 134 aprovados, duas falhas e seis nao executados, zero retries;
+timeout do conteudo final da Home e CLI ausente no PATH do runner local. Nenhuma
+mudanca de aplicacao/seletor/timeout foi feita para ocultar essas ocorrencias.
+Complemento com PATH correto, mesmo Build/configuracao publica e migration final:
+21/23, zero retries, nenhum skipped; os cenarios de agendamento/Diario e consumidor
+passaram. Persistiram timeouts de acessibilidade em Home (45 s) e Explorar
+(indicador final em 12 s), sem diagnostico de violacao axe nesses erros. App,
+loaders e testes dessas paginas estao identicos a main; a suite ampla nao e
+declarada integralmente aprovada nem os timeouts declarados corrigidos nesta PR.
+`db lint` apontou cinco referencias dinamicas a tabelas Cron ausentes em
+funcoes preexistentes/guardadas. O snapshot real funciona sem a extensao;
+nao instalar Cron para silenciar o verificador estatico. Homologacao do
+pooler gerenciado e dos alertas permanece separada das provas locais.
+
+Seguranca: canario TEMP reproduziu HSC01 antes do endurecimento. A migration
+qualifica pg_catalog.pg_extension no snapshot e no verificador da fonte,
+preservando assinatura/owner/ACL. O canario nao e executado apos a correcao.
+Supavisor local reteve autenticacao da senha anterior; a fixture agora reinicia
+somente seu pooler antes/depois, sem retry de login. Rotacao/revogacao no
+gerenciado continua exigindo procedimento autorizado e prova de invalidacao.
+
+### CI #2267 — instalacao do Chromium, 11/11/2026
+
+Duas falhas de DNS no mirror Azure e outra no archive Ubuntu impediram o APT.
+Usar mirrors alternativos nao resolveu e o ajuste foi retirado. O navegador
+passa a usar a imagem oficial Playwright 1.62.1/Noble por digest, com todas as
+dependencias, servidor restrito a loopback e smoke obrigatorio antes do banco.
+Testes/app/Supabase continuam no host; nenhum gate ou scan removido.
+Testes focados 74/74; instalacao Linux/E2E dependem da CI do novo commit.
+Ver `PROBLEMS_AND_SOLUTIONS.md`. Nenhum controle Sentry/SQL foi alterado.
+
+### Sentry/watchdog — preparacao de homologacao, 11/11/2026
+
+Base `cda7e996`. Responsavel confirmou criacao de monitor/alerta Sentry e secret
+GitHub; nao inspecionados nem usados nesta etapa. Cadencia aprovada de 15 min UTC
+registrada somente no patch inerte; workflows reais continuam manuais.
+Monitor SQL depende de papel NOLOGIN provisionado separadamente, TLS, gates e
+janela de observacao aprovada. Na continuacao da #2267, a etapa v2 separa prova
+de leitura SQL valida/entrega confirmada da saude. Alertas de capacidade/WAL e
+runner desligado permanecem; `ok` do Sentry nao significa saude nem ativa gates.
+Erros SQL, evidencia invalida/obsoleta e entrega incerta continuam negando prova.
+Dispatch/teste de e-mail nao produz check-in falso. Homologacao remota pendente. Ver
+`docs/operacao/sentry-watchdog-homologacao.md` e
+`DESBLOQUEIO_OPERACIONAL_AGENDAMENTO.md`. Nenhum check-in, schedule ou gate ativado.
 
 ### Agendamento — fase 6B3, freios privados sem ativacao
 
@@ -432,8 +927,8 @@ usa `p_formato` da RPC paginada existente, inclusive ao carregar mais resultados
 Valores desconhecidos voltam para todos os formatos; formatos personalizados
 continuam aparecendo na opção geral. Não há mudança de schema ou RLS.
 
-Status editorial (em andamento, concluída ou pausada) ainda não é um dado
-persistido de obras. O booleano `publicado` não representa esse status, e a
+Na investigação original da #2213, status editorial (em andamento, concluída ou
+pausada) não era um dado persistido de obras. O booleano `publicado` não representa esse status, e a
 coleção pessoal `Concluídas` representa leitura do usuário, não conclusão da obra.
 
 ### Explorar — diversidade em publicações recentes
@@ -608,3 +1103,33 @@ O ciclo funcional iniciado pelas melhorias de Explorar, continuidade de leitura,
 gestão de comentários para autores, proteção contra spoilers e histórico de
 moderação está concluído no código. Novas melhorias devem partir de uma nova
 priorização, sem reabrir essas frentes sem evidência de regressão.
+
+### Diário de edição — dependência da #2307 em preparação
+
+Migration revisável independente prepara `editou_capitulo`, mantendo gate desligado,
+sem backfill ou registro automático. RPC idempotente por versão, tombstones e RLS
+atual impedem duplicação/snapshots privados. A #2307 não foi alterada; seu helper
+legado ainda requer adoção separada após homologação. Implantação, rollback e limites
+em `docs/diario-edicao-evento-seguro.md`. Local: 52/52 pgTAP focados, 1.132/1.132
+na rodada completa, duas conexões com lock real, rollback e reaplicação aprovados.
+Advisor sem problemas, auditoria 199/199; seis apontamentos SQL antigos comprovados
+antes/depois. REST/Playwright e integração do save pendentes. Não inferir ativação/aplicação remota.
+
+### Editar capítulo — integração do Diário por RPC (sobre #2307)
+
+Branch derivada da #2307 usa somente a RPC do contrato #2316, com token extraído do
+PATCH confirmado e guardado na recuperação da intenção. Sem migration/coluna, o
+save segue compatível; gate desligado/RPC ausente não repetem capítulo. Pendências
+são recuperadas por ação explícita sem repetir notificações; NULL permanece incerto.
+Schema/ativação e homologação conjunta seguem separados. Ver
+`app/editar-capitulo/INTEGRACAO_DIARIO_RPC.md` para ordem de implantação e limites.
+
+### Integração conjunta local — 15/11/2026
+
+Preparada sobre `main deeb839b`, na ordem #2316 → #2307 → #2321, preservando
+ancestralidade e branches originais. Conflitos somente documentais, sem alterações
+adicionais da aplicação/SQL. Gate do Diário continua desligado. Homologação focada:
+244 unitários, 52 pgTAP e cinco cenários reais Data API/Auth/Playwright aprovados,
+desktop/mobile, um worker e zero retries. Registro de falhas do preparo/harness,
+métricas e limites em [Integração editor/Diário](../integracao-editor-diario-20261115.md).
+Não inferir merge, migration remota ou autorização para ativar o Diário.

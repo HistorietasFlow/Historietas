@@ -120,12 +120,11 @@ export async function carregarRegistrosUsuario(
     const { data, error } = await consultas[tabela]();
 
     if (error) {
-      console.warn(`Nao consegui carregar ${tabela} na pagina Listas:`, error.message);
-      return [];
+      throw error;
     }
 
     if (!Array.isArray(data)) {
-      return [];
+      throw new Error("Não foi possível carregar esta lista agora.");
     }
 
     return data
@@ -141,6 +140,6 @@ export async function carregarRegistrosUsuario(
   } catch (error) {
     const mensagem = error instanceof Error ? error.message : "Falha desconhecida";
     console.warn(`Nao consegui carregar ${tabela} na pagina Listas:`, mensagem);
-    return [];
+    throw error;
   }
 }

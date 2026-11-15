@@ -28,44 +28,14 @@ test("o hook concentra os sete estados de dados e expõe somente os setters nece
   );
 });
 
-test("o lifecycle preserva acesso, resets, carregamento concorrente e cleanup", () => {
-  assert.match(hookSource, /setCarregando\(true\);\s*setErro\(""\);\s*setSucesso\(""\);/);
-  assert.match(
-    hookSource,
-    /const \{ user, adminConfirmado \} =\s*await verificarAcessoModeracao\(\);/,
-  );
-  assert.match(hookSource, /if \(!user\) \{/);
-  assert.match(
-    hookSource,
-    /setUsuarioId\(""\);\s*setEhAdmin\(false\);\s*setDenuncias\(\[\]\);\s*setDenunciasPerfis\(\[\]\);\s*setReincidenciasPorUsuario\(\{\}\);\s*router\.replace\(criarLoginHrefAdminModeracao\(\)\);/,
-  );
-  assert.match(hookSource, /setUsuarioId\(user\.id\);\s*setEhAdmin\(adminConfirmado\);/);
-  assert.match(
-    hookSource,
-    /if \(adminConfirmado\) \{\s*await Promise\.all\(\[\s*carregarDenuncias\(\),\s*carregarDenunciasPerfis\(\),\s*carregarReincidenciasModeracao\(\),\s*\]\);/,
-  );
-  assert.match(hookSource, /let cancelado = false;/);
-  assert.match(
-    hookSource,
-    /criarMensagemErro\("Erro ao carregar moderação", error\)/,
-  );
-  assert.match(hookSource, /finally \{\s*if \(!cancelado\) \{\s*setCarregando\(false\);/);
-  assert.match(hookSource, /iniciarModeracao\(\);/);
-  assert.match(hookSource, /return \(\) => \{\s*cancelado = true;\s*\};/);
-  assert.match(hookSource, /\}, \[router\]\);/);
-});
-
-test("o hook preserva os três carregadores e a sincronização das observações", () => {
-  assert.match(hookSource, /async function carregarDenuncias\(\) \{/);
-  assert.match(hookSource, /await carregarDenunciasComContextoModeracao\(\)/);
-  assert.match(hookSource, /setDenuncias\(denunciasComContexto\);/);
-  assert.match(hookSource, /sincronizarObservacoesModeracao\(\s*observacoesAtuais,\s*denunciasComContexto,/);
-  assert.match(hookSource, /async function carregarReincidenciasModeracao\(\)/);
-  assert.match(hookSource, /await buscarReincidenciasModeracao\(\)/);
-  assert.match(hookSource, /setReincidenciasPorUsuario\(proximoMapa\);/);
-  assert.match(hookSource, /async function carregarDenunciasPerfis\(\)/);
-  assert.match(hookSource, /await buscarDenunciasPerfisModeracao\(\)/);
-  assert.match(hookSource, /setDenunciasPerfis\(denunciasComContexto\);/);
+test("lifecycle valida acesso e protege cada carregador por identidade e geração", () => {
+  assert.match(hookSource, /verificarAcessoModeracao\(\)/);
+  assert.match(hookSource, /substituirContextoModeracao\(controleModeracao\)/);
+  assert.match(hookSource, /ctx\.leitura === leitura/);
+  assert.match(hookSource, /onAuthStateChange/);
+  assert.match(hookSource, /subscription\.unsubscribe\(\)/);
+  assert.match(hookSource, /cancelado = true/);
+  for (const name of ["carregarDenunciasComContextoModeracao", "buscarDenunciasPerfisModeracao", "buscarReincidenciasModeracao", "sincronizarObservacoesModeracao"]) assert.match(hookSource, new RegExp(`${name}\\(`));
 });
 
 test("a página delega dados iniciais e mantém o lifecycle de fechamento do menu", () => {
@@ -73,7 +43,7 @@ test("a página delega dados iniciais e mantém o lifecycle de fechamento do men
     pageSource,
     /import \{ useAdminComunidadeInitialData \} from "\.\/hooks\/use-admin-comunidade-initial-data";/,
   );
-  assert.match(pageSource, /useAdminComunidadeInitialData\(\{\s*router,\s*setErro,\s*setSucesso,\s*\}\)/);
+  assert.match(pageSource, /useAdminComunidadeInitialData\(\{[\s\S]*?controleModeracao,[\s\S]*?setErro,[\s\S]*?setSucesso,/);
   assert.doesNotMatch(pageSource, /async function iniciarModeracao/);
   assert.doesNotMatch(pageSource, /async function carregarDenuncias\(/);
   assert.doesNotMatch(pageSource, /async function carregarDenunciasPerfis/);
@@ -89,6 +59,6 @@ test("a página delega dados iniciais e mantém o lifecycle de fechamento do men
 test("o hook não concentra filtros, ações de moderação ou JSX", () => {
   assert.doesNotMatch(
     hookSource,
-    /useMemo|statusFiltro|setStatusFiltro|buscaModeracaoAberta|setAcaoEmAndamento|return\s*\(\s*</,
+    /useMemo|statusFiltro|setStatusFiltro|buscaModeracaoAberta|return\s*\(\s*</,
   );
 });

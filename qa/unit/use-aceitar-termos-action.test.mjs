@@ -17,7 +17,7 @@ const hookSource = readFileSync(
 test("ação de aceitar preserva guards, falha e navegação", () => {
   assert.match(hookSource, /export function useAceitarTermosAction\(/);
   assert.match(hookSource, /async function aceitar\(\)/);
-  assert.match(hookSource, /if \(salvando\) \{\s*return;\s*\}/);
+  assert.match(hookSource, /if \(!atual\(\) \|\| salvando \|\| execucao\.enviando \|\| execucao\.aceito\) return;/);
   assert.match(
     hookSource,
     /if \(!confirmouTermos \|\| !confirmouPrivacidade\)/,
@@ -25,7 +25,7 @@ test("ação de aceitar preserva guards, falha e navegação", () => {
   assert.match(hookSource, /setErro\(t\("erroMarcar"\)\);/);
   assert.match(hookSource, /const resultado = await registrarAceiteTermosPublicacao\(\);/);
   assert.match(hookSource, /if \(!resultado\.aceito\)/);
-  assert.match(hookSource, /setErro\(resultado\.erro \|\| t\("erroLogin"\)\);/);
+  assert.match(hookSource, /setErro\(resultado\.erro \|\| t\("erroSalvar"\)\);/);
   assert.match(hookSource, /setSalvando\(false\);/);
   assert.match(hookSource, /router\.replace\(redirectTo\);\s*router\.refresh\(\);/);
   assert.match(hookSource, /return \{ aceitar \};/);

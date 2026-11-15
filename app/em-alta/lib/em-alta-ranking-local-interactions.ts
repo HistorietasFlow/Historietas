@@ -8,28 +8,26 @@ import {
   normalizarVisualizacoesRanking,
 } from "./em-alta-ranking-data-utils";
 
+function lerInteracao(chave: string) {
+  if (!chave) return {};
+  try {
+    const texto = localStorage.getItem(chave);
+    return texto ? JSON.parse(texto) : {};
+  } catch { return {}; }
+}
+
 export function carregarInteracoesLocaisRankingEmAlta(userId: string) {
   const chaveVisualizacoesUsuario = userId
     ? criarStorageKeyUsuarioEmAlta(VIEWED_WORKS_STORAGE_KEY, userId)
     : "";
-  const visualizacoesTexto = chaveVisualizacoesUsuario
-    ? localStorage.getItem(chaveVisualizacoesUsuario)
-    : null;
-  const visualizacoesJson = visualizacoesTexto
-    ? JSON.parse(visualizacoesTexto)
-    : {};
+  const visualizacoesJson = lerInteracao(chaveVisualizacoesUsuario);
   const visualizacoesNormalizadas =
     normalizarVisualizacoesRanking(visualizacoesJson);
 
   const chaveAvaliacoesUsuario = userId
     ? criarStorageKeyUsuarioEmAlta(RATED_WORKS_STORAGE_KEY, userId)
     : "";
-  const avaliacoesLocaisTexto = chaveAvaliacoesUsuario
-    ? localStorage.getItem(chaveAvaliacoesUsuario)
-    : null;
-  const avaliacoesLocaisJson = avaliacoesLocaisTexto
-    ? JSON.parse(avaliacoesLocaisTexto)
-    : {};
+  const avaliacoesLocaisJson = lerInteracao(chaveAvaliacoesUsuario);
   const avaliacoesLocaisNormalizadas =
     normalizarAvaliacoesLocaisRanking(avaliacoesLocaisJson);
 

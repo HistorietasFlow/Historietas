@@ -21,10 +21,10 @@ test("Em Breve delega o carregamento inicial das obras reais ao hook", async () 
   assert.match(hook, /let componenteAtivo = true/);
   assert.match(hook, /async function carregarObrasReais\(\)/);
   assert.match(hook, /await carregarObrasReaisEmBreve\(\)/);
-  assert.match(hook, /window\.setTimeout/);
-  assert.match(hook, /if \(componenteAtivo\)/);
+  assert.match(hook, /subscription.unsubscribe/);
+  assert.match(hook, /atual === geracao/);
   assert.match(hook, /setObrasReaisEmBreve\(obrasSemConteudo\)/);
-  assert.match(hook, /\}, 0\);/);
+  assert.match(hook, /onAuthStateChange/);
   assert.match(hook, /void carregarObrasReais\(\)/);
   assert.match(hook, /componenteAtivo = false/);
   assert.match(hook, /\}, \[\]\);/);
@@ -41,9 +41,9 @@ test("Em Breve delega o carregamento inicial das obras reais ao hook", async () 
     page,
     /\.\/loaders\/carregar-obras-reais-em-breve/,
   );
-  assert.match(page, /async function carregarLancamentosSalvos\(\)/);
+  assert.match(page, /useEmBreveLancamentosSalvosIniciais\(router\)/);
   assert.doesNotMatch(
     hook,
-    /supabase|\.from\(|auth|router|localStorage|MutationObserver|<\/?(?:div|section|article|button|span|p|Link)\b|Style|\.(?:insert|update|delete|upsert)\(/,
+    /\.from\(|router|localStorage|MutationObserver|<\/?(?:div|section|article|button|span|p|Link)\b|Style|\.(?:insert|update|delete|upsert)\(/,
   );
 });

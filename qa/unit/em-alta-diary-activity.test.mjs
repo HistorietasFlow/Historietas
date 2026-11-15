@@ -38,7 +38,7 @@ test("conclusão e título ausente preservam os textos literais", async () => {
   assert.equal(estado.inserts[0].payload.texto, "adicionou uma obra à lista");
 });
 test("erro do primeiro insert usa fallback sem visibilidade", async () => {
-  resetar(); estado.respostas.push({ error: { message: "coluna ausente" } });
+  resetar(); estado.respostas.push({ error: { code: "PGRST204", message: "visibilidade ausente" } });
   await registrarColecaoRankingNoDiario("concluiu_obra", obra);
   assert.equal(estado.inserts.length, 2);
   assert.equal("visibilidade" in estado.inserts[1].payload, false);
@@ -57,6 +57,5 @@ test("fronteira preserva somente a persistência de atividade", () => {
   for (const proibido of [/\.upsert\(/, /\.update\(/, /\.delete\(/, /localStorage/, /from ["']react["']/i, /\buse[A-Z]\w*\b/, /<[A-Z][\w.]*\s+[\w-]+=/]) assert.doesNotMatch(modulo, proibido);
   assert.match(hook, /import \{ registrarColecaoRankingNoDiario \} from "\.\.\/lib\/em-alta-diary-activity";/);
   assert.doesNotMatch(pagina, /async function registrarColecaoRankingNoDiario\b/);
-  assert.match(hook, /void registrarColecaoRankingNoDiario\("favoritou_obra", obraRanking\)/);
-  assert.match(hook, /void registrarColecaoRankingNoDiario\("concluiu_obra", obraRanking\)/);
+  assert.match(hook, /registrarColecaoRankingNoDiario\(tabela === "favoritos" \? "favoritou_obra" : "concluiu_obra", obraRanking, usuarioLogadoId/);
 });

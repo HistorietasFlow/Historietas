@@ -1,5 +1,37 @@
 # QA — agendamento/Diário e lotes da outbox
 
+## PR #2273 — fixture de notificacoes ativa interferia no runner (12/11/2026)
+
+Primeira falha do run `43140137033`: `chapter-scheduling-capacity-supabase-real.test.mjs:167`,
+zero notificacoes em vez de duas. pgTAP passou 954/954 e a integracao anterior
+de notificacoes passou; nao era falha da nova migration nem de lock/limite.
+
+O teardown preservou obra/conta para nao apagar recibos por cascata, mas deixou
+o capitulo 2 da fixture em erro, vencido e elegivel ao runner global. Depois de
+restaurar o limite de notificacoes, o runner da suite seguinte publicou ESSE
+capitulo e consumiu a ultima vaga de outbox antes dos capitulos do proprio teste.
+As falhas posteriores de pausa/CAS/Cron/runner seguiram o estado interrompido.
+
+Reproducao serial em descartavel inicialmente vazio, antes da correcao:
+13/17; mesmo `0 !== 2` na linha 167. Captura SQL na propria ocorrencia:
+Obra orcamento/capitulo 2 publicado com quatro notificacoes; Obra runner/
+capitulos 1 e 2 ainda agendados e zero notificacoes.
+
+Correcao exclusivamente QA: encerrar somente as intencoes ativas da propria
+obra/autor pela RPC autenticada `cancelar_agendamento_capitulo`, com a revisao
+esperada. Nao excluir obra/conta, eventos ou recibos, nao resetar debitos,
+nao mudar datas/prioridades, runner, medicao, limites, timeouts, RLS ou gates.
+Snapshots integrais antes/depois exigem preservacao de toda a outbox, recibos,
+saldo e configuracao fisica. O encerramento idempotente tambem e exercitado
+como regressao e pelo teardown, inclusive se algum subteste anterior falhar.
+
+Validacao do isolamento em OUTRO descartavel novo (CLI 2.116.0, Node 22.23.4):
+pgTAP completo **954/954** antes das fixtures; sequencia notificacoes ->
+capacidade **18/18**, concurrency=1, sem retries. O subteste que falhava e os
+cenarios seguintes de medicao/retomada passaram sem alterar suas assercoes.
+Gates completos e suites posteriores devem ser conferidos nos checks da #2273;
+esta evidencia nao autoriza ativacao nem certifica capacidade fisica PH-1.
+
 ## PR #2255 — integração Data API com backlog global (10/11/2026)
 
 `chapter-cache-outbox-supabase-real.test.mjs:79` exigia dois eventos de uma

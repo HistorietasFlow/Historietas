@@ -1,8 +1,55 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
+import { EventEmitter } from "node:events";
+import { observarObraPublica, anexarDiagnosticosObra } from "../tests/work-public-diagnostics.mjs";
 import ts from "typescript";
 import * as pagination from "../../lib/supabase/paginacao.mjs";
+
+function diagnosticPage() {
+  const page = new EventEmitter();
+  page.addInitScript = async script => { assert.equal(typeof script, "function"); };
+  return page;
+}
+test("diagnostico QA preserva cronologia e descarta URL, identidade, corpo e erros livres", async () => {
+  const page = diagnosticPage(); let time = 10;
+  const d = await observarObraPublica(page, "desktop", () => time++);
+  page.emit("request", { url: () => "http://localhost/api/obra-publica?slug=privado&token=SEGREDO" });
+  page.emit("response", { url: () => "http://localhost/auth/v1/user?token=SEGREDO", status: () => 200 });
+  page.emit("response", { url: () => "http://localhost/_next/chunk-SEGREDO.js", status: () => 503 });
+  page.emit("requestfailed", { url: () => "http://localhost/obra/privada", resourceType: () => "fetch", failure: () => ({ errorText: "net::ERR_ABORTED" }) });
+  page.emit("pageerror", { name: "SEGREDO", message: "SEGREDO", stack: "SEGREDO" });
+  const s = d.snapshot(); assert.equal(s.events.length, 5);
+  assert.deepEqual(s.events.map(e => e.at), [1, 2, 3, 4, 5]);
+  assert.deepEqual(s.events.map(e => e.path), ["barreira", "auth-user", "next-asset", "documento", undefined]);
+  assert.doesNotMatch(JSON.stringify(s), /SEGREDO|token|privad|localhost|stack|message/);
+  d.dispose(); assert.equal(page.eventNames().length, 0);
+});
+test("diagnostico QA limita memoria, sanitiza console e nao expoe campos inesperados", async () => {
+  const page = diagnosticPage(), d = await observarObraPublica(page, "mobile");
+  page.emit("console", { text: () => "HISTORIETAS_QA_WORK nao-json-SEGREDO" });
+  page.emit("console", { text: () => 'HISTORIETAS_QA_WORK {"state":"SEGREDO","ready":"SEGREDO","longTasks":-1,"totalLong":4,"maxLong":2,"token":"SEGREDO"}' });
+  assert.equal(d.snapshot().events[0].state, "desconhecido");
+  assert.equal(d.snapshot().events[0].longTasks, null);
+  assert.doesNotMatch(JSON.stringify(d.snapshot()), /SEGREDO|token/);
+  page.emit("requestfailed", { url: () => "URL-SEGREDO", resourceType: () => "SEGREDO", failure: () => ({ errorText: "SEGREDO" }) });
+  assert.deepEqual({ ...d.snapshot().events[1], at: 0 }, { at: 0, event: "requestfailed", path: "outro", resource: "outro", code: "sanitized" });
+  for (let i = 0; i < 130; i++) page.emit("load");
+  assert.equal(d.snapshot().events.length, 120); assert.equal(d.snapshot().discarded, 12);
+  assert.doesNotMatch(JSON.stringify(d.snapshot()), /SEGREDO|token/);
+  const copy = d.snapshot(); copy.events[0].event = "alterado";
+  assert.notEqual(d.snapshot().events[0].event, "alterado"); d.dispose();
+  await assert.rejects(observarObraPublica(page, "SEGREDO"), /Contexto QA invalido/);
+});
+test("anexo QA e JSON sanitizado e falha do transporte nao substitui erro funcional", async () => {
+  const page = diagnosticPage(), d = await observarObraPublica(page, "anonimo");
+  let attachment;
+  assert.equal(await anexarDiagnosticosObra({ attach: async (name, value) => { attachment = { name, ...value }; } }, [d]), true);
+  assert.equal(attachment.contentType, "application/json");
+  assert.equal(JSON.parse(attachment.body)[0].context, "anonimo");
+  assert.equal(await anexarDiagnosticosObra({ attach: async () => { throw Error("SEGREDO"); } }, [d]), false);
+  d.dispose();
+});
 
 function load(path, mocks = {}) {
   const js = ts.transpileModule(readFileSync(new URL(path, import.meta.url), "utf8"), {
@@ -73,6 +120,35 @@ test("snapshot leve usa ordem canônica, whitelist e preserva remoções sem rec
   for (const forbidden of ["privado", "segredo", "Texto completo", "object/sign", "user_metadata", "arquivo_url"]) assert.ok(!json.includes(forbidden), forbidden);
   assert.equal(h.calls.filter(c => c === "barreira").length, 2);
   assert.ok(h.transport.every(t => t.method === "POST" && t.cache === "no-store"));
+});
+
+test("status editorial distingue legado, null remoto, valores validos e erro sem restaurar cache antigo", async () => {
+  const h = harness(), read = h.instance();
+  assert.equal(Object.hasOwn((await read("obra")).obra, "statusEditorial"), false);
+  for (const status of ["em_andamento", "concluida", "pausada", null]) {
+    h.state.projection.revisao = String(BigInt(h.state.projection.revisao) + 1n);
+    h.state.projection.obra.statusEditorial = status;
+    const snapshot = await read("obra");
+    assert.equal(Object.hasOwn(snapshot.obra, "statusEditorial"), true);
+    assert.equal(snapshot.obra.statusEditorial, status);
+  }
+  for (const value of ["", "Publicado", "nao_informado", 0, undefined]) {
+    h.state.projection.revisao = String(BigInt(h.state.projection.revisao) + 1n);
+    h.state.projection.obra.statusEditorial = value;
+    await assert.rejects(read("obra"), /Status editorial da projecao publica invalido/);
+  }
+  h.state.onRead = () => { throw new Error("Falha de carregamento"); };
+  await assert.rejects(read("obra"), /Falha de carregamento/);
+});
+
+test("cache do DTO anterior nao certifica o campo aditivo na mesma revisao", async () => {
+  const h = harness();
+  const key = ["historietas-projecao-publica-v1", "obra-leve-v1",
+    JSON.stringify([h.state.projection.obraId, h.state.projection.geracao, h.state.projection.revisao, "obra"]), "null"];
+  h.cache.set(JSON.stringify(key), { obra: { statusEditorial: "concluida" } });
+  h.state.projection.obra.statusEditorial = null;
+  assert.equal((await h.instance()("obra")).obra.statusEditorial, null);
+  assert.equal(h.calls.filter(c => c !== "barreira").length, 1);
 });
 
 test("paginação keyset ultrapassa 500 capítulos, sem perda ou duplicação e sem renumerar lacunas", async () => {
@@ -156,3 +232,7 @@ test("capa assinada não entra no DTO; SSR usa snapshot e o loader legado fica d
   assert.match(client, /useObraPublicWorkLoad\(\{\s*habilitado: !snapshotInicial/);
   assert.match(client, /useObraPublicSnapshot\(/);
 });
+
+
+import "./editorial-status-application.test.mjs";
+import "./editorial-status-lifecycle.test.mjs";

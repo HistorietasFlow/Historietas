@@ -74,6 +74,8 @@ jobs:
       E2E_ALLOW_DESTRUCTIVE: "true"
       E2E_PUBLIC_WORK_SLUG: obra-publica-e2e
       E2E_PUBLIC_CHAPTER_NUMBER: "1"
+      # Official image: same Playwright version as qa/package-lock.json, immutable digest.
+      PLAYWRIGHT_IMAGE: mcr.microsoft.com/playwright:v1.62.1-noble@sha256:dcc5531e97840b9b5e794f2814476b21571c5124a3fca2267d73041f56e7580e
     steps:
       - name: Baixar o código
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -114,11 +116,29 @@ jobs:
           npm ci
           npm --prefix qa ci
 
+      - name: Validar preparo seguro do Chromium
+        run: node --test qa/unit/playwright-container.test.mjs qa/unit/playwright-diagnostics.test.mjs qa/unit/playwright-safe-flow-diagnostics.test.mjs
+
+      - name: Preparar Chromium e dependências oficiais
+        id: playwright-server
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker pull "$PLAYWRIGHT_IMAGE"
+          docker run --detach --interactive --init \
+            --name "historietas-playwright-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" \
+            --network host --ipc=host --user pwuser \
+            --cap-drop=ALL --security-opt=no-new-privileges \
+            --mount "type=bind,src=$PWD/qa/node_modules,dst=/opt/qa/node_modules,readonly" \
+            "$PLAYWRIGHT_IMAGE" \
+            node /opt/qa/node_modules/playwright/cli.js run-server --host 127.0.0.1 --port 3001
+          node qa/scripts/check-playwright-server.mjs
+
       - name: Executar testes estáticos
         run: npm run test:static
 
       - name: Testar verificador externo do agendamento sem ativacao
-        run: node --test qa/unit/chapter-scheduling-monitor.test.mjs
+        run: node --test qa/unit/chapter-monitor-ca.test.mjs qa/unit/chapter-scheduling-monitor.test.mjs qa/unit/chapter-scheduling-watchdog.test.mjs qa/unit/chapter-scheduling-sentry-checkin.test.mjs
 
       - name: Validar imagens ilustradas com decoder real (sem habilitar uploads)
         run: npm run test:illustrated-images
@@ -149,6 +169,18 @@ jobs:
       - name: Iniciar ambiente Supabase local descartável
         run: |
           supabase init
+          # A identidade do monitor precisa ser testada tambem no Supavisor SESSION local.
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import {readFileSync,writeFileSync} from 'node:fs';
+          const path='supabase/config.toml',text=readFileSync(path,'utf8');
+          const section=text.match(/\[db\.pooler\][\s\S]*?(?=\n\[|$)/)?.[0];
+          assert.ok(section,'Secao db.pooler ausente');
+          const session=section.replace(/^enabled = false$/m,'enabled = true')
+            .replace(/^pool_mode = "transaction"$/m,'pool_mode = "session"');
+          assert.match(session,/^enabled = true$/m);assert.match(session,/^pool_mode = "session"$/m);
+          writeFileSync(path,text.replace(section,session));
+          NODE
           cp \
             qa/integration/supabase/20260826000637_normalizar_acl_baseline_local.sql \
             supabase/migrations/20260826000637_normalizar_acl_baseline_local.sql
@@ -206,15 +238,17 @@ jobs:
       - name: Gerar aplicação para os testes locais
         run: npm run build
 
-      - name: Instalar Chromium
-        working-directory: qa
-        run: npm exec -- playwright install --with-deps chromium
-
       - name: Executar testes públicos e autenticados no código do PR
         env:
           E2E_BASE_URL: http://127.0.0.1:3000
           E2E_WEB_SERVER_COMMAND: npm --prefix .. run start
+          PW_TEST_CONNECT_WS_ENDPOINT: ws://127.0.0.1:3001/
         run: npm --prefix qa test
+
+      - name: Classificar diagnóstico seguro do Playwright
+        id: playwright_diagnostics
+        if: ${{ always() }}
+        run: node qa/scripts/collect-playwright-diagnostics.mjs
 
       - name: Instalar Lighthouse CI
         run: npm install --global @lhci/cli@0.15.1
@@ -298,6 +332,17 @@ jobs:
 
           docker run --rm             --network host             -v "$PWD/qa/reports/zap:/zap/wrk:rw"             ghcr.io/zaproxy/zaproxy:stable             zap-baseline.py               -t http://127.0.0.1:3000               -m 1               -I               -s               -r zap-report.html               -J zap-report.json
 
+      - name: Remover servidor Chromium
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          browser_container="historietas-playwright-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          containers=$(docker ps -a --format '{{.Names}}')
+          if grep -Fxq "$browser_container" <<< "$containers"; then
+            docker rm --force "$browser_container"
+          fi
+
       - name: Remover ambiente Supabase local
         if: ${{ always() }}
         run: |
@@ -332,15 +377,12 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
-      - name: Salvar diagnóstico do Playwright em caso de falha
-        if: ${{ failure() }}
+      - name: Salvar diagnóstico do Playwright em falha ou flaky
+        if: ${{ failure() || steps.playwright_diagnostics.outputs.should_upload == 'true' }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: playwright-diagnostics
-          path: |
-            qa/playwright-report
-            qa/reports/playwright-results.json
-            qa/test-results
+          path: qa/reports/playwright-diagnostics/summary.json
           if-no-files-found: ignore
           retention-days: 7
 

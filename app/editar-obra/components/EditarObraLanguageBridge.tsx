@@ -135,6 +135,10 @@ const EDITAR_OBRA_UI_TRANSLATIONS: Record<
   "Você não tem permissão para editar esta obra.": { en: "You do not have permission to edit this work.", es: "No tienes permiso para editar esta obra." },
   "Não consegui confirmar a atualização da obra no Supabase.": { en: "I could not confirm the work update in Supabase.", es: "No pude confirmar la actualización de la obra en Supabase." },
   "Não consegui atualizar a obra no Supabase.": { en: "I could not update the work in Supabase.", es: "No pude actualizar la obra en Supabase." },
+  "Esta alteração 18+ exige uma remoção segura da capa pública. Esta tentativa não removeu arquivos nem atualizou a obra.": {
+    en: "This 18+ change requires safe removal of the public cover. This attempt did not remove files or update the work.",
+    es: "Este cambio 18+ requiere una eliminación segura de la portada pública. Este intento no eliminó archivos ni actualizó la obra.",
+  },
   "Não consegui salvar as alterações. Tente usar uma capa/arquivo menor ou atualizar a página e salvar novamente.": { en: "I could not save the changes. Try using a smaller cover/file or refresh the page and save again.", es: "No pude guardar los cambios. Prueba con una portada o archivo más pequeño, o actualiza la página y vuelve a guardar." },
 };
 

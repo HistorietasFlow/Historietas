@@ -2,8 +2,13 @@ import { calcularProgressoLeitura } from "./adicionar-capitulo-metrics-utils";
 import { ordenarCapitulosPorOrdem } from "./adicionar-capitulo-chapter-order-utils";
 
 type CapituloParaCriacaoLocal = {
+  id: string;
   criadoEm: string;
   lido?: boolean;
+  lidoEm?: string;
+  curtiu?: boolean;
+  salvo?: boolean;
+  comentario?: string;
 };
 
 type ObraParaCriacaoLocal<TCapitulo extends CapituloParaCriacaoLocal> = {
@@ -41,9 +46,18 @@ export function aplicarNovoCapituloNasObrasLocais<
       return obra;
     }
 
+    const existente = obra.capitulos.find((capitulo) => capitulo.id === novoCapitulo.id);
+    const capituloAtualizado = existente ? {
+      ...existente, ...novoCapitulo,
+      lido: existente.lido ?? novoCapitulo.lido,
+      lidoEm: existente.lidoEm ?? novoCapitulo.lidoEm,
+      curtiu: existente.curtiu ?? novoCapitulo.curtiu,
+      salvo: existente.salvo ?? novoCapitulo.salvo,
+      comentario: existente.comentario ?? novoCapitulo.comentario,
+    } : novoCapitulo;
     const capitulosAtualizados = ordenarCapitulosPorOrdem([
-      ...obra.capitulos,
-      novoCapitulo,
+      ...obra.capitulos.filter((capitulo) => capitulo.id !== novoCapitulo.id),
+      capituloAtualizado,
     ]);
 
     return {

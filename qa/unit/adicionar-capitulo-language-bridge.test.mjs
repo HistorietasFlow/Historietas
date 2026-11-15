@@ -12,13 +12,31 @@ async function carregar() {
   return import(`data:text/javascript;base64,${Buffer.from(javascript).toString("base64")}#${Math.random()}`);
 }
 
-function elemento(tagName = "DIV", atributos = {}) {
-  return { tagName, atributos, getAttribute(nome) { return this.atributos[nome] ?? null; }, setAttribute(nome, valor) { this.atributos[nome] = valor; } };
+function elemento(tagName = "DIV", atributos = {}, parentElement = null) {
+  return {
+    tagName,
+    atributos,
+    parentElement,
+    getAttribute(nome) { return this.atributos[nome] ?? null; },
+    setAttribute(nome, valor) { this.atributos[nome] = valor; },
+    closest(seletor) {
+      assert.equal(seletor, "[data-historietas-i18n-ignore='true']");
+      function encontrar(atual) {
+        if (!atual) return null;
+        if (atual.getAttribute("data-historietas-i18n-ignore") === "true") return atual;
+        return encontrar(atual.parentElement);
+      }
+      return encontrar(this);
+    },
+  };
 }
 
 async function traduzir(textos, idioma, atributos = []) {
   const modulo = await carregar();
-  const nos = textos.map(([valor, tag = "DIV"]) => ({ nodeValue: valor, parentElement: elemento(tag) }));
+  const nos = textos.map(([valor, tag = "DIV", atributosTexto = {}, ancestral = null]) => ({
+    nodeValue: valor,
+    parentElement: elemento(tag, atributosTexto, ancestral),
+  }));
   const raiz = elemento();
   raiz.querySelectorAll = () => atributos;
   const anteriorDocumento = globalThis.document;
@@ -43,6 +61,25 @@ test("bridge ignora elementos proibidos e traduz somente quatro atributos", asyn
   const nos = await traduzir([["Criar capítulo", "SCRIPT"], ["Criar capítulo", "STYLE"], ["Criar capítulo", "TEXTAREA"]], "en", [atributo]);
   assert.deepEqual(nos.map((no) => no.nodeValue), ["Criar capítulo", "Criar capítulo", "Criar capítulo"]);
   assert.deepEqual(atributo.atributos, { "aria-label": "Create chapter", title: "Cancel", placeholder: "Chapter title", alt: "Untitled work", role: "Criar capítulo" });
+});
+
+test("bridge preserva texto autoral protegido em EN e ES sem impedir tradução da interface", async () => {
+  for (const [idioma, traducaoUi] of [["en", "Read chapter"], ["es", "Leer capítulo"]]) {
+    const ancestralProtegido = elemento("SPAN", { "data-historietas-i18n-ignore": "true" });
+    const nos = await traduzir([
+      ["  Ler capítulo\n", "SPAN", { "data-historietas-i18n-ignore": "true" }],
+      ["Ler capítulo", "EM", {}, ancestralProtegido],
+      ["Ler capítulo"],
+      ["Ler capítulo", "SPAN", { "data-historietas-i18n-ignore": "false" }],
+    ], idioma);
+
+    assert.deepEqual(nos.map((no) => no.nodeValue), [
+      "  Ler capítulo\n",
+      "Ler capítulo",
+      traducaoUi,
+      traducaoUi,
+    ]);
+  }
 });
 
 test("Adicionar Capítulo delega helpers ao módulo sem mover lifecycle", () => {

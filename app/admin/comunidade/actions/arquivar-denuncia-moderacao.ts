@@ -1,26 +1,5 @@
-import { supabase } from "../../../../lib/supabase/client";
-
-type PersistirArquivamentoDenunciaModeracaoParams = {
-  denunciaId: string;
-};
-
-export async function persistirArquivamentoDenunciaModeracao({
-  denunciaId,
-}: PersistirArquivamentoDenunciaModeracaoParams) {
-  const { data, error } = await supabase
-    .from("comunidade_denuncias")
-    .update({ arquivada: true })
-    .eq("id", denunciaId)
-    .select("id")
-    .maybeSingle();
-
-  if (error) {
-    throw error;
-  }
-
-  if (!data?.id) {
-    throw new Error(
-      "A denúncia não foi encontrada ou não pôde ser arquivada."
-    );
-  }
+import { escreverEstadoDenunciaModeracao, type EstadoDenuncia } from "../lib/admin-comunidade-confirmed-write";
+export async function persistirArquivamentoDenunciaModeracao({denunciaId, esperada}: {denunciaId: string; esperada: EstadoDenuncia}) {
+  if (denunciaId !== esperada.id) throw new Error("A denúncia mudou durante a ação.");
+  return escreverEstadoDenunciaModeracao(esperada, {arquivada: true});
 }

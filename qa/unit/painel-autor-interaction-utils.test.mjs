@@ -8,6 +8,7 @@ await import("./painel-autor-deleted-work-storage-cleanup.test.mjs");
 await import("./painel-autor-deleted-work-supabase-cleanup.test.mjs");
 await import("./painel-autor-supabase-chapters-loader.test.mjs");
 await import("./painel-autor-supabase-works-loader.test.mjs");
+await import("./painel-autor-work-followers-card.test.mjs");
 
 const utilsSource = readFileSync(
   new URL(

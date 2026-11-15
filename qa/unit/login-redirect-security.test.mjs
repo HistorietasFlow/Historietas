@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import typescript from "typescript";
+import "./login-latency-behavior.test.mjs";
 
 const source = readFileSync(
   new URL("../../app/login/lib/login-redirect-utils.ts", import.meta.url),

@@ -7,7 +7,7 @@ import {
 } from "../../lib/historietasTheme";
 import { useNotificacoes } from "../../components/NotificacoesProvider";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
-import { Suspense, useMemo, useRef, useState } from "react";
+import { Suspense, useCallback, useMemo, useRef, useState } from "react";
 import { usePerfilAutorDesktopMode } from "./hooks/use-perfil-autor-desktop-mode";
 import { usePerfilAutorActionMessage } from "./hooks/use-perfil-autor-action-message";
 import { usePerfilAutorTabNavigation } from "./hooks/use-perfil-autor-tab-navigation";
@@ -69,6 +69,10 @@ import type {
 import {
   BIO_MAX_LENGTH,
   SOBRE_BIO_MAX_LENGTH,
+  avaliacaoAutorVazia,
+  avaliacaoDiarioVazia,
+  comunidadePerfilVazia,
+  diarioPerfilVazio,
 } from "./constants";
 import { PerfilAutorLanguageBridge } from "./translations";
 import {
@@ -359,7 +363,25 @@ function PerfilAutorPageContent() {
     notificacoesNaoLidasContexto,
   });
 
-  usePerfilAutorAuthIdentitySync({
+  const limparEstadoPerfilAnterior = useCallback(() => {
+    setDiarioPerfil(diarioPerfilVazio);
+    setComunidadePerfil(comunidadePerfilVazia);
+    setAvaliacaoAutor(avaliacaoAutorVazia);
+    setAvaliacaoDiario(avaliacaoDiarioVazia);
+    setTopFiveObraIds([]);
+    setTopFiveCurtidasTotal(0);
+    setTopFiveCurtidoPorMim(false);
+    setSeguindoUsuarioPerfil(false);
+    setSeguidoresUsuarioPerfilTotal(0);
+    setSeguindoUsuarioPerfilTotal(0);
+    setEstadoRelacionamentoPerfil("nenhum");
+    setEstadoBloqueioPerfil({ bloqueadoPorMim: false, bloqueadoPeloPerfil: false, existeBloqueio: false });
+  }, [setDiarioPerfil, setComunidadePerfil, setAvaliacaoAutor, setAvaliacaoDiario,
+    setTopFiveObraIds, setTopFiveCurtidasTotal, setTopFiveCurtidoPorMim,
+    setSeguindoUsuarioPerfil, setSeguidoresUsuarioPerfilTotal, setSeguindoUsuarioPerfilTotal,
+    setEstadoRelacionamentoPerfil, setEstadoBloqueioPerfil]);
+
+  const versaoIdentidade = usePerfilAutorAuthIdentitySync({
     avatarInputRef,
     identidadeAutenticadaPerfilRef,
     versaoConsultaAutenticacaoPerfilRef,
@@ -400,10 +422,12 @@ function PerfilAutorPageContent() {
   });
 
 
-  usePerfilAutorProfileLoadSync({
+  const { carregamentoAtual, erroCarregamento } = usePerfilAutorProfileLoadSync({
     autenticacaoCarregada,
     queryPerfilAtual,
     usuarioIdLogado,
+    versaoIdentidade,
+    limparEstadoPerfilAnterior,
     identidadeAutenticadaPerfilRef,
     setAbaPerfil,
     setAutorSelecionado,
@@ -440,6 +464,7 @@ function PerfilAutorPageContent() {
         autorIdSelecionado,
         usuarioIdLogado,
         autenticacaoCarregada,
+        carregamentoAtual,
       }),
     [
       obras,
@@ -449,6 +474,7 @@ function PerfilAutorPageContent() {
       autorIdSelecionado,
       usuarioIdLogado,
       autenticacaoCarregada,
+      carregamentoAtual,
     ],
   );
   const {
@@ -471,15 +497,26 @@ function PerfilAutorPageContent() {
 
   usePerfilAutorTopFiveStorageSync({
     perfilAutorId,
-    usuarioIdLogado,
+    usuarioIdLogado: carregamentoAtual ? usuarioIdLogado : "",
     setTopFiveObraIds,
   });
 
   usePerfilAutorTopFiveLikesSync({
     perfilAutorId,
-    usuarioIdLogado,
+    usuarioIdLogado: carregamentoAtual ? usuarioIdLogado : "",
     setTopFiveCurtidasTotal,
     setTopFiveCurtidoPorMim,
+  });
+
+  const { privacidadeAtual, erroPrivacidade } = usePerfilAutorPrivacySync({
+    perfilAutorId,
+    perfilPertenceAoUsuario,
+    estadoRelacionamentoPerfil,
+    usuarioIdLogado,
+    versaoIdentidade,
+    identidadeAutenticadaPerfilRef,
+    setPermissoesAbasPerfil,
+    setPrivacidadePerfilCarregando,
   });
 
   const {
@@ -512,21 +549,13 @@ function PerfilAutorPageContent() {
     editorSobreAberto,
     estadoBloqueioPerfil,
     bloqueioPerfilSalvando,
-    privacidadePerfilCarregando,
+    privacidadePerfilCarregando: privacidadePerfilCarregando || !privacidadeAtual,
     permissoesAbasPerfil,
     abaPerfil,
   });
   const menuBloqueioStyle = bloqueadoPorMim
     ? menuItemStyle
     : menuDangerItemStyle;
-
-  usePerfilAutorPrivacySync({
-    perfilAutorId,
-    perfilPertenceAoUsuario,
-    estadoRelacionamentoPerfil,
-    setPermissoesAbasPerfil,
-    setPrivacidadePerfilCarregando,
-  });
 
   usePerfilAutorCommunitySync({
     perfilAutorId,
@@ -1005,6 +1034,10 @@ function PerfilAutorPageContent() {
 
   const estadoVisualPaginaPerfilAutor = obterEstadoVisualPaginaPerfilAutor({
     carregando,
+    carregamentoAtual,
+    privacidadeAtual: perfilPertenceAoUsuario || privacidadeAtual,
+    erroCarregamento,
+    erroPrivacidade,
     redirecionandoParaLogin,
     autorNaoEncontrado,
     perfilParaMostrar,
@@ -1016,6 +1049,16 @@ function PerfilAutorPageContent() {
         isDesktop={isDesktop}
         pageThemeStyle={pageThemeStyle}
         loadingLabel="Carregando perfil"
+      />
+    );
+  }
+
+  if (estadoVisualPaginaPerfilAutor === "erro-carregamento") {
+    return (
+      <ProfilePageState
+        isDesktop={isDesktop}
+        pageThemeStyle={pageThemeStyle}
+        message="Não foi possível carregar o perfil agora."
       />
     );
   }

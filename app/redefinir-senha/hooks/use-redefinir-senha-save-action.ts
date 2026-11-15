@@ -1,10 +1,17 @@
+import { useEffect, useRef } from "react";
 import type { Dispatch, FormEvent, SetStateAction } from "react";
 import { supabase } from "../../../lib/supabase/client";
 import {
   obterMensagemErro,
-  sessaoEhRecuperacao,
+  obterSessaoRecuperacao,
+  invalidarContextoRecuperacao,
+  type ContextoRecuperacao,
   type EstadoLink,
 } from "../lib/redefinir-senha-recovery-utils";
+import {
+  atualizarSenhaNaSessaoRecuperacao,
+  ContextoRecuperacaoObsoleto,
+} from "../lib/redefinir-senha-session-mutation";
 import type { TranslationKey } from "../lib/redefinir-senha-translations";
 
 type RedefinirSenhaRouter = {
@@ -16,6 +23,7 @@ type UseRedefinirSenhaSaveActionParams = {
   router: RedefinirSenhaRouter;
   salvando: boolean;
   estadoLink: EstadoLink;
+  contextoRecuperacaoRef: { current: ContextoRecuperacao };
   novaSenha: string;
   confirmacao: string;
   t: (key: TranslationKey) => string;
@@ -28,6 +36,7 @@ export function useRedefinirSenhaSaveAction({
   router,
   salvando,
   estadoLink,
+  contextoRecuperacaoRef,
   novaSenha,
   confirmacao,
   t,
@@ -35,12 +44,22 @@ export function useRedefinirSenhaSaveAction({
   setErro,
   setSalvando,
 }: UseRedefinirSenhaSaveActionParams) {
+  const controleRef = useRef({ ativo: true, ocupado: false });
+  useEffect(() => {
+    const controle = { ativo: true, ocupado: false };
+    controleRef.current = controle;
+    return () => { controle.ativo = false; };
+  }, []);
+
   async function salvarNovaSenha(
     event: FormEvent<HTMLFormElement>,
   ) {
     event.preventDefault();
 
-    if (salvando || estadoLink !== "valido") {
+    const controle = controleRef.current;
+    const contexto = contextoRecuperacaoRef.current;
+    if (!controle.ativo || controle.ocupado || salvando || estadoLink !== "valido" ||
+      contexto.estado !== "valido" || !contexto.sessao || contexto.consumido) {
       return;
     }
 
@@ -64,57 +83,64 @@ export function useRedefinirSenhaSaveAction({
       return;
     }
 
+    const sessaoEsperada = contexto.sessao;
+    const estaAtual = () => controle.ativo && contextoRecuperacaoRef.current === contexto &&
+      window.location.search === contexto.query && sessaoEsperada.expiraEm > Date.now() / 1000;
+    function rejeitarContexto() {
+      if (!controle.ativo) return;
+      if (contextoRecuperacaoRef.current === contexto) {
+        invalidarContextoRecuperacao(contextoRecuperacaoRef);
+        setEstadoLink("invalido");
+        setErro(t("sessionInvalid"));
+      }
+    }
+    const mesmaSessao = (sessao: Awaited<ReturnType<typeof obterSessaoRecuperacao>>) =>
+      sessao?.usuarioId === sessaoEsperada.usuarioId && sessao.sessaoId === sessaoEsperada.sessaoId &&
+      sessao.accessToken === sessaoEsperada.accessToken;
+
+    controle.ocupado = true;
     setSalvando(true);
-
     try {
-      const {
-        data: usuarioAtual,
-        error: erroUsuario,
-      } = await supabase.auth.getUser();
+      const sessaoAtual = await obterSessaoRecuperacao();
+      if (!estaAtual()) { rejeitarContexto(); return; }
+      if (!mesmaSessao(sessaoAtual)) { rejeitarContexto(); return; }
+      contexto.emAlteracao = true;
+      const { data, error } = await atualizarSenhaNaSessaoRecuperacao(sessaoEsperada, novaSenha, estaAtual);
+      // Registrar confirmação mesmo se um refresh já invalidou a interface.
+      if (!error && data.user?.id === sessaoEsperada.usuarioId) contexto.consumido = true;
+      if (!estaAtual()) { rejeitarContexto(); return; }
+      if (error) { setErro(obterMensagemErro(error, t("genericError"))); return; }
+      if (data.user?.id !== sessaoEsperada.usuarioId) { rejeitarContexto(); return; }
 
-      if (erroUsuario || !usuarioAtual.user) {
-        setEstadoLink("invalido");
-        setErro(t("sessionInvalid"));
-        return;
-      }
-
-      const recuperacaoValida =
-        await sessaoEhRecuperacao();
-
-      if (!recuperacaoValida) {
-        setEstadoLink("invalido");
-        setErro(t("sessionInvalid"));
-        return;
-      }
-
-      const { error } =
-        await supabase.auth.updateUser({
-          password: novaSenha,
-        });
-
-      if (error) {
-        setErro(
-          obterMensagemErro(error, t("genericError")),
-        );
-
-        return;
-      }
-
+      // O contexto confirmado permanece consumido mesmo se o logout falhar.
+      const sessaoAntesLogout = await obterSessaoRecuperacao();
+      if (!estaAtual()) { rejeitarContexto(); return; }
+      if (!mesmaSessao(sessaoAntesLogout)) { rejeitarContexto(); return; }
+      contexto.logoutSolicitado = true;
       const { error: erroLogout } = await supabase.auth.signOut();
-
+      if (!estaAtual()) { rejeitarContexto(); return; }
       if (erroLogout) {
+        invalidarContextoRecuperacao(contextoRecuperacaoRef);
+        setEstadoLink("invalido");
         setErro(t("genericError"));
         return;
       }
-
+      const { data: final, error: erroFinal } = await supabase.auth.getSession();
+      if (!estaAtual()) { rejeitarContexto(); return; }
+      if (erroFinal || final.session) { rejeitarContexto(); return; }
       router.replace("/login?senhaRedefinida=1");
       router.refresh();
     } catch (error) {
-      setErro(
-        obterMensagemErro(error, t("genericError")),
-      );
+      if (!estaAtual() || error instanceof ContextoRecuperacaoObsoleto) { rejeitarContexto(); return; }
+      setErro(obterMensagemErro(error, t("genericError")));
+      if (contexto.consumido) {
+        invalidarContextoRecuperacao(contextoRecuperacaoRef);
+        setEstadoLink("invalido");
+      }
     } finally {
-      setSalvando(false);
+      contexto.emAlteracao = false;
+      controle.ocupado = false;
+      if (controle.ativo) setSalvando(false);
     }
   }
 

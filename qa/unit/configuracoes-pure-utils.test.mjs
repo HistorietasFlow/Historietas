@@ -1080,8 +1080,8 @@ test("Configurações delega as fronteiras extraídas", () => {
   );
   assert.match(profileSaveActionSource, /export async function salvarConfiguracoesPerfil\(/);
   assert.match(profileSaveActionSource, /salvarPerfilConfiguracoesSupabase\(\{/);
-  assert.match(profileSaveActionSource, /salvarPreferencias\(preferenciasNormalizadas, userIdSeguro\)/);
-  assert.match(profileSaveActionSource, /salvarPreferenciasPrivacidade\(/);
+  assert.match(profileSaveActionSource, /salvarPreferencias\(preferenciasParaCache, userIdSeguro\)/);
+  assert.doesNotMatch(profileSaveActionSource, /salvarPreferenciasPrivacidade\(/);
   assert.match(profileSaveActionSource, /supabase\.auth\.getUser\(\)/);
   assert.match(profileSaveActionSource, /supabase\.auth\.updateUser\(\{/);
   assert.match(profileSaveActionSource, /carregarResumoContaSupabase\(userIdSeguro\)/);
@@ -1170,14 +1170,14 @@ test("Configurações delega as fronteiras extraídas", () => {
   assert.match(accessOrchestrationHookSource, /useConfiguracoesBlockedUsers\(\{/);
   assert.match(
     accessOrchestrationHookSource,
-    /useConfiguracoesInitialAccess\(\{\s*router,\s*setVerificandoAcesso,\s*setUsuario,\s*setPreferencias,\s*setPrivacidade,\s*setResumo,\s*setUsuariosBloqueados: blockedUsers\.setUsuariosBloqueados,\s*\}\);/,
+    /useConfiguracoesInitialAccess\(\{\s*router,\s*setVerificandoAcesso,\s*setSalvando,\s*setErroUsername,\s*setUsuario,\s*setPreferencias,\s*setPrivacidade,\s*setResumo,\s*setUsuariosBloqueados: blockedUsers\.setUsuariosBloqueados,\s*\}\);/,
   );
   assert.doesNotMatch(pagina, /async function verificarAcesso\(/);
   assert.match(
     accessOrchestrationHookSource,
     /useConfiguracoesAdminAccess\(\{\s*verificandoAcesso,\s*setAdminLiberado,\s*\}\);/,
   );
-  assert.match(accessOrchestrationHookSource, /return blockedUsers;/);
+  assert.match(accessOrchestrationHookSource, /return \{ \.\.\.blockedUsers, \.\.\.preferenciasConta \};/);
   assert.ok(
     accessOrchestrationHookSource.indexOf("useConfiguracoesBlockedUsers({") <
       accessOrchestrationHookSource.indexOf("useConfiguracoesInitialAccess({") &&
@@ -1197,7 +1197,7 @@ test("Configurações delega as fronteiras extraídas", () => {
   assert.doesNotMatch(pagina, /function alternarAprovacaoNovosSeguidores\(/);
   assert.match(
     pagina,
-    /useConfiguracoesPreferenceActions\(\{\s*preferencias,\s*privacidade,\s*usuarioIdLogado,\s*setPreferencias,\s*setPrivacidade,\s*setMensagemAcao,\s*mostrarMensagemAcao,\s*traduzirTexto: t,\s*\}\);/,
+    /useConfiguracoesPreferenceActions\(\{\s*preferencias,\s*privacidade,\s*usuarioIdLogado,\s*identidadeContaRef,\s*setPreferencias,\s*setPrivacidade,\s*setMensagemAcao,\s*mostrarMensagemAcao,\s*traduzirTexto: t,\s*\}\);/,
   );
   assert.doesNotMatch(pagina, /const confirmacaoEsperada/);
   assert.doesNotMatch(pagina, /!\/\[A-Za-zÀ-ÖØ-öø-ÿ\]\/.test\(novaSenha\)/);
@@ -1244,96 +1244,28 @@ test("hook de acesso administrativo preserva autenticacao, RPC e cleanup", () =>
   assert.doesNotMatch(adminAccessHookSource, /localStorage|sessionStorage|window|document|JSX/);
 });
 
-test("hook inicial preserva autenticacao, cargas paralelas e cancelamento", () => {
-  assert.match(initialAccessHookSource, /^"use client";/);
-  assert.match(initialAccessHookSource, /import \{ useEffect \} from "react";/);
-  assert.match(
-    initialAccessHookSource,
-    /export function useConfiguracoesInitialAccess\(/,
-  );
-  assert.match(initialAccessHookSource, /let cancelado = false;/);
-  assert.match(initialAccessHookSource, /async function verificarAcesso\(\)/);
+test("hook inicial preserva acesso e invalida cargas por identidade e tentativa", () => {
   assert.match(initialAccessHookSource, /await supabase\.auth\.getUser\(\)/);
-  assert.match(initialAccessHookSource, /if \(cancelado\) \{\s*return;/);
-  assert.match(
-    initialAccessHookSource,
-    /if \(error \|\| !data\.user\) \{\s*router\.replace\(criarLoginHrefConfiguracoes\(\)\);/,
-  );
-  assert.match(
-    initialAccessHookSource,
-    /carregarPerfilConfiguracoesSupabase\(data\.user\.id\)/,
-  );
-  assert.match(initialAccessHookSource, /const preferenciasCarregadas = carregarPreferencias\(usuarioCarregado\.id\)/);
+  assert.match(initialAccessHookSource, /if \(error \|\| !data\.user\) \{\s*router\.replace\(criarLoginHrefConfiguracoes\(\)\)/);
   assert.match(initialAccessHookSource, /await Promise\.all\(\[/);
-  assert.match(
-    initialAccessHookSource,
-    /carregarPreferenciasPrivacidade\(usuarioCarregado\.id, \{\s*usarFallbackLocal: true,/,
-  );
-  assert.match(initialAccessHookSource, /carregarResumoContaSupabase\(usuarioCarregado\.id\)/);
-  assert.match(initialAccessHookSource, /listarUsuariosBloqueadosConfiguracoes\(\)\.catch\(\(\) => \[\]\)/);
-  assert.match(
-    initialAccessHookSource,
-    /setUsuario\(usuarioCarregado\);\s*setPrivacidade\(privacidadeCarregada\);\s*setUsuariosBloqueados\(usuariosBloqueadosCarregados\);/,
-  );
-  assert.match(
-    initialAccessHookSource,
-    /setResumo\(resumoCarregado\);\s*setVerificandoAcesso\(false\);/,
-  );
-  assert.match(
-    initialAccessHookSource,
-    /catch \{\s*if \(!cancelado\) \{\s*router\.replace\(criarLoginHrefConfiguracoes\(\)\);/,
-  );
-  assert.match(initialAccessHookSource, /return \(\) => \{\s*cancelado = true;\s*\};/);
-  assert.match(initialAccessHookSource, /\}, \[router\]\);/);
-  assert.doesNotMatch(initialAccessHookSource, /localStorage|sessionStorage|window|document|JSX/);
+  assert.match(initialAccessHookSource, /exigirConfirmacao: true/);
+  assert.match(initialAccessHookSource, /execucaoEstaAtual: atual/);
+  assert.match(initialAccessHookSource, /if \(!atual\(\)\) return;\s*setUsuario\(usuarioCarregado\)/);
+  assert.match(initialAccessHookSource, /subscription\.unsubscribe\(\)/);
+  assert.match(initialAccessHookSource, /\[router, tentativa\]/);
+  assert.doesNotMatch(initialAccessHookSource, /auth\.(signIn|signOut|updateUser|setSession)/);
 });
 
-test("hook de acoes de preferencias preserva as composicoes da pagina", () => {
-  assert.match(preferenceActionsHookSource, /^"use client";/);
-  assert.match(
-    preferenceActionsHookSource,
-    /export function useConfiguracoesPreferenceActions\(/,
-  );
-  assert.match(
-    preferenceActionsHookSource,
-    /from "\.\.\/lib\/configuracoes-preference-actions";/,
-  );
-  assert.match(
-    preferenceActionsHookSource,
-    /from "\.\.\/lib\/configuracoes-privacy-actions";/,
-  );
-  assert.match(
-    preferenceActionsHookSource,
-    /atualizarPreferenciaConfiguracoes\(\{\s*campo,\s*valor,\s*setPreferencias,\s*\}\)/,
-  );
-  assert.match(
-    preferenceActionsHookSource,
-    /alternarReceberAvisosConfiguracoes\(\{\s*preferencias,\s*setPreferencias,\s*usuarioIdLogado,\s*\}\)/,
-  );
-  assert.match(
-    preferenceActionsHookSource,
-    /aplicarPrivacidadeAtualizadaConfiguracoes\(\{[\s\S]*?privacidadeAtualizada,[\s\S]*?setPrivacidade,[\s\S]*?setMensagemAcao,[\s\S]*?usuarioIdLogado,[\s\S]*?mostrarMensagemAcao,[\s\S]*?traduzirTexto,[\s\S]*?\}\)/,
-  );
-  assert.match(
-    preferenceActionsHookSource,
-    /atualizarPrivacidadeConfiguracoes\(\{\s*privacidade,\s*campo,\s*valor,\s*aplicarPrivacidadeAtualizada,\s*\}\)/,
-  );
-  assert.match(
-    preferenceActionsHookSource,
-    /alternarPerfilPrivadoConfiguracoes\(\{\s*privacidade,\s*aplicarPrivacidadeAtualizada,\s*\}\)/,
-  );
-  assert.match(
-    preferenceActionsHookSource,
-    /alternarAprovacaoNovosSeguidoresConfiguracoes\(\{\s*privacidade,\s*aplicarPrivacidadeAtualizada,\s*\}\)/,
-  );
-  assert.match(
-    preferenceActionsHookSource,
-    /return \{[\s\S]*?atualizarPreferencia,[\s\S]*?alternarReceberAvisos,[\s\S]*?aplicarPrivacidadeAtualizada,[\s\S]*?atualizarPrivacidade,[\s\S]*?alternarPerfilPrivado,[\s\S]*?alternarAprovacaoNovosSeguidores,[\s\S]*?\};/,
-  );
-  assert.doesNotMatch(
-    preferenceActionsHookSource,
-    /supabase|localStorage|sessionStorage|window|document|JSX/,
-  );
+test("hook de ações mantém composições e estado confirmado separado da intenção", () => {
+  assert.match(preferenceActionsHookSource, /from "\.\.\/lib\/configuracoes-preference-actions";/);
+  assert.match(preferenceActionsHookSource, /from "\.\.\/lib\/configuracoes-privacy-actions";/);
+  for (const acao of ["atualizarPreferenciaConfiguracoes", "alternarReceberAvisosConfiguracoes", "atualizarPrivacidadeConfiguracoes", "alternarPerfilPrivadoConfiguracoes", "alternarAprovacaoNovosSeguidoresConfiguracoes"]) {
+    assert.ok(preferenceActionsHookSource.includes(acao + "({"));
+  }
+  assert.match(preferenceActionsHookSource, /estado\.desejada/);
+  assert.match(preferenceActionsHookSource, /estado\.confirmada/);
+  assert.match(preferenceActionsHookSource, /preferenciasDaContaEstaoAtuais/);
+  assert.doesNotMatch(preferenceActionsHookSource, /supabase\.|localStorage|sessionStorage|window|document|JSX/);
 });
 
 test("ações dos modais preservam resets, guardas e fronteira local", () => {
@@ -1698,7 +1630,6 @@ test("contratos de callback compartilhados preservam assinaturas e consumidores"
     "lib/configuracoes-account-backup-actions.ts",
     "lib/configuracoes-account-deletion-action.ts",
     "lib/configuracoes-password-change-action.ts",
-    "lib/configuracoes-preference-actions.ts",
     "lib/configuracoes-profile-save-action.ts",
     "lib/configuracoes-sign-out-action.ts",
     "components/configuracoes-account-deletion-modal.tsx",
@@ -2109,7 +2040,6 @@ test("contratos de feedback de acoes preservam a limpeza compartilhada", () => {
     "hooks/use-configuracoes-preference-actions.ts",
     "lib/configuracoes-account-backup-actions.ts",
     "lib/configuracoes-overlay-field-actions.ts",
-    "lib/configuracoes-preference-actions.ts",
     "lib/configuracoes-profile-save-action.ts",
   ]) {
     const source = readFileSync(

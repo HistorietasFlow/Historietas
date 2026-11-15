@@ -31,7 +31,7 @@ const {
   `data:text/javascript;base64,${Buffer.from(javascript).toString("base64")}`
 );
 
-function useMontarHook(search = "") {
+function useMontarHook(search = "", prontoInicial = true) {
   const windowAnterior = globalThis.window;
   const efeitos = [];
   const listeners = new Map();
@@ -59,17 +59,23 @@ function useMontarHook(search = "") {
     },
   };
 
-  useObraCommentsDeepLink({
-    abrirComentariosObra() {
-      aberturas += 1;
-    },
-  });
-  const cleanups = efeitos.map((efeito) => efeito()).filter(Boolean);
+  let cleanups = [];
+  function useRender(pronto = true, chaveRota = "obra") {
+    cleanups.reverse().forEach((cleanup) => cleanup());
+    indiceRef = 0;
+    efeitos.length = 0;
+    useObraCommentsDeepLink({
+      abrirComentariosObra() { aberturas += 1; }, pronto, chaveRota,
+    });
+    cleanups = efeitos.map((efeito) => efeito()).filter(Boolean);
+  }
+  useRender(prontoInicial);
 
   return {
     get aberturas() {
       return aberturas;
     },
+    render: useRender,
     navegar(searchAtual) {
       globalThis.window.location.search = searchAtual;
       listeners.get("popstate")?.();
@@ -114,5 +120,22 @@ test("cliente conecta o deep link ao mesmo handler acessivel do sheet", () => {
     cliente,
     /import \{ useObraCommentsDeepLink \} from "\.\/hooks\/use-obra-comments-deep-link";/,
   );
-  assert.match(cliente, /useObraCommentsDeepLink\(\{ abrirComentariosObra \}\);/);
+  assert.match(cliente, /useObraCommentsDeepLink\(\{\s*abrirComentariosObra,\s*pronto: autenticacaoCarregada && \(!snapshotInicial \|\| publica\.interativa\),\s*chaveRota: slug,/);
+});
+
+test("deep link aguarda identidade/barreira e não reabre após fechamento ou nova confirmação", () => {
+  const cenario = montarHook("?comentarios=1", false);
+  try {
+    assert.equal(cenario.aberturas, 0);
+    cenario.navegar("?comentarios=1");
+    assert.equal(cenario.aberturas, 0);
+    cenario.render(true);
+    assert.equal(cenario.aberturas, 1);
+    cenario.render(false); cenario.render(true);
+    assert.equal(cenario.aberturas, 1);
+    cenario.navegar(""); cenario.navegar("?comentarios=1");
+    assert.equal(cenario.aberturas, 2);
+    cenario.render(true, "outra-obra");
+    assert.equal(cenario.aberturas, 3);
+  } finally { cenario.desmontar(); }
 });

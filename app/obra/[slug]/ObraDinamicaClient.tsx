@@ -68,6 +68,7 @@ import ObraSynopsisSection from "./components/obra-synopsis-section";
 import ObraChaptersSection from "./components/obra-chapters-section";
 import ArquivoObraPublico from "./components/arquivo-obra-publico";
 import ObraRatingSummary from "./components/obra-rating-summary";
+import { textosStatusEditorial } from "../../../lib/statusEditorial";
 import ObraHeroHeader from "./components/obra-hero-header";
 import ObraHeroCover from "./components/obra-hero-cover";
 import ObraHeroMetaBar from "./components/obra-hero-meta-bar";
@@ -164,7 +165,6 @@ export default function ObraDinamicaPage({ snapshotInicial }: { snapshotInicial?
     fecharMenuOrdenacaoComentarios,
     limparRespostaComentario: () => setRespostaComentario(null),
   });
-  useObraCommentsDeepLink({ abrirComentariosObra });
   const {
     acoesObraAbertas,
     setAcoesObraAbertas,
@@ -226,6 +226,8 @@ export default function ObraDinamicaPage({ snapshotInicial }: { snapshotInicial?
 
   const {
     usuarioIdLogado,
+    erroAutenticacao,
+    tentarAutenticacaoNovamente,
     autenticacaoCarregada,
     identidadeAutenticadaObraRef,
     versaoIdentidade,
@@ -263,6 +265,11 @@ export default function ObraDinamicaPage({ snapshotInicial }: { snapshotInicial?
   const obraLeitura = snapshotInicial ? publica.leitura : obra;
   // Estado privado não é inicializado com a identidade anônima do SSR.
   const obraInteracoes = snapshotInicial && !publica.pronta ? null : obra;
+  useObraCommentsDeepLink({
+    abrirComentariosObra,
+    pronto: autenticacaoCarregada && (!snapshotInicial || publica.interativa),
+    chaveRota: slug,
+  });
   const contextoAcaoRef = useRef("");
   useLayoutEffect(() => {
     if (contextoAcaoRef.current && contextoAcaoRef.current !== publica.contexto) {
@@ -318,10 +325,11 @@ export default function ObraDinamicaPage({ snapshotInicial }: { snapshotInicial?
   });
   const obraIdComentarios = obterObraIdComentarios(obraInteracoes);
   const carregarMetricasObra = useObraWorkMetricsRequest(usuarioIdLogado);
-  const { carregarMaisComentariosObra } = useObraCommentsLoadPagination({
+  const { carregarMaisComentariosObra, comentariosRemotosConfirmados } = useObraCommentsLoadPagination({
     comentariosAbertos,
     obraIdComentarios,
     usuarioIdLogado,
+    versaoIdentidade,
     identidadeAutenticadaObraRef,
     comentariosCarregando,
     comentariosCarregandoMais,
@@ -627,6 +635,7 @@ export default function ObraDinamicaPage({ snapshotInicial }: { snapshotInicial?
                 comentarioRemovendoId={comentarioRemovendoId}
                 comentarioCurtindoId={comentarioCurtindoId}
                 agoraComentarios={agoraComentarios}
+                comentariosRemotosConfirmados={comentariosRemotosConfirmados}
                 onResponder={responderComentarioObra}
                 onRemover={removerComentarioObra}
                 onDenunciar={abrirDenunciaComentarioObra}
@@ -670,7 +679,7 @@ export default function ObraDinamicaPage({ snapshotInicial }: { snapshotInicial?
         )
       : null;
 
-  if ((snapshotInicial ? publica.carregando : carregandoObras) && !obra) {
+  if (!erroAutenticacao && (snapshotInicial ? publica.carregando : carregandoObras) && !obra) {
     return (
       <main data-historietas-obra-dinamica-root="true" style={pageThemeStyle} aria-busy="true">
         <style>{`${historietasThemeCss}${obraPageCss}`}</style>
@@ -682,16 +691,17 @@ export default function ObraDinamicaPage({ snapshotInicial }: { snapshotInicial?
     );
   }
 
-  if (!obra) {
+  if (erroAutenticacao || !obra) {
     return (
-      <main data-historietas-obra-dinamica-root="true" style={pageThemeStyle} aria-busy={snapshotInicial ? publica.validando : false}
-        data-public-work-state={snapshotInicial ? publica.erro ? "erro" : "ausente" : undefined}>
+      <main data-historietas-obra-dinamica-root="true" style={pageThemeStyle} aria-busy={!erroAutenticacao && Boolean(snapshotInicial && publica.validando)}
+        data-public-work-state={erroAutenticacao ? "erro" : snapshotInicial ? publica.erro ? "erro" : "ausente" : undefined}>
         <style>{`${historietasThemeCss}${obraPageCss}`}</style>
 
         <ObraDinamicaLanguageBridge />
 
         <section style={isDesktop ? desktopContainerStyle : containerStyle}>
           <p
+            role={erroAutenticacao ? "alert" : undefined}
             style={{
               margin: "10px 0 0",
               color: "#FFFFFF",
@@ -700,11 +710,15 @@ export default function ObraDinamicaPage({ snapshotInicial }: { snapshotInicial?
               textAlign: "center",
             }}
           >
-            {(snapshotInicial ? publica.erro : erroCarregamentoObra)
+            {erroAutenticacao
+              ? "Não foi possível confirmar sua sessão agora."
+              : (snapshotInicial ? publica.erro : erroCarregamentoObra)
               ? "Não foi possível carregar a obra agora."
               : "Obra não encontrada"}
           </p>
-          {snapshotInicial && publica.erro ? <button type="button" onClick={publica.tentarNovamente}>Tentar novamente</button> : null}
+          {erroAutenticacao || (snapshotInicial && publica.erro) ? (
+            <button type="button" onClick={erroAutenticacao ? tentarAutenticacaoNovamente : publica.tentarNovamente}>Tentar novamente</button>
+          ) : null}
         </section>
       </main>
     );
@@ -805,6 +819,13 @@ export default function ObraDinamicaPage({ snapshotInicial }: { snapshotInicial?
                 classificacaoIndicativa={obra.classificacaoIndicativa}
                 sinopse={obra.sinopse}
               />
+
+              {snapshotInicial && publica.pronta && obra.statusEditorial !== undefined && (
+                <p data-historietas-i18n-ignore="true" style={{ fontSize: 13, overflowWrap: "anywhere" }}>
+                  {textosStatusEditorial(language).label}: {obra.statusEditorial === null
+                    ? textosStatusEditorial(language).indefinido : textosStatusEditorial(language)[obra.statusEditorial]}
+                </p>
+              )}
 
               <ObraHeroMetaBar
                 isDesktop={isDesktop}

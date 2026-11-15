@@ -49,7 +49,7 @@ test("a pagina delega o estado e preserva os consumidores de privacidade", async
   );
   assert.match(
     source,
-    /obterEstadoVisualAcessoPerfilAutor\(\{[\s\S]*?privacidadePerfilCarregando,[\s\S]*?permissoesAbasPerfil,/,
+    /obterEstadoVisualAcessoPerfilAutor\(\{[\s\S]*?privacidadePerfilCarregando: privacidadePerfilCarregando \|\| !privacidadeAtual,[\s\S]*?permissoesAbasPerfil,/,
   );
   assert.match(
     source,

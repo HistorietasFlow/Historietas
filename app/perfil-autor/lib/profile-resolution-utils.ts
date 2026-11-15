@@ -42,7 +42,7 @@ export function resolverEstadoPerfilAutor({
       }
     }
 
-    if (!perfilAtual) {
+    if (!perfilAtual && !autorIdNormalizado) {
       const autorNormalizado = normalizarNomeAutor(autorSelecionado);
 
       perfilAtual =
@@ -79,17 +79,14 @@ export function resolverEstadoPerfilAutor({
       ? perfilAtual
       : perfilSemLoginSemParametro
         ? null
-        : perfilDoUsuarioLogado || perfilUsuarioRemotoComoAutor || null;
+        : perfilDoUsuarioLogado;
 
   const autorIdPerfilNormalizado =
     normalizarIdPerfilAutor(perfilParaMostrar?.autorId || "");
-  const autorIdUrlNormalizado = normalizarIdPerfilAutor(autorIdSelecionado);
 
   const perfilPertenceAoUsuario = Boolean(
     usuarioIdNormalizado &&
-      (perfilSemParametro ||
-        autorIdPerfilNormalizado === usuarioIdNormalizado ||
-        autorIdUrlNormalizado === usuarioIdNormalizado),
+      perfilParaMostrar && autorIdPerfilNormalizado === usuarioIdNormalizado,
   );
 
   return {

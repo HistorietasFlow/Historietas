@@ -14,6 +14,7 @@ const pageSource = readFileSync(
   new URL("../../app/editar-capitulo/page.tsx", import.meta.url),
   "utf8",
 );
+const deleteHookSource = readFileSync(new URL("../../app/editar-capitulo/hooks/useEditarCapituloDeleteAction.ts", import.meta.url), "utf8");
 const javascript = typescript.transpileModule(messageSource, {
   compilerOptions: {
     module: typescript.ModuleKind.ESNext,
@@ -57,13 +58,14 @@ test("Editar Capítulo delega somente a mensagem pura de confirmação de exclus
     /const tituloSeguro =\s*tituloCapitulo\.trim\(\) \|\| "Capítulo";/,
   );
   assert.match(
-    pageSource,
-    /import \{ criarMensagemConfirmacaoExclusaoCapitulo \} from "\.\/lib\/editar-capitulo-delete-message";/,
+    deleteHookSource,
+    /import \{ criarMensagemConfirmacaoExclusaoCapitulo \} from "\.\.\/lib\/editar-capitulo-delete-message";/,
   );
+  assert.match(pageSource, /useEditarCapituloDeleteAction\(/);
   assert.doesNotMatch(pageSource, /function criarMensagemConfirmacaoExclusaoCapitulo\(/);
   assert.match(
-    pageSource,
-    /async function excluirCapitulo\(\) \{[\s\S]*?window\.confirm\(\s*criarMensagemConfirmacaoExclusaoCapitulo\(\s*capituloAtual\.titulo,\s*language\s*\)/,
+    deleteHookSource,
+    /async function excluirCapitulo\(\) \{[\s\S]*?window\.confirm\(\s*criarMensagemConfirmacaoExclusaoCapitulo\(\s*capituloAtual\.titulo,\s*language,\s*\)/,
   );
   assert.doesNotMatch(messageSource, /supabase|localStorage|useState|useEffect|router|<\w+/);
 });

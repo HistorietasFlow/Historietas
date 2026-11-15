@@ -69,8 +69,9 @@ export function normalizarObraPainel(
   obraIndex: number
 ): ObraNormalizadaPainel {
   const capitulosNormalizados = Array.isArray(obra.capitulos)
-    ? obra.capitulos.map((capitulo, capituloIndex) =>
-        normalizarCapitulo(capitulo, capituloIndex, obraIndex)
+    ? obra.capitulos.flatMap((capitulo, capituloIndex) =>
+        capitulo && typeof capitulo === "object" && !Array.isArray(capitulo)
+          ? [normalizarCapitulo(capitulo, capituloIndex, obraIndex)] : []
       )
     : [];
 

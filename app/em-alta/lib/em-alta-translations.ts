@@ -6,6 +6,14 @@ type TraducaoEmAlta = {
 };
 
 const EM_ALTA_UI_TRANSLATIONS: Record<string, TraducaoEmAlta> = {
+  "Não foi possível atualizar todos os dados do Em Alta.": { en: "Could not update all Trending data.", es: "No se pudieron actualizar todos los datos de Tendencias." },
+  "Tentar novamente": { en: "Try again", es: "Intentar de nuevo" },
+  "Salvando coleção…": { en: "Saving collection…", es: "Guardando colección…" },
+  "Não foi possível confirmar a alteração da coleção. Tente novamente.": { en: "Could not confirm the collection change. Try again.", es: "No se pudo confirmar el cambio de colección. Inténtalo de nuevo." },
+  "Favoritar": { en: "Favorite", es: "Añadir a favoritos" },
+  "Favoritada": { en: "Favorited", es: "En favoritos" },
+  "Concluir": { en: "Mark as completed", es: "Marcar como terminada" },
+  "Concluída": { en: "Completed", es: "Terminada" },
   "Carregando": { en: "Loading", es: "Cargando" },
   "Carregando Em Alta": { en: "Loading Trending", es: "Cargando Tendencias" },
   "Voltar para a Home": { en: "Back to Home", es: "Volver al inicio" },

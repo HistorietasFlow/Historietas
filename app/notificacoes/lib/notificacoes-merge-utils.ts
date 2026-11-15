@@ -1,4 +1,3 @@
-import { normalizarTexto } from "../../../lib/utils";
 import { dataNotificacao } from "./notificacoes-filter-utils";
 import { normalizarNotificacao } from "./notificacoes-local-normalizers";
 import type { NotificacaoLocal } from "./notificacoes-models";
@@ -11,15 +10,8 @@ function notificacaoSinteticaDeCapitulo(notificacao: NotificacaoLocal) {
 }
 
 function obterAutorChaveNotificacao(notificacao: NotificacaoLocal) {
-  const autorId = notificacao.autorId?.trim() || "";
-
-  if (autorId) {
-    return autorId;
-  }
-
-  const autorNome = normalizarTexto(notificacao.autorNome || "");
-
-  return autorNome || "";
+  // Nome de exibição não é identidade: duas contas podem ter o mesmo nome.
+  return notificacao.autorId?.trim() || "";
 }
 
 function criarChaveMesclagemNotificacao(notificacao: NotificacaoLocal) {
@@ -71,67 +63,97 @@ export function notificacoesRepresentamMesmoEvento(
   const primeiraChave = criarChaveMesclagemNotificacao(primeira);
   const segundaChave = criarChaveMesclagemNotificacao(segunda);
 
-  return Boolean(primeiraChave && primeiraChave === segundaChave);
+  return Boolean(
+    (primeira.id.trim() && primeira.id.trim() === segunda.id.trim()) ||
+    (primeiraChave && primeiraChave === segundaChave)
+  );
+}
+
+function mesclarMesmoEvento(existente: NotificacaoLocal, nova: NotificacaoLocal) {
+  const existenteSintetica = notificacaoSinteticaDeCapitulo(existente);
+  const novaSintetica = notificacaoSinteticaDeCapitulo(nova);
+  const existenteMaisRecente =
+    dataNotificacao(existente) > dataNotificacao(nova);
+  const preferida =
+    existenteSintetica && !novaSintetica
+      ? nova
+      : !existenteSintetica && novaSintetica
+        ? existente
+        : existenteMaisRecente
+          ? existente
+          : nova;
+  const secundaria = preferida === nova ? existente : nova;
+  const mesmoId = existente.id.trim() === nova.id.trim();
+
+  return {
+    ...secundaria,
+    ...preferida,
+    obraId: preferida.obraId || secundaria.obraId,
+    capituloId: preferida.capituloId || secundaria.capituloId,
+    link: preferida.link || secundaria.link,
+    autorId: preferida.autorId || secundaria.autorId,
+    autorNome: preferida.autorNome || secundaria.autorNome,
+    autorAvatar: preferida.autorAvatar || secundaria.autorAvatar,
+    solicitacaoId: preferida.solicitacaoId || secundaria.solicitacaoId,
+    lida: mesmoId
+      ? existente.lida || nova.lida
+      : preferida.lida,
+  };
 }
 
 export function mesclarNotificacoes(
   notificacoesLocais: NotificacaoLocal[],
   notificacoesSupabase: NotificacaoLocal[]
 ) {
-  const mapa = new Map<string, NotificacaoLocal>();
-
+  // Consolida primeiro a identidade estável, antes das chaves semânticas que
+  // dependem de metadados eventualmente ausentes no cache.
+  const porId = new Map<string, NotificacaoLocal>();
   [...notificacoesLocais, ...notificacoesSupabase].forEach((notificacao) => {
-    const notificacaoNormalizada = normalizarNotificacao(notificacao, 0);
-    const chave = criarChaveMesclagemNotificacao(notificacaoNormalizada);
-
-    if (!chave) {
-      return;
-    }
-
-    const existente = mapa.get(chave);
-
-    if (!existente) {
-      mapa.set(chave, notificacaoNormalizada);
-      return;
-    }
-
-    const existenteSintetica = notificacaoSinteticaDeCapitulo(existente);
-    const novaSintetica = notificacaoSinteticaDeCapitulo(
-      notificacaoNormalizada
+    const normalizada = normalizarNotificacao(notificacao, 0);
+    const id = normalizada.id.trim();
+    if (!id) return;
+    const existente = porId.get(id);
+    porId.set(
+      id,
+      existente ? mesclarMesmoEvento(existente, normalizada) : normalizada
     );
-    const existenteMaisRecente =
-      dataNotificacao(existente) > dataNotificacao(notificacaoNormalizada);
-    const preferida =
-      existenteSintetica && !novaSintetica
-        ? notificacaoNormalizada
-        : !existenteSintetica && novaSintetica
-          ? existente
-          : existenteMaisRecente
-            ? existente
-            : notificacaoNormalizada;
-    const secundaria =
-      preferida === notificacaoNormalizada
-        ? existente
-        : notificacaoNormalizada;
-    const mesmoId = existente.id.trim() === notificacaoNormalizada.id.trim();
+  });
 
-    mapa.set(chave, {
-      ...secundaria,
-      ...preferida,
-      obraId: preferida.obraId || secundaria.obraId,
-      capituloId: preferida.capituloId || secundaria.capituloId,
-      link: preferida.link || secundaria.link,
-      autorId: preferida.autorId || secundaria.autorId,
-      autorNome: preferida.autorNome || secundaria.autorNome,
-      autorAvatar: preferida.autorAvatar || secundaria.autorAvatar,
-      solicitacaoId: preferida.solicitacaoId || secundaria.solicitacaoId,
-      lida: mesmoId
-        ? existente.lida || notificacaoNormalizada.lida
-        : preferida.lida,
-    });
+  const mapa = new Map<string, NotificacaoLocal>();
+  porId.forEach((notificacao) => {
+    const chave = criarChaveMesclagemNotificacao(notificacao);
+    const existente = mapa.get(chave);
+    mapa.set(
+      chave,
+      existente ? mesclarMesmoEvento(existente, notificacao) : notificacao
+    );
   });
 
   return Array.from(mapa.values()).sort(
     (a, b) => dataNotificacao(b) - dataNotificacao(a)
   );
+}
+
+export function preservarLeituraAlteradaDuranteCarga(
+  mescladas: NotificacaoLocal[],
+  iniciais: NotificacaoLocal[],
+  atuais: NotificacaoLocal[]
+) {
+  // Capítulos têm duas representações conhecidas; eventos recorrentes de um
+  // mesmo autor continuam distintos para não herdar a leitura do evento antigo.
+  const chaveLeitura = (item: NotificacaoLocal) =>
+    item.tipo === "novo-capitulo" && item.capituloId.trim()
+      ? `novo-capitulo:${item.capituloId.trim()}`
+      : item.id.trim();
+  const leituraInicial = new Map(iniciais.map((item) => [chaveLeitura(item), item.lida]));
+  const alteradas = new Map(
+    atuais
+      .filter((item) => leituraInicial.has(chaveLeitura(item)) &&
+        leituraInicial.get(chaveLeitura(item)) !== item.lida)
+      .map((item) => [chaveLeitura(item), item.lida])
+  );
+  return mescladas.map((item) => {
+    const leitura = alteradas.get(chaveLeitura(item));
+    return leitura === undefined ? item : { ...item, lida: leitura };
+  });
 }

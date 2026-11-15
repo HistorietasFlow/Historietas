@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import { idObraSupabaseValido } from "../../../../lib/utils";
 import {
@@ -19,6 +19,7 @@ type UseObraCommentsLoadPaginationParams = {
   comentariosAbertos: boolean;
   obraIdComentarios: string;
   usuarioIdLogado: string;
+  versaoIdentidade: number;
   identidadeAutenticadaObraRef: {
     current: IdentidadeAutenticadaObra;
   };
@@ -39,6 +40,7 @@ export function useObraCommentsLoadPagination({
   comentariosAbertos,
   obraIdComentarios,
   usuarioIdLogado,
+  versaoIdentidade,
   identidadeAutenticadaObraRef,
   comentariosCarregando,
   comentariosCarregandoMais,
@@ -53,6 +55,10 @@ export function useObraCommentsLoadPagination({
   setComentarioStatus,
 }: UseObraCommentsLoadPaginationParams) {
   const comentariosConsultaVersaoRef = useRef(0);
+  const [confirmacaoComentarios, setConfirmacaoComentarios] = useState<{
+    obraId: string;
+    identidade: IdentidadeAutenticadaObra;
+  } | null>(null);
 
   useEffect(() => {
     const versaoConsulta = comentariosConsultaVersaoRef.current + 1;
@@ -63,10 +69,12 @@ export function useObraCommentsLoadPagination({
     }
 
     let cancelado = false;
+    const identidadeEsperada = identidadeAutenticadaObraRef.current;
     const execucaoAtual = () =>
       !cancelado && comentariosConsultaVersaoRef.current === versaoConsulta;
 
     async function carregarComentariosObra() {
+      setConfirmacaoComentarios(null);
       setComentarioStatus("");
       setComentariosCarregandoMais(false);
       setComentariosTemMais(false);
@@ -104,6 +112,13 @@ export function useObraCommentsLoadPagination({
         }
 
         setComentariosObra(pagina.comentarios);
+        if (execucaoIdentidadeObraEstaAtual({
+          cancelada: false,
+          identidadeEsperada,
+          identidadeAtual: identidadeAutenticadaObraRef.current,
+        })) {
+          setConfirmacaoComentarios({ obraId: obraIdComentarios, identidade: identidadeEsperada });
+        }
         setComentariosTemMais(pagina.temMais);
         setComentariosProximoOffset(pagina.proximoOffset);
         setTotalComentariosObra((totalAtual) =>
@@ -150,6 +165,8 @@ export function useObraCommentsLoadPagination({
     setComentariosTemMais,
     setTotalComentariosObra,
     usuarioIdLogado,
+    identidadeAutenticadaObraRef,
+    versaoIdentidade,
   ]);
 
   async function carregarMaisComentariosObra() {
@@ -221,5 +238,9 @@ export function useObraCommentsLoadPagination({
 
   return {
     carregarMaisComentariosObra,
+    comentariosRemotosConfirmados: comentariosAbertos &&
+      confirmacaoComentarios?.obraId === obraIdComentarios &&
+      confirmacaoComentarios.identidade.usuarioId === usuarioIdLogado &&
+      confirmacaoComentarios.identidade.versao === versaoIdentidade,
   };
 }

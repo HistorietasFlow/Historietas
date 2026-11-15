@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
 import { useState } from "react";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
+import { ChapterTextPreview } from "../../components/ChapterTextPreview";
 import { EditarCapituloLanguageBridge } from "./components/EditarCapituloLanguageBridge";
 import { useEditarCapituloDesktopMode } from "./hooks/useEditarCapituloDesktopMode";
 import { useEditarCapituloDerivedValues } from "./hooks/useEditarCapituloDerivedValues";
@@ -100,6 +101,8 @@ export default function EditarCapituloPage() {
     setObras,
     carregando,
     verificandoAcesso,
+    usuarioEdicaoId,
+    referenciaRemota,
   } = useEditarCapituloInitialLoad({
     router,
     setTitulo,
@@ -145,6 +148,8 @@ export default function EditarCapituloPage() {
     router,
     obraId,
     capituloId,
+    usuarioEdicaoId,
+    referenciaRemota,
     obras,
     obraAtual,
     capituloAtual,
@@ -435,13 +440,17 @@ export default function EditarCapituloPage() {
                 </h3>
               </div>
 
-              <p style={isDesktop ? desktopPreviewChapterTextStyle : previewChapterTextStyle}>
+              <ChapterTextPreview
+                key={`${obraId}:${capituloId}`}
+                textStyle={isDesktop ? desktopPreviewChapterTextStyle : previewChapterTextStyle}
+                buttonStyle={isDesktop ? desktopSecondaryButtonStyle : secondaryButtonStyle}
+              >
                 {texto.trim() ? (
                   <span data-historietas-i18n-ignore="true">{textoPreview}</span>
                 ) : (
                   textoPreview
                 )}
-              </p>
+              </ChapterTextPreview>
             </article>
           </aside>
         </section>

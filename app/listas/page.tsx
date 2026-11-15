@@ -22,6 +22,7 @@ import { useListasProfileItemRenderer } from "./hooks/use-listas-profile-item-re
 import { useListasDiaryCommentsRenderer } from "./hooks/use-listas-diary-comments-renderer";
 import { useListasWorkActionSheetRenderer } from "./hooks/use-listas-work-action-sheet-renderer";
 import { useListasIdentityProfileState } from "./hooks/use-listas-identity-profile-state";
+import { useListasSessionScope, type UsuarioAutenticadoListas } from "./hooks/use-listas-session-scope";
 import { useListasPageLoadState } from "./hooks/use-listas-page-load-state";
 import { useListasLoadedDataState } from "./hooks/use-listas-loaded-data-state";
 import { useListasWorkMenuState } from "./hooks/use-listas-work-menu-state";
@@ -105,7 +106,7 @@ import {
   type AvaliacaoDiarioListasEstado,
 } from "./lib/listas-diary-rating-utils";
 import { idUsuarioValido } from "./lib/listas-value-utils";
-import { obterEstadoRotaListas } from "./lib/listas-page-route-state";
+import { criarChaveCarregamentoListas, obterEstadoRotaListas } from "./lib/listas-page-route-state";
 import {
   CATEGORIAS_PERFIL,
   COMPLETED_STORAGE_KEY,
@@ -127,7 +128,7 @@ import {
   useHistorietasTheme,
 } from "../../lib/historietasTheme";
 
-function ListasUniversaisContent() {
+function ListasContextContent({ usuarioAutenticado }: { usuarioAutenticado: UsuarioAutenticadoListas }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
@@ -248,6 +249,7 @@ function ListasUniversaisContent() {
   });
 
   useListasPageDataLoader({
+    usuarioAutenticado,
     modo,
     origemPerfil,
     userIdUrl,
@@ -659,6 +661,21 @@ function ListasUniversaisContent() {
       {renderizarComentariosDiarioSheet()}
     </main>
   );
+}
+function ListasUniversaisContent() {
+  const searchParams = useSearchParams();
+  const rota = obterEstadoRotaListas(searchParams);
+  const escopo = useListasSessionScope(criarChaveCarregamentoListas(rota));
+  if (escopo.carregando || escopo.erro) {
+    return (
+      <main style={pageStyle} aria-busy={escopo.carregando}>
+        <div style={stateStyle} role="status">
+          {escopo.carregando ? "Carregando lista..." : escopo.erro}
+        </div>
+      </main>
+    );
+  }
+  return <ListasContextContent key={escopo.chave} usuarioAutenticado={escopo.usuario} />;
 }
 export default function ListasUniversaisPage() {
   return (

@@ -29,6 +29,7 @@ let indiceModulo = 0;
 async function carregarModulo() {
   const chamadas = [];
   globalThis.__editarObraLocalPersistenceDependencies = {
+    carregarObrasLocalStorageEdicaoObra() { return []; },
     atualizarObraNaListaLocalEdicao(dados) {
       chamadas.push(["atualizar", dados]);
       return [{ id: "obra", titulo: dados.titulo }];
@@ -65,8 +66,8 @@ async function carregarModulo() {
           "const atualizarObraNaListaLocalEdicao = globalThis.__editarObraLocalPersistenceDependencies.atualizarObraNaListaLocalEdicao;",
         )
         .replace(
-          'import { salvarObrasDoUsuarioPreservandoOutrasContas } from "./editar-obra-local-work-storage";',
-          "const salvarObrasDoUsuarioPreservandoOutrasContas = globalThis.__editarObraLocalPersistenceDependencies.salvarObrasDoUsuarioPreservandoOutrasContas;",
+          'import { carregarObrasLocalStorageEdicaoObra, salvarObrasDoUsuarioPreservandoOutrasContas } from "./editar-obra-local-work-storage";',
+          "const { carregarObrasLocalStorageEdicaoObra, salvarObrasDoUsuarioPreservandoOutrasContas } = globalThis.__editarObraLocalPersistenceDependencies;",
         ),
       {
         compilerOptions: {

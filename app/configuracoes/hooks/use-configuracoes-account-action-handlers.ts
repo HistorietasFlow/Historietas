@@ -18,6 +18,7 @@ import { salvarConfiguracoesPerfil } from "../lib/configuracoes-profile-save-act
 import type { PreferenciasPrivacidadeHistorietas } from "../lib/configuracoes-privacy-preferences";
 import { criarLoginHrefConfiguracoes } from "../lib/configuracoes-route-utils";
 import { sairDaContaConfiguracoes } from "../lib/configuracoes-sign-out-action";
+import { preferenciasDaContaEstaoAtuais, type ReferenciaIdentidadePreferenciasConfiguracoes } from "../lib/configuracoes-preference-identity";
 import type { RouterConfiguracoesAtualizavel } from "../lib/configuracoes-navigation-types";
 import type {
   LimparMensagemAcaoConfiguracoes,
@@ -27,6 +28,7 @@ import type {
 
 export function useConfiguracoesAccountActionHandlers({
   router,
+  identidadeContaRef,
   salvando,
   usuarioIdLogado,
   preferencias,
@@ -59,6 +61,7 @@ export function useConfiguracoesAccountActionHandlers({
   setSenhaAlterada,
 }: {
   router: RouterConfiguracoesAtualizavel;
+  identidadeContaRef: ReferenciaIdentidadePreferenciasConfiguracoes;
   salvando: boolean;
   usuarioIdLogado: string;
   preferencias: PreferenciasConta;
@@ -91,7 +94,10 @@ export function useConfiguracoesAccountActionHandlers({
   setSenhaAlterada: Dispatch<SetStateAction<boolean>>;
 }) {
   async function salvar() {
+    const identidadeEsperada = { ...identidadeContaRef.current };
     await salvarConfiguracoesPerfil({
+      execucaoEstaAtual: () => identidadeEsperada.usuarioId === usuarioIdLogado &&
+        preferenciasDaContaEstaoAtuais(identidadeContaRef, identidadeEsperada),
       salvando,
       usuarioIdLogado,
       preferencias,

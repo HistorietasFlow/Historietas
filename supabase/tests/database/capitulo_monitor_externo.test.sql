@@ -23,7 +23,7 @@ select is((historietas_privado.snapshot_monitor_capitulos()->>'versao')::int,1,'
 select ok(historietas_privado.snapshot_monitor_capitulos() ?& array['agora','saude','capacidade','fonteValida','ultimaExecucaoCron'],'reutiliza saude/capacidade e fonte existente');
 select ok(not (select habilitado from historietas_privado.capitulo_runner_controle),'nao habilita runner');
 select ok(not exists(select 1 from jsonb_object_keys(historietas_privado.snapshot_monitor_capitulos()) k
-  where k not in ('versao','agora','saude','capacidade','recursos','fonteValida','ultimaExecucaoCron')),'retorno superior limitado');
+  where k not in ('versao','agora','saude','capacidade','recursos','operacoesCache','fonteValida','ultimaExecucaoCron')),'retorno superior limitado');
 grant historietas_agendamento_monitor to postgres with set true;
 -- pgTAP fica com a sessao administrativa; a operacao testada usa o papel real.
 -- Nao conceder USAGE de extensions ou acesso aos caches de pgTAP ao monitor.
