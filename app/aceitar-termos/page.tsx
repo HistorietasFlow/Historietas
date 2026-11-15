@@ -44,15 +44,20 @@ export default function AceitarTermosPage() {
   const [erro, setErro] = useState("");
   const [redirectTo, setRedirectTo] = useState("/");
 
-  useAceitarTermosInitialLoad({
+  const { contextoRef, recarregar } = useAceitarTermosInitialLoad({
     router,
     setRedirectTo,
     setJaAceito,
     setErro,
     setCarregando,
+    setSalvando,
+    setConfirmouTermos,
+    setConfirmouPrivacidade,
+    t,
   });
 
   const { aceitar } = useAceitarTermosAction({
+    contextoRef,
     router,
     salvando,
     confirmouTermos,
@@ -108,7 +113,9 @@ export default function AceitarTermosPage() {
               </p>
               <button
                 type="button"
-                onClick={() => router.replace(redirectTo)}
+                onClick={() => {
+                  if (contextoRef.current.ativo && contextoRef.current.aceito) router.replace(redirectTo);
+                }}
                 style={primaryButtonStyle}
               >
                 {t("continuar")}
@@ -145,9 +152,12 @@ export default function AceitarTermosPage() {
               </div>
 
               {erro && (
-                <p role="alert" style={errorStyle}>
-                  {erro}
-                </p>
+                <div>
+                  <p role="alert" style={errorStyle}>{erro}</p>
+                  <button type="button" disabled={salvando} onClick={recarregar}>
+                    {t("tentarNovamente")}
+                  </button>
+                </div>
               )}
 
               <button

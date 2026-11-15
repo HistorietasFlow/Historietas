@@ -51,9 +51,29 @@ const nextConfig: NextConfig = {
         source: "/:path*",
         headers: securityHeaders,
       },
+      {
+        // Inclui erros do roteador, métodos não suportados e URLs sem obraId.
+        source: "/api/capas-obras/:path*",
+        headers: [
+          { key: "Cache-Control", value: "private, no-store, max-age=0, must-revalidate" },
+          { key: "CDN-Cache-Control", value: "no-store" },
+          { key: "Vercel-CDN-Cache-Control", value: "no-store" },
+          { key: "Surrogate-Control", value: "no-store" },
+          { key: "Pragma", value: "no-cache" },
+          { key: "Expires", value: "0" },
+        ],
+      },
     ];
   },
   images: {
+    // O otimizador pode cachear uma resposta interna sem respeitar a autorização
+    // por requisição. Somente assets estáticos locais podem passar por ele.
+    localPatterns: [
+      { pathname: "/icon-192.png", search: "" },
+      { pathname: "/icon-512.png", search: "" },
+      { pathname: "/maskable-icon-512.png", search: "" },
+      { pathname: "/apple-touch-icon.png", search: "" },
+    ],
     remotePatterns: supabaseCoverRemotePatterns,
   },
   ...(process.env.NODE_ENV === "development"

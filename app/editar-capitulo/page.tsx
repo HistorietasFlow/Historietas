@@ -101,6 +101,8 @@ export default function EditarCapituloPage() {
     setObras,
     carregando,
     verificandoAcesso,
+    usuarioEdicaoId,
+    referenciaRemota,
   } = useEditarCapituloInitialLoad({
     router,
     setTitulo,
@@ -146,6 +148,8 @@ export default function EditarCapituloPage() {
     router,
     obraId,
     capituloId,
+    usuarioEdicaoId,
+    referenciaRemota,
     obras,
     obraAtual,
     capituloAtual,

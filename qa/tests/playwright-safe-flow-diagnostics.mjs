@@ -1,6 +1,9 @@
 import { SAFE_FLOW_MARKER, sanitizeSafeFlowDiagnostic } from "../scripts/playwright-safe-flow-schema.mjs";
 
 const ENDPOINT_BY_PATH = new Map([
+  ["/api/leitura-publica", "public-reader"],
+  ["/rest/v1/rpc/obter_metricas_conteudos", "content-metrics"],
+  ["/rest/v1/rpc/salvar_progresso_leitura", "reading-progress"],
   ["/auth/v1/token", "auth-token"],
   ["/auth/v1/user", "auth-user"],
   ["/rest/v1/obras", "works"],
@@ -17,6 +20,9 @@ function endpointOf(url) {
 function routeOf(url) {
   try {
     const path = new URL(url).pathname;
+    if (path === "/") return "home";
+    if (path === "/perfil-autor") return "library";
+    if (/^\/obra\/[^/]+\/capitulo\/[^/]+$/.test(path)) return "reader";
     if (path === "/login") return "login";
     if (path === "/editar-obra") return "editor";
     if (path === "/listas") return "lists";
@@ -27,7 +33,22 @@ function routeOf(url) {
 
 function networkKey(endpoint, method) { return `${endpoint}:${method}`; }
 
-export function observeSafeFlow(page, scenario) {
+// Compare only in memory. Never return IDs, query strings or body fields.
+export function readerPayloadMatch(request, endpoint, target) {
+  if (!target || !["public-reader", "content-metrics"].includes(endpoint)) return null;
+  try {
+    if (endpoint === "public-reader") {
+      const params = new URL(request.url()).searchParams;
+      return params.get("slug") === target.slug && params.get("numero") === "1" ? "matched" : "other";
+    }
+    const body = request.postDataJSON();
+    // Same target predicate as the specs, including optional empty work IDs.
+    return (body?.p_obra_ids || []).length === 0 &&
+      (body?.p_capitulo_ids || []).includes(target.chapterId) ? "matched" : "other";
+  } catch { return "unavailable"; }
+}
+
+export function observeSafeFlow(page, scenario, {readerTarget, device} = {}) {
   const network = new Map();
   const snapshots = [];
 
@@ -35,8 +56,9 @@ export function observeSafeFlow(page, scenario) {
     const endpoint = endpointOf(request.url());
     const method = request.method();
     if (!endpoint || !["GET", "POST", "PATCH", "DELETE"].includes(method)) return null;
-    const key = networkKey(endpoint, method);
-    if (!network.has(key)) network.set(key, { endpoint, method, requestCount: 0, failedCount: 0, statuses: new Map() });
+    const payloadMatch = readerPayloadMatch(request, endpoint, readerTarget);
+    const key = `${networkKey(endpoint, method)}:${payloadMatch || ""}`;
+    if (!network.has(key)) network.set(key, { endpoint, method, ...(payloadMatch ? {payloadMatch} : {}), requestCount: 0, failedCount: 0, statuses: new Map() });
     return network.get(key);
   };
   const onRequest = request => { const entry = entryFor(request); if (entry) entry.requestCount++; };
@@ -65,6 +87,7 @@ export function observeSafeFlow(page, scenario) {
       try {
         const result = sanitizeSafeFlowDiagnostic({
           scenario,
+          device,
           network: [...network.values()].map(entry => ({
             ...entry,
             statuses: [...entry.statuses].map(([code, count]) => ({ code, count })),

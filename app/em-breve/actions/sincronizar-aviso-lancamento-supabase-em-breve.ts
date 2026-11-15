@@ -41,6 +41,8 @@ export async function sincronizarAvisoLancamentoSupabaseEmBreve(
       return true;
     }
 
+    if (erroConsulta) return false;
+
     const payloadBase = {
       user_id: userIdLimpo,
       obra_id: obraIdLimpo,
@@ -56,6 +58,9 @@ export async function sincronizarAvisoLancamentoSupabaseEmBreve(
     if (!erroComVisibilidade || erroEhRegistroDuplicadoEmBreve(erroComVisibilidade)) {
       return true;
     }
+
+    if (erroComVisibilidade.code !== "42703" &&
+      !(erroComVisibilidade.code === "PGRST204" && erroComVisibilidade.message.includes("visibilidade"))) return false;
 
     const { error: erroSemVisibilidade } = await supabase
       .from("seguindo_obras")

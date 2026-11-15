@@ -192,20 +192,48 @@ for(const [device,viewport] of [["desktop",{width:1440,height:900}],["mobile",{w
   });
 
   test(`limpeza atualiza a projeção pública e preserva i18n e acessibilidade — ${device}`,async({page})=>{
-    await reset("concluida");await page.setViewportSize(viewport);await loginAsAuthor(page);await editor(page);
-    await expect(select(page)).toHaveValue("concluida");
-    await select(page).selectOption("");await save(page).click();
-    await expect(page.getByRole("button",{name:"Atualizada",exact:true})).toBeVisible();
-    expect(check(await client.from("obras").select("status_editorial").eq("id",editWork.id).single()).status_editorial).toBeNull();
-    await page.goto(`/obra/${editWork.slug}`);
-    const publicRoot=page.locator('[data-historietas-obra-dinamica-root="true"][data-public-work-state="confirmada"]:visible');
-    await expect(publicRoot).toHaveCount(1);await expect(publicRoot).toHaveAttribute("aria-busy","false");
-    await expect(publicRoot.getByText("Estado da história: Não informado",{exact:true})).toBeVisible();
-    await editor(page);
-    for(const [lang,label,empty] of [["en","Story status","Not specified"],["es","Estado de la historia","No informado"],["pt-BR","Estado da história","Não informado"]]) {
-      await language(page,lang);await expect(page.getByRole("combobox",{name:label,exact:true})).toContainText(empty);
+    const diagnostics=observeSafeFlow(page,"editorial-status");
+    let authState="transition";
+    try {
+      await diagnostics.capture("start",{authState});
+      await reset("concluida");await page.setViewportSize(viewport);await loginAsAuthor(page);
+      authState="authenticated";
+      await diagnostics.capture("after-login",{authState});
+      await editor(page,diagnostics);
+      await diagnostics.capture("editor-ready",{authState,rendered:{"editor-enabled":select(page)}});
+      await expect(select(page)).toHaveValue("concluida");
+      await select(page).selectOption("");await save(page).click();
+      await expect(page.getByRole("button",{name:"Atualizada",exact:true})).toBeVisible();
+      await diagnostics.capture("save-confirmed",{authState,rendered:{updated:page.getByRole("button",{name:"Atualizada",exact:true})}});
+      expect(check(await client.from("obras").select("status_editorial").eq("id",editWork.id).single()).status_editorial).toBeNull();
+      await page.goto(`/obra/${editWork.slug}`);
+      const publicRoot=page.locator('[data-historietas-obra-dinamica-root="true"][data-public-work-state="confirmada"]:visible');
+      await expect(publicRoot).toHaveCount(1);await expect(publicRoot).toHaveAttribute("aria-busy","false");
+      await expect(publicRoot.getByText("Estado da história: Não informado",{exact:true})).toBeVisible();
+      await diagnostics.capture("public-confirmed",{authState,rendered:{"public-confirmed":publicRoot}});
+      await editor(page,diagnostics);
+      await diagnostics.capture("editor-ready",{authState,rendered:{"editor-enabled":select(page)}});
+      for(const [lang,label,empty] of [["en","Story status","Not specified"],["es","Estado de la historia","No informado"],["pt-BR","Estado da história","Não informado"]]) {
+        await language(page,lang);await expect(page.getByRole("combobox",{name:label,exact:true})).toContainText(empty);
+        await diagnostics.capture("editor-ready",{authState,rendered:{"editor-enabled":page.getByRole("combobox",{name:label,exact:true})}});
+      }
+      await noSerious(page,'section[data-historietas-i18n-ignore="true"]');
+    } finally {
+      // Keep the original Playwright failure for the report's safe classifier.
+      // Only route categories, HTTP codes and locator counts enter this trace.
+      try {
+        await diagnostics.capture("final",{authState,rendered:{
+          loading:page.getByText(/carregando/i),
+          "editor-enabled":page.getByRole("combobox",{name:/^(Estado da história|Story status|Estado de la historia)$/,exact:true}),
+          updated:page.getByRole("button",{name:"Atualizada",exact:true}),
+          "public-confirmed":page.locator('[data-historietas-obra-dinamica-root="true"][data-public-work-state="confirmada"]:visible'),
+          error:page.getByRole("alert"),
+        }});
+      } finally {
+        diagnostics.emit();
+        diagnostics.dispose();
+      }
     }
-    await noSerious(page,'section[data-historietas-i18n-ignore="true"]');
   });
 
   test(`duas sessões reais, conflito visível e reconciliação explícita — ${device}`,async({page,browser,baseURL})=>{
