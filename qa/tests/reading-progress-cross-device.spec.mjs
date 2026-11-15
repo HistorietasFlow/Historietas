@@ -1,9 +1,9 @@
 import { expect, test } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
+import { createServerClient } from "@supabase/ssr";
 
 import {
   hasVisitorCredentials,
-  loginAsVisitor,
   resetVisitorWorkInteractions,
   visitorEmail,
   visitorPassword,
@@ -74,8 +74,31 @@ async function limparProgressoLocal() {
   await client.auth.signOut({ scope: "local" });
 }
 
+// O alvo deste E2E é sincronização entre dispositivos, não o formulário de login.
+// Reutiliza a sessão Auth real e cookies SSR já exercitados no leitor canônico.
+async function criarPaginaVisitante(browser, baseURL, width) {
+  const api = (process.env.NEXT_PUBLIC_SUPABASE_URL || "").trim();
+  const key = (process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "").trim();
+  expect(["127.0.0.1", "localhost", "[::1"]).toContain(new URL(api).hostname);
+  expect(["127.0.0.1", "localhost", "[::1"]).toContain(new URL(baseURL).hostname);
+  const client = createClient(api, key, { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } });
+  const auth = await client.auth.signInWithPassword({ email: visitorEmail, password: visitorPassword });
+  expect(auth.error).toBeNull();
+  const session = auth.data.session;
+  expect(session).toBeTruthy();
+  const cookies = new Map();
+  const serverAuth = createServerClient(api, key, { cookies: { getAll: () => [], setAll: values => {
+    for (const cookie of values) cookies.set(cookie.name, cookie);
+  } } });
+  const saved = await serverAuth.auth.setSession({ access_token: session.access_token, refresh_token: session.refresh_token });
+  expect(saved.error).toBeNull();
+  const context = await browser.newContext({ viewport: { width, height: width === 390 ? 844 : 900 } });
+  await context.addCookies([...cookies.values()].filter(c => c.value).map(c => ({ name: c.name, value: c.value, url: baseURL, sameSite: "Lax" })));
+  return { context, client, page: await context.newPage() };
+}
+
 test("sincroniza leitor, Home e Biblioteca entre computador e celular", async ({
-  browser,
+  browser, baseURL,
 }) => {
   test.skip(
     !hasVisitorCredentials || !slug || !workId || !chapterId,
@@ -84,18 +107,14 @@ test("sincroniza leitor, Home e Biblioteca entre computador e celular", async ({
 
   await limparProgressoLocal();
 
-  const computador = await browser.newContext({
-    viewport: { width: 1440, height: 900 },
-  });
-  const celular = await browser.newContext({
-    viewport: { width: 390, height: 844 },
-  });
-  const paginaComputador = await computador.newPage();
-  const paginaCelular = await celular.newPage();
-
+  const sessions = [];
   try {
-    await loginAsVisitor(paginaComputador);
-    await loginAsVisitor(paginaCelular);
+    const desktop = await criarPaginaVisitante(browser, baseURL, 1440);
+    sessions.push(desktop);
+    const mobile = await criarPaginaVisitante(browser, baseURL, 390);
+    sessions.push(mobile);
+    const paginaComputador = desktop.page;
+    const paginaCelular = mobile.page;
     await abrirLeitorComIdentidadeCarregada(paginaComputador);
     await abrirLeitorComIdentidadeCarregada(paginaCelular);
 
@@ -169,8 +188,8 @@ test("sincroniza leitor, Home e Biblioteca entre computador e celular", async ({
       paginaComputador.getByRole("button", { name: "Marcar capítulo como lido" }),
     ).toBeVisible();
   } finally {
-    await computador.close();
-    await celular.close();
+    for (const session of sessions) await session.context.close();
+    for (const session of sessions) await session.client.auth.signOut({ scope: "local" });
     await limparProgressoLocal();
   }
 });
