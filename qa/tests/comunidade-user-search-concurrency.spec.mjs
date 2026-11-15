@@ -63,16 +63,21 @@ async function setup(page, baseURL, options = {}) {
     const data = id ? session(id) : null;
     await page.context().clearCookies({ name: storageKey });
     if (data) await page.context().addCookies([{ name: storageKey, value: `base64-${Buffer.from(JSON.stringify(data)).toString("base64url")}`, url: origin, sameSite: "Lax" }]);
-    await page.evaluate(({ data, storageKey }) => {
+    await page.evaluate(async ({ data, storageKey }) => {
       const channel = new BroadcastChannel(storageKey);
       channel.postMessage({ event: data ? "SIGNED_IN" : "SIGNED_OUT", session: data });
+      await new Promise(resolve => window.setTimeout(resolve, 0));
       channel.close();
     }, { data, storageKey });
   }
   // Inicializa anonimamente. A sessão simulada fica somente no cliente e não
   // é enviada ao middleware/servidor ou a um Supabase real da CI.
-  const initialized = page.waitForRequest(request => new URL(request.url()).pathname.endsWith("/rest/v1/comunidade_posts"));
-  await page.goto("/comunidade"); await initialized;
+  const initialized = page.waitForResponse(response => new URL(response.url()).pathname.endsWith("/rest/v1/comunidade_posts"));
+  await page.goto("/comunidade");
+  const initializedResponse = await initialized;
+  expect(await initializedResponse.finished()).toBeNull();
+  expect(initializedResponse.ok()).toBe(true);
+  await expect(page.getByText("Nenhuma publicação ainda", { exact: true })).toBeVisible();
   await account(A);
   await expect.poll(() => stats.followed.includes(A)).toBe(true);
   const input = page.getByRole("textbox", { name: "Buscar publicações ou usuários" }).filter({ visible: true });
