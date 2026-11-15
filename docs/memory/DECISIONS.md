@@ -346,3 +346,12 @@
 - Validação econômica aprovada, consolidada em 12/11/2026: a política única de execução local proporcional ao risco, cobertura completa na CI, tratamento de falhas e consulta única dos checks está em [AGENTS.md](../../AGENTS.md#validação-proporcional-ao-risco) e na seção Processo seguro. Substitui a exigência de repetir localmente todos os gates em cada fase; não reduz a cobertura obrigatória nem altera workflows. Não duplicar essa política em outros documentos.
 - Antes de recomendar merge: revisar diff, mergeabilidade e estado conhecido de CI/Gitleaks conforme o `AGENTS.md`, incluindo suas autorizações de merge e produção. Merge na `main` pode disparar deploy automático; não inferir autorização de ativação a partir de checks aprovados.
 - O assistente de planejamento deve seguir as orientações de comunicação do `AGENTS.md`, sinalizar o próximo passo e não executar mudanças somente por receber um resumo.
+
+### Diário de edição — contrato preparado, sem ativação
+
+`editou_capitulo` possui contrato independente da #2307, com gate privado falso,
+versão opaca gerada pelo banco e recibo transacional/tombstone. DML direto do novo
+tipo não é permitido; só RPC com sessão/autoria/termos atuais. Não persistir título,
+href ou metadata histórica: a leitura verifica publicação e classificação atuais,
+bloqueios e preferências. Nenhuma integração do helper legado ou ativação faz parte
+da preparação. Ver `docs/diario-edicao-evento-seguro.md` e critérios de homologação.

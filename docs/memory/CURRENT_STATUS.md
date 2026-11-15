@@ -1103,3 +1103,33 @@ O ciclo funcional iniciado pelas melhorias de Explorar, continuidade de leitura,
 gestão de comentários para autores, proteção contra spoilers e histórico de
 moderação está concluído no código. Novas melhorias devem partir de uma nova
 priorização, sem reabrir essas frentes sem evidência de regressão.
+
+### Diário de edição — dependência da #2307 em preparação
+
+Migration revisável independente prepara `editou_capitulo`, mantendo gate desligado,
+sem backfill ou registro automático. RPC idempotente por versão, tombstones e RLS
+atual impedem duplicação/snapshots privados. A #2307 não foi alterada; seu helper
+legado ainda requer adoção separada após homologação. Implantação, rollback e limites
+em `docs/diario-edicao-evento-seguro.md`. Local: 52/52 pgTAP focados, 1.132/1.132
+na rodada completa, duas conexões com lock real, rollback e reaplicação aprovados.
+Advisor sem problemas, auditoria 199/199; seis apontamentos SQL antigos comprovados
+antes/depois. REST/Playwright e integração do save pendentes. Não inferir ativação/aplicação remota.
+
+### Editar capítulo — integração do Diário por RPC (sobre #2307)
+
+Branch derivada da #2307 usa somente a RPC do contrato #2316, com token extraído do
+PATCH confirmado e guardado na recuperação da intenção. Sem migration/coluna, o
+save segue compatível; gate desligado/RPC ausente não repetem capítulo. Pendências
+são recuperadas por ação explícita sem repetir notificações; NULL permanece incerto.
+Schema/ativação e homologação conjunta seguem separados. Ver
+`app/editar-capitulo/INTEGRACAO_DIARIO_RPC.md` para ordem de implantação e limites.
+
+### Integração conjunta local — 15/11/2026
+
+Preparada sobre `main deeb839b`, na ordem #2316 → #2307 → #2321, preservando
+ancestralidade e branches originais. Conflitos somente documentais, sem alterações
+adicionais da aplicação/SQL. Gate do Diário continua desligado. Homologação focada:
+244 unitários, 52 pgTAP e cinco cenários reais Data API/Auth/Playwright aprovados,
+desktop/mobile, um worker e zero retries. Registro de falhas do preparo/harness,
+métricas e limites em [Integração editor/Diário](../integracao-editor-diario-20261115.md).
+Não inferir merge, migration remota ou autorização para ativar o Diário.

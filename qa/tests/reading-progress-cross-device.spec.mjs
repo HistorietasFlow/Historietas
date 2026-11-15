@@ -1,3 +1,4 @@
+import { observeSafeFlow } from "./playwright-safe-flow-diagnostics.mjs";
 import { expect, test } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
 import { createServerClient } from "@supabase/ssr";
@@ -16,6 +17,13 @@ const sessions = [];
 let cleanupSession, desktop, mobile;
 const fixturesDisponiveis = hasVisitorCredentials && slug && workId && chapterId;
 
+const diagnosticPhases = new Map([
+  ["desktop: abrir leitor autenticado", "identity-ready"], ["mobile: abrir leitor autenticado", "identity-ready"],
+  ["desktop: marcar leitura", "mark-read"], ["mobile: confirmar leitura sincronizada", "sync-read"],
+  ["mobile: confirmar Home", "home"], ["mobile: confirmar Biblioteca", "library"],
+  ["mobile: desmarcar leitura", "unmark-read"], ["desktop: confirmar desmarcacao sincronizada", "sync-unread"],
+]);
+
 // Os nomes são constantes deste arquivo; nunca registrar respostas ou identidade.
 async function etapa(nome, executar) {
   return test.step(nome, async () => {
@@ -27,6 +35,12 @@ async function etapa(nome, executar) {
       return resultado;
     } finally {
       console.log(JSON.stringify({ phase: nome, status, durationMs: Math.round(performance.now() - inicio) }));
+      const phase = diagnosticPhases.get(nome);
+      if (phase) for (const recurso of sessions.filter(r => nome.startsWith(`${r.nome}:`) && r.diagnostic)) {
+        await recurso.diagnostic.capture(phase, {authState: "authenticated", rendered: {
+          target: recurso.page.getByRole("button", {name: /Marcar capítulo como/}), error: recurso.page.getByRole("alert"),
+        }});
+      }
     }
   });
 }
@@ -49,6 +63,7 @@ async function autenticar(nome) {
 }
 
 async function abrirLeitorComIdentidadeCarregada(page, nome) {
+  await sessions.find(r => r.page === page)?.diagnostic?.capture("navigation", {authState: "authenticated"});
   const identidadeCarregada = etapa(`${nome}: identidade HTTP 200`, () => page.waitForResponse(
     (response) =>
       response.url().includes("/auth/v1/user") && response.status() === 200,
@@ -115,6 +130,10 @@ async function criarPaginaVisitante(browser, baseURL, width, nome) {
   recurso.context = await etapa(`${nome}: criar contexto`, () => browser.newContext({ viewport: { width, height: width === 390 ? 844 : 900 } }));
   await etapa(`${nome}: aplicar cookies SSR`, () => recurso.context.addCookies([...cookies.values()].filter(c => c.value).map(c => ({ name: c.name, value: c.value, url: baseURL, sameSite: "Lax" }))));
   recurso.page = await etapa(`${nome}: criar pagina`, () => recurso.context.newPage());
+  recurso.diagnostic = observeSafeFlow(recurso.page, "reading-progress-cross-device", {
+    readerTarget: {slug, chapterId}, device: width === 390 ? "mobile" : "desktop",
+  });
+  await recurso.diagnostic.capture("start", {authState: "authenticated"});
   return recurso;
 }
 
@@ -136,6 +155,10 @@ test.afterAll(async () => {
   }
   // Cada recurso é independente: inclusive um erro de close não impede signOut.
   for (const recurso of sessions) {
+    if (recurso.diagnostic) {
+      try { await recurso.diagnostic.capture("final", {rendered: {error: recurso.page.getByRole("alert")}}); }
+      finally { recurso.diagnostic.emit(); recurso.diagnostic.dispose(); }
+    }
     if (!recurso.context) continue;
     await tentar(`${recurso.nome}: fechar contexto`, async () => {
       try { await recurso.context.close(); } catch (error) {
