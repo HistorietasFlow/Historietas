@@ -3,8 +3,8 @@
 Data: 13/11/2026. Base examinada: `a5ac96c7` (`main`, #2285).
 Branch: `investigation/safe-18plus-cover-transition`, sem commits da #2286.
 
-**Resultado: não há solução comprovadamente segura com os contratos atuais.**
-Esta entrega é documental. O bloqueio existente permanece; não foi implementada
+**Resultado da investigação #2287: não havia solução comprovadamente segura nos contratos examinados.**
+A entrega original foi documental. O bloqueio existente permanece; não foi implementada
 uma transição, migration, serviço, limpeza ou ativação. As evidências abaixo
 descrevem o código versionado, não o estado de produção.
 
@@ -246,3 +246,134 @@ Revisão documental: diff completo revisado, 12 referências locais da proposta
 e dois links de entrada do Memory Bank conferidos; quatro fontes externas
 oficiais lidas. `git diff --check` aprovado. Somente os três documentos desta
 investigação fazem parte do commit.
+
+## PR 1 — contrato transacional privado (13/11/2026)
+
+Base: `98be8c31`; branch remota existente
+`feat/private-cover-transaction-contract`. Migration dedicada:
+`20261113190105_contrato_transacional_capas_privadas.sql`.
+Esta etapa prepara somente SQL, sem backfill, bucket, upload, entrega,
+assinatura, retirada fisica ou desbloqueio da interface/18+.
+
+### Identidade e escritores
+
+- `historietas_privado.obra_capas_estado` guarda geracao UUID, versao bigint
+  propria, autoria, tombstone, vinculo privado e marca conservadora de origem
+  publica/incerta. Nao reutiliza token editorial ou geracao da projecao publica.
+- INSERT gera identidade no banco. DELETE/TRUNCATE conservam tombstones;
+  recriacao e mudanca administrativa de ID/autoria invalidam geracao e vinculo.
+  Nenhuma FK/cascata elimina evidencias. A administracao nao pode alterar
+  identidade e capa/classificacao no mesmo UPDATE deste contrato.
+- Sem preenchimento em massa: a primeira consulta/mutacao relevante de uma
+  obra anterior inicializa apenas seu registro privado sob lock da obra, como
+  origem incerta. Nao regrava tuplas, publica dados nem certifica capa ausente.
+- Escritores legados continuam funcionando para obras nao gerenciadas e
+  invalidam a versao ao alterar capa/nome/classificacao/avisos. A marca de
+  possivel exposicao publica nunca e limpa por remocao da URL ou recriacao.
+  Transicao 18+ com essa marca e recusada no banco, inclusive via Data API.
+- Depois de vinculo privado, apenas operacao versionada altera esses campos;
+  retirar o vinculo nao reabre DML legado. Sinopse, titulo, status editorial,
+  publicacao e contadores conservam seus contratos. O trigger de UPDATE e
+  limitado as colunas relevantes, sem acionar o ledger por visualizacoes.
+
+### Operacoes, autorizacao e recibos
+
+Wrappers publicos `SECURITY INVOKER`, sem EXECUTE de anon/service_role:
+
+- `consultar_contrato_capa(p_obra_id)` retorna somente contexto do proprietario:
+  identidade, geracao, versao decimal em string, referencia opaca, classificacao,
+  avisos e indicadores de origem/gerenciamento. Nenhum caminho ou URL.
+- `aplicar_operacao_capa(p_operacao_id,p_obra_id,p_geracao,p_versao,
+  p_capa_privada_id,p_classificacao,p_avisos)` persiste alteracao, versao e recibo
+  causal na mesma transacao. Parametros sao exatos; nao normaliza avisos nem
+  contorna CHECKs. Vinculo sem mudanca dos campos publicos tambem avanca a
+  revisao logica publica, sem flush, outbox ou ACK.
+- `consultar_operacao_capa(p_operacao_id)` recupera somente o recibo da mesma
+  identidade/sessao. Recibo passado nao e autorizacao nem snapshot atual;
+  continua identificando a geracao original depois de excluir/recriar a obra.
+
+O nucleo privado definer tem `search_path` vazio, ownership postgres e grants
+explicitos; revalida usuario, sessao real em `auth.sessions`, exclusao pendente,
+propriedade e termos vigentes. Revalida expiracao depois das esperas por locks
+e antes de concluir o recibo, revertendo inclusive o UPDATE ja executado.
+Ordem de locks: usuario, sessao, perfil, UUID da
+operacao, obra, estado. O lock de UUID serializa repeticoes; o lock da obra e
+CAS descartam concorrentes/ABA. Uma sessao diferente nao assume uma operacao
+antiga. Nenhum NULL de `auth.uid()` autoriza execucao.
+
+Parametros e recibos sao privados e imutaveis; apenas preencher o recibo na
+mesma transacao e permitido. Zero linhas, CHECK, erro ou aborto revertem tudo.
+Retry exato de operacao confirmada devolve o recibo original sem nova alteracao;
+UUID confirmado com parametros diferentes e conflito. Operacao revertida nao
+deixa recibo. Ausencia retorna `terminal=false`: nao prova que uma requisicao
+atrasada terminou e nao autoriza substitui-la por uma nova chave. Nao ha
+cancelamento/reconciliacao de IO, pois nao existe IO externo nesta etapa.
+
+### Referencias internas e limites ainda bloqueados
+
+`obra_capas_referencias` possui UUID, obra, geracao, autor, bucket/caminho
+imutaveis e data, sem grants de tabela ou produtor autorizado. O caminho tem
+estrutura exata de autor/geracao/asset e e unico. A operacao so aceita referencia
+interna pertencente a mesma obra/geracao/autor e sem origem publica/incerta.
+As tres tabelas privadas tem RLS e REVOKE explicitos, sem acesso direto pelos
+clientes ou service_role. Nenhuma coluna/grant/policy de obras foi ampliada.
+
+O nome reservado `capas-obras-privadas` e somente contrato de referencia:
+nenhum bucket foi criado. Fixtures SQL internas nao comprovam bytes, privacidade
+fisica, quotas ou validacao de imagens. Registro seguro de referencias,
+capacidade durante upload incerto, entrega server-only, exclusao do otimizador,
+consumidores/cache e revogacao do legado publico continuam em fases futuras.
+Nao usar SQL administrativo para popular essa tabela como atalho de upload.
+
+Retencao: conservar estados, referencias e recibos integralmente nesta fase.
+Nao ha TTL, purga, liberacao de quota ou orcamento arbitrario. Custo de retencao,
+admissao operacional e exclusao de conta precisam de contrato antes de uso
+amplo. Este ledger nao certifica capacidade fisica nem terminalidade do Storage.
+O bloqueio da interface e a suspensao dos uploads ilustrados nao mudam.
+
+### Evidencias locais da PR 1
+
+Node 22.23.4 e CLI 2.116.0. Banco novo `private-cover-contract`, API em loopback
+63421 e PostgreSQL 63422; nenhuma consulta/migration remota. Config e auxiliar
+ACL locais nao versionados. O primeiro start sem schema Storage falhou na
+baseline; a configuracao local foi corrigida antes de aplicar as migrations.
+Nenhum container antigo foi pausado, nenhum volume foi removido.
+
+- pgTAP completo: **38 arquivos, 1.143 assertions aprovadas**, incluindo
+  **60** do contrato de capas; sem omissoes ou retries. Comando:
+  `supabase test db --workdir <worktree-descartavel>`.
+- Data API focada: **10/10 contagens TAP** (9 cenarios e suite), com
+  `node --test --test-concurrency=1 qa/integration/private-cover-contract-supabase-real.test.mjs`.
+  Inclui duas sessoes Auth reais, disputa de versao, UUID duplicado, resposta
+  HTTP perdida depois do commit, rollback/timeout, escritores legados nas duas
+  ordens, snapshot Repeatable Read antigo, ABA/recriacao, referencia imutavel,
+  autoria, termos/logout e expiracao durante espera na revisao publica.
+- Cadeia de projecao publica/editorial/Storage legado aprovada (38 contagens
+  TAP na entrada `public-work-projection-supabase-real.test.mjs`). A rodada
+  conjunta contou 47/47 porque tambem incluiu diretamente o arquivo novo.
+  A ultima ampliacao da revalidacao de expiracao foi retestada no arquivo
+  focado e no pgTAP completo, sem repetir toda essa cadeia.
+- Regressoes unitarias existentes da #2287: **39/39**, sem retries, incluindo
+  recusa 18+, assets, resposta incerta, isolamento de identidade e policies.
+- ESLint focado nos dois arquivos JS, syntax check, regra de GRANT/REVOKE e
+  `git diff --check` aprovados. Nenhuma dependencia/workflow alterado.
+- Lint SQL focado no novo nucleo privado via `plpgsql_check_function_tb`, em
+  transacao revertida: sem erros. O `supabase db lint --local --schema
+  historietas_privado --level error --fail-on error` global encontrou **cinco**
+  erros por ausencia de `cron.job`/`cron.job_run_details` em funcoes de
+  monitoramento nao alteradas neste diff. Nao instalar/ativar Cron nem mudar
+  essas funcoes para aprovar lint; a verificacao global nao foi declarada verde.
+
+Falhas corrigidas antes da entrega: o primeiro guard de identidade recusava
+mudancas administrativas de autoria usadas em dois pgTAP existentes; agora
+elas invalidam geracao/referencia sem ampliar grants. Na nova fixture, logout
+do cliente clonado de resposta perdida revogava a sessao compartilhada; esse
+cleanup indevido foi retirado, mantendo o teste real de logout separado.
+Uma regressao adicional comprova zero linhas sem falso sucesso. As assercoes
+originais nao foram relaxadas e nenhum timeout/retry foi ampliado.
+
+Sem alteracao de aplicacao: Build, Typecheck e Playwright nao repetidos nesta
+PR de backend/QA; todos os gates completos permanecem na CI. O arquivo novo
+e importado pela integracao publica ja executada na CI, sem mudar workflows.
+Essas provas sao do PostgreSQL/Auth/Data API locais, nao do Storage/CDN
+gerenciado. PR em draft nao autoriza implantacao nem as proximas fases.
