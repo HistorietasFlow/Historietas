@@ -73,3 +73,57 @@ as verificações completas do GitHub (o workflow existente só executa para PRs
 baseadas em `main`). A branch contém também a composição ainda não integrada
 da #2292; **não mesclar diretamente sem resolver a ordem das PRs**.
 A migration e os testes continuam restritos ao Supabase local descartável da CI.
+
+## Preparacao apos integracao da #2315 — 15/11/2026
+
+Main `8a1ec45579c5e4167f9b7b06dab8332babce16ab` incorporada por merge
+local, sem rebase/force push. Sua arvore e identica ao head `9a8a41e` da
+#2315 (integracao por squash). Merge automatico, sem conflitos. Antes desta
+nota, comparacao dos blobs confirmou os 33 arquivos da composicao de capas
+identicos a `2487760d`; todos os demais arquivos coincidem com a main.
+HTTP 503/no-store, upload `disabled`, recusa do quarto bucket e bloqueios de
+transicao 18+ permanecem inalterados. Nenhuma mudanca funcional adicional.
+
+Validacao desta integracao, Node 22.23.4, dependencias existentes reutilizadas:
+138/138 testes focados de entrega/Auth/otimizador/protocolo/quotas, policies
+Storage estaticas, Publicar e capa da Obra; concorrencia 1, zero falhas/skips.
+O total inclui subtestes importados pelos harnesses de Publicar, nao retries.
+Typecheck, lint focado, auditor de GRANT/REVOKE (41 migrations) e diff check
+aprovados. Sem build, Playwright, pgTAP ou Data API novos nesta rodada;
+os resultados SQL/Data API anteriores acima nao foram repetidos nem equivalem
+a homologacao operacional de producao. Checks do novo head dependem da CI.
+
+### Migrations antigas: investigacao somente leitura
+
+Consulta ao projeto `drqqgfxrchnymetmpabd`: 86 versoes registradas, ultima
+`20261114215557`; `20261113190105` e `20261113213000` ausentes por versao e
+nome. As quatro tabelas novas, os triggers `obras_contrato_capa*` e o bucket
+privado estao ausentes. Schema privado, obras, Auth/sessoes, profiles,
+exclusao de conta, revisao publica e ledgers ilustrados dependentes existem.
+Isso confirma dependencias presentes, nao certifica compatibilidade completa.
+
+Nao usar db push do checkout: historico remoto tem timestamps distintos e
+estas duas versoes precedem a ultima aplicada. Uma futura aplicacao exige
+autorizacao separada e workspace isolado com `migration fetch --linked`,
+conferencia integral do SQL/historico real e somente os dois arquivos originais,
+na ordem contrato -> quota. Consultar a ajuda da CLI; se necessario incluir
+versoes anteriores, `--include-all` somente nesse conjunto previamente
+conferido e apenas apos dry-run listar EXATAMENTE as duas migrations, sem
+roles/seeds e com `--skip-vault`. Nunca repair, renomear timestamps ou aplicar
+as migrations com horarios alternativos do repositorio para reconciliar historico.
+
+Antes de autorizar, capturar definicoes/ACL/dependencias dos helpers ativos,
+policies e triggers existentes; verificar ausencia de objetos conflitantes e
+drift. Revalidar localmente escritores legados/editoriais, quota SQL combinada
+e uniao objeto/retencao sobre snapshot compativel. A primeira migration toma
+SHARE ROW EXCLUSIVE em obras e instala triggers ativos mesmo com HTTP/upload
+desligados; a segunda substitui helpers usados nos tres buckets atuais.
+Medir latencia/locks/WAL/capacidade em janela operacional aprovada. As duas
+transacoes sao separadas: sucesso da primeira e falha da segunda deixam estado
+parcial instalado. Interromper em falha, sem retry/rollback automatico.
+
+Rollback compensatorio precisa ser revisado antes da aplicacao: nao apagar
+ledgers/recibos nem restaurar cegamente helpers antigos se houver retencoes
+ou objetos privados. A existencia de referencias/dados e dependencias pode
+exigir correcao progressiva. Bloqueios fisicos/18+/exclusao de conta continuam;
+esta preparacao de branch NAO autoriza SQL remoto nem ativacao.

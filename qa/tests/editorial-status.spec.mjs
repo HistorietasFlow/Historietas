@@ -3,6 +3,7 @@ import {test, expect} from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import {createClient} from "@supabase/supabase-js";
 import {authorEmail, authorPassword, destructiveEnabled, hasAuthorCredentials, loginAsAuthor} from "./helpers.mjs";
+import {observeSafeFlow} from "./playwright-safe-flow-diagnostics.mjs";
 
 let client, userId, editWork;
 const ids = [], works = [], storagePaths = [];
@@ -36,12 +37,30 @@ test.afterAll(async () => {
   if(storagePaths.length)check(await client.storage.from("capas-obras").remove(storagePaths));
 });
 
-async function editor(page) {
+async function editor(page, diagnostics = null) {
+  const obraCarregada = page.waitForResponse(response => {
+    const url = new URL(response.url());
+    return response.request().method() === "GET" &&
+      url.pathname === "/rest/v1/obras" &&
+      url.searchParams.get("id") === `eq.${editWork.id}`;
+  });
+  const capitulosCarregados = page.waitForResponse(response => {
+    const url = new URL(response.url());
+    return response.request().method() === "GET" &&
+      url.pathname === "/rest/v1/capitulos" &&
+      url.searchParams.get("obra_id") === `eq.${editWork.id}`;
+  });
   await page.goto(`/editar-obra?obraId=${editWork.id}`);
+  await diagnostics?.capture("editor-navigation", {
+    authState: "authenticated",
+    rendered: { loading: page.getByText(/carregando/i), "editor-enabled": select(page) },
+  });
+  expect((await obraCarregada).ok()).toBe(true);
+  expect((await capitulosCarregados).ok()).toBe(true);
   await expect(select(page)).toBeEnabled();
   await expect(page.getByLabel("Título da obra",{exact:true})).toHaveValue(editWork.titulo);
 }
-async function reset() {check(await client.from("obras").update({status_editorial:null,sinopse:editWork.sinopse,capa_url:""}).eq("id",editWork.id));}
+async function reset(statusEditorial = null) {check(await client.from("obras").update({status_editorial:statusEditorial,sinopse:editWork.sinopse,capa_url:""}).eq("id",editWork.id));}
 async function noSerious(page, selector) {
   const axe = await new AxeBuilder({page}).include(selector).analyze();
   expect(axe.violations.filter(v=>["serious","critical"].includes(v.impact))).toEqual([]);
@@ -55,6 +74,30 @@ async function filters(page) {
 }
 async function language(page,value) {
   await page.evaluate(value=>{localStorage.setItem("historietas-idioma",value);window.dispatchEvent(new StorageEvent("storage",{key:"historietas-idioma",newValue:value}));},value);
+}
+
+async function createWork(page, device, status) {
+  await page.goto("/publicar");
+  await expect(select(page)).toHaveValue("");
+  const title=`QA Criada ${device} ${randomUUID()}`;
+  await page.locator("#publicar-titulo").fill(title);
+  await page.locator("#publicar-formato").selectOption("Conto");
+  await page.locator("#publicar-genero").selectOption("Fantasia");
+  await page.locator("#publicar-classificacao").selectOption("Livre");
+  await page.getByRole("textbox",{name:"Sinopse",exact:true}).fill("Sinopse longa e válida para criação descartável de teste.");
+  await select(page).selectOption(status);
+  const input=page.locator('input[type="file"][accept^=".pdf"]');
+  await input.setInputFiles({name:"primeiro.txt",mimeType:"text/plain",buffer:Buffer.from("Texto original integral do primeiro capítulo da obra de teste.")});
+  await page.getByRole("button",{name:"Transformar em capítulo",exact:true}).click();
+  const requests=[]; page.on("request",r=>{if(new URL(r.url()).pathname==="/rest/v1/obras"&&["POST","PATCH"].includes(r.method()))requests.push(r);});
+  await page.getByRole("button",{name:"Criar obra",exact:true}).click();
+  await expect(page).toHaveURL(/\/painel-autor$/);
+  const row=check(await client.from("obras").select("id,status_editorial,status_editorial_versao").eq("titulo",title).single()); ids.push(row.id);
+  expect(row.status_editorial).toBe(status||null); expect(row.status_editorial_versao).toBeTruthy();
+  const insertion=requests.filter(r=>r.method()==="POST");expect(insertion).toHaveLength(1);
+  expect(insertion[0].postDataJSON().status_editorial).toBe(status||null);
+  expect(insertion[0].postDataJSON()).not.toHaveProperty("status_editorial_versao");
+  expect(requests.filter(r=>r.method()==="PATCH").every(r=>!Object.hasOwn(r.postDataJSON(),"status_editorial"))).toBe(true);
 }
 
 for(const [device,viewport] of [["desktop",{width:1440,height:900}],["mobile",{width:390,height:844}]]) {
@@ -109,46 +152,53 @@ for(const [device,viewport] of [["desktop",{width:1440,height:900}],["mobile",{w
     await expect(page.getByRole("group",{name:"Filtros selecionados",exact:true})).toContainText("Em andamento");
   });
 
-  test(`criação opcional, edição, limpeza e projeção pública — ${device}`,async({page,baseURL})=>{
+  test(`criação sem estado editorial preserva o payload opcional — ${device}`,async({page,baseURL})=>{
     expect(["127.0.0.1","localhost"]).toContain(new URL(baseURL).hostname);
-    await page.setViewportSize(viewport); await loginAsAuthor(page);
-    for(const status of ["","pausada"]) {
-      await page.goto("/publicar");
-      await expect(select(page)).toHaveValue("");
-      const title=`QA Criada ${device} ${randomUUID()}`;
-      await page.locator("#publicar-titulo").fill(title);
-      await page.locator("#publicar-formato").selectOption("Conto");
-      await page.locator("#publicar-genero").selectOption("Fantasia");
-      await page.locator("#publicar-classificacao").selectOption("Livre");
-      await page.getByRole("textbox",{name:"Sinopse",exact:true}).fill("Sinopse longa e válida para criação descartável de teste.");
-      await select(page).selectOption(status);
-      const input=page.locator('input[type="file"][accept^=".pdf"]');
-      await input.setInputFiles({name:"primeiro.txt",mimeType:"text/plain",buffer:Buffer.from("Texto original integral do primeiro capítulo da obra de teste.")});
-      await page.getByRole("button",{name:"Transformar em capítulo",exact:true}).click();
-      const requests=[]; page.on("request",r=>{if(new URL(r.url()).pathname==="/rest/v1/obras"&&["POST","PATCH"].includes(r.method()))requests.push(r);});
-      await page.getByRole("button",{name:"Criar obra",exact:true}).click();
-      await expect(page).toHaveURL(/\/painel-autor$/);
-      const row=check(await client.from("obras").select("id,status_editorial,status_editorial_versao").eq("titulo",title).single()); ids.push(row.id);
-      expect(row.status_editorial).toBe(status||null); expect(row.status_editorial_versao).toBeTruthy();
-      const insertion=requests.filter(r=>r.method()==="POST");expect(insertion).toHaveLength(1);
-      expect(insertion[0].postDataJSON().status_editorial).toBe(status||null);
-      expect(insertion[0].postDataJSON()).not.toHaveProperty("status_editorial_versao");
-      expect(requests.filter(r=>r.method()==="PATCH").every(r=>!Object.hasOwn(r.postDataJSON(),"status_editorial"))).toBe(true);
+    await page.setViewportSize(viewport);await loginAsAuthor(page);
+    await createWork(page,device,"");
+  });
+
+  test(`criação com estado editorial persiste somente no insert — ${device}`,async({page,baseURL})=>{
+    expect(["127.0.0.1","localhost"]).toContain(new URL(baseURL).hostname);
+    await page.setViewportSize(viewport);await loginAsAuthor(page);
+    await createWork(page,device,"pausada");
+  });
+
+  test(`edição confirmada atualiza a projeção pública — ${device}`,async({page})=>{
+    const diagnostics=observeSafeFlow(page,"editorial-status");
+    try {
+      await diagnostics.capture("start");
+      await reset();await page.setViewportSize(viewport);await loginAsAuthor(page);
+      await diagnostics.capture("after-login",{authState:"authenticated"});
+      await editor(page,diagnostics);
+      await diagnostics.capture("editor-ready",{authState:"authenticated",rendered:{"editor-enabled":select(page)}});
+      await select(page).selectOption("concluida");await save(page).click();
+      const updated=page.getByRole("button",{name:"Atualizada",exact:true});
+      await expect(updated).toBeVisible();
+      await diagnostics.capture("save-confirmed",{authState:"authenticated",rendered:{updated}});
+      expect(check(await client.from("obras").select("status_editorial").eq("id",editWork.id).single()).status_editorial).toBe("concluida");
+      await page.goto(`/obra/${editWork.slug}`);
+      const publicRoot=page.locator('[data-historietas-obra-dinamica-root="true"][data-public-work-state="confirmada"]:visible');
+      await expect(publicRoot).toHaveCount(1);
+      await expect(publicRoot).toHaveAttribute("aria-busy","false");
+      await expect(page.locator('[data-historietas-obra-dinamica-root="true"]:visible')).toHaveCount(1);
+      await expect(publicRoot.getByText("Estado da história: Concluída",{exact:true})).toBeVisible();
+      await diagnostics.capture("public-confirmed",{authState:"authenticated",rendered:{"public-confirmed":publicRoot}});
+    } finally {
+      await diagnostics.capture("final");
+      diagnostics.emit();
+      diagnostics.dispose();
     }
-    await reset();await editor(page);
-    await select(page).selectOption("concluida"); await save(page).click();
-    await expect(page.getByRole("button",{name:"Atualizada",exact:true})).toBeVisible();
-    expect(check(await client.from("obras").select("status_editorial").eq("id",editWork.id).single()).status_editorial).toBe("concluida");
-    await page.goto(`/obra/${editWork.slug}`);
-    const publicRoot=page.locator('[data-historietas-obra-dinamica-root="true"][data-public-work-state="confirmada"]:visible');
-    await expect(publicRoot).toHaveCount(1);
-    await expect(publicRoot).toHaveAttribute("aria-busy","false");
-    await expect(page.locator('[data-historietas-obra-dinamica-root="true"]:visible')).toHaveCount(1);
-    await expect(publicRoot.getByText("Estado da história: Concluída",{exact:true})).toBeVisible();
-    await editor(page);await select(page).selectOption("");await save(page).click();
+  });
+
+  test(`limpeza atualiza a projeção pública e preserva i18n e acessibilidade — ${device}`,async({page})=>{
+    await reset("concluida");await page.setViewportSize(viewport);await loginAsAuthor(page);await editor(page);
+    await expect(select(page)).toHaveValue("concluida");
+    await select(page).selectOption("");await save(page).click();
     await expect(page.getByRole("button",{name:"Atualizada",exact:true})).toBeVisible();
     expect(check(await client.from("obras").select("status_editorial").eq("id",editWork.id).single()).status_editorial).toBeNull();
     await page.goto(`/obra/${editWork.slug}`);
+    const publicRoot=page.locator('[data-historietas-obra-dinamica-root="true"][data-public-work-state="confirmada"]:visible');
     await expect(publicRoot).toHaveCount(1);await expect(publicRoot).toHaveAttribute("aria-busy","false");
     await expect(publicRoot.getByText("Estado da história: Não informado",{exact:true})).toBeVisible();
     await editor(page);

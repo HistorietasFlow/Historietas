@@ -105,6 +105,7 @@ export async function carregarObrasSupabaseHome(
   userId = "",
   consultasCatalogo: readonly ConsultaCatalogo[] =
     CONSULTAS_INICIAIS_CATALOGO_HOME,
+  aoFalhar?: () => void,
 ) {
   try {
     let obraIdsCatalogo: readonly string[] = [];
@@ -114,6 +115,7 @@ export async function carregarObrasSupabaseHome(
       const selecao = await listarSelecaoCatalogo(consultasCatalogo);
       obraIdsCatalogo = selecao.obraIds;
     } catch (error) {
+      aoFalhar?.();
       catalogoDisponivel = false;
       console.warn(
         "O catálogo paginado da Home ainda não está disponível; usando uma amostra limitada:",
@@ -130,6 +132,7 @@ export async function carregarObrasSupabaseHome(
 
     if (catalogoDisponivel) {
       if (obraIdsCatalogo.length === 0) {
+        if (obrasLocais.length > 0) aoFalhar?.();
         return obrasLocais;
       }
 
@@ -150,6 +153,7 @@ export async function carregarObrasSupabaseHome(
     const obrasSupabase = (obrasData || []) as SupabaseObraRow[];
 
     if (obrasSupabase.length === 0) {
+      if (obrasLocais.length > 0) aoFalhar?.();
       return obrasLocais;
     }
 
@@ -157,7 +161,8 @@ export async function carregarObrasSupabaseHome(
       obrasSupabase
         .map((obra) => obra.user_id || "")
         .filter(Boolean),
-      userId
+      userId,
+      aoFalhar,
     );
 
     const obrasIds = obrasSupabase
@@ -186,6 +191,7 @@ export async function carregarObrasSupabaseHome(
                 .range(inicio, fim),
           });
       } catch (error) {
+        aoFalhar?.();
         console.warn(
           "Não consegui carregar capítulos da Home no Supabase:",
           error,
@@ -217,6 +223,7 @@ export async function carregarObrasSupabaseHome(
       obraIds: obrasIds,
       capituloIds: capituloIdsPublicados,
     });
+    if (!metricas.carregado) aoFalhar?.();
     const progressoHomeCarregado = metricas.carregado && Boolean(userIdLimpo);
 
     if (progressoHomeCarregado) {
@@ -285,6 +292,7 @@ export async function carregarObrasSupabaseHome(
 
       return !idsRemotos.has(obraLocalAtual.id) && !slugsRemotos.has(slugLocal);
     });
+    if (obrasApenasLocais.length > 0) aoFalhar?.();
 
     const obrasAtualizadas = [...obrasRemotas, ...obrasApenasLocais].filter(
       (obra) => obra.publicado && obraTemConteudoPublicoHome(obra)
@@ -292,6 +300,7 @@ export async function carregarObrasSupabaseHome(
 
     return obrasAtualizadas;
   } catch (error) {
+    aoFalhar?.();
     console.warn("Não consegui acessar o Supabase na Home:", error);
     return obrasLocais;
   }

@@ -1,4 +1,9 @@
 import { test, expect } from "@playwright/test";
+import {
+  activeReader,
+  expectActiveChapter,
+  publicChapterResponse as waitForPublicChapter,
+} from "./public-reader-readiness.mjs";
 
 const slug = (process.env.E2E_PUBLIC_WORK_SLUG || "").trim();
 const workId = (process.env.E2E_PUBLIC_WORK_ID || "").trim();
@@ -8,39 +13,10 @@ const publicChapterNumber =
   Number.isInteger(chapterNumber) && chapterNumber > 0 ? chapterNumber : 1;
 const canonicalPath = `/obra/${encodeURIComponent(slug)}/capitulo/${publicChapterNumber}`;
 
-const activeReader = (page) =>
-  page.locator('main[data-historietas-ler-capitulo-root="true"]:visible');
-
 function publicChapterResponse(page, number) {
-  // Registrar antes da navegação: uma resposta atrasada de uma requisição
-  // anterior (mesmo do mesmo capítulo) não pode confirmar a nova transição.
-  const request = page.waitForRequest((request) => {
-    const url = new URL(request.url());
-    return url.pathname === "/api/leitura-publica" &&
-      url.searchParams.get("slug") === slug &&
-      url.searchParams.get("numero") === String(number);
+  return waitForPublicChapter(page, number, {
+    slug, workId, chapterId: number === publicChapterNumber ? chapterId : undefined,
   });
-  return request.then(async (request) => {
-    const response = await request.response();
-    expect(response).not.toBeNull();
-    expect(response.status()).toBe(200);
-    const snapshot = await response.json();
-    expect(["disponivel", "inalterada"]).toContain(snapshot.estado);
-    expect(snapshot.obraId).toBe(workId);
-    expect(snapshot.numeroCapitulo).toBe(number);
-    if (number === publicChapterNumber) expect(snapshot.capituloId).toBe(chapterId);
-    return snapshot;
-  });
-}
-
-async function expectActiveChapter(page, path, title, text) {
-  await expect(page).toHaveURL(new RegExp(`${path}$`));
-  const reader = activeReader(page);
-  // Não escolher uma raiz arbitrária nem aceitar dois leitores ativos.
-  await expect(reader).toHaveCount(1);
-  await expect(reader).not.toHaveAttribute("aria-busy", "true");
-  await expect(reader.getByRole("heading", { name: title, exact: true })).toBeVisible();
-  await expect(reader.getByText(text, { exact: true })).toBeVisible();
 }
 
 test.describe("capítulo público canônico", () => {
@@ -87,47 +63,49 @@ test.describe("capítulo público canônico", () => {
     expect(html).toContain('name="robots" content="noindex"');
   });
 
-  test("hidrata o leitor compartilhado sem trocar a URL canônica", async ({
-    page,
-  }) => {
-    const response = await page.goto(canonicalPath, {
-      waitUntil: "domcontentloaded",
+  for (const device of ["desktop", "mobile"]) {
+    test(`hidrata o leitor compartilhado sem trocar a URL canônica (${device})`, async ({
+      page,
+    }) => {
+      await page.setViewportSize(device === "mobile"
+        ? { width: 390, height: 844 } : { width: 1440, height: 900 });
+      const hydration = publicChapterResponse(page, publicChapterNumber);
+      const response = await page.goto(canonicalPath, {
+        waitUntil: "domcontentloaded",
+      });
+
+      expect(response?.status()).toBe(200);
+      await hydration;
+      await expect(page).toHaveURL(new RegExp(`${canonicalPath}$`));
+      await expect(page).toHaveTitle(/Capítulo 1.*Obra Pública E2E/);
+      await expectActiveChapter(page, canonicalPath, "Capítulo 1",
+        "Este capítulo existe somente no ambiente local descartável dos testes E2E.");
+
+      await activeReader(page).getByRole("button", { name: "Ajustes" }).click();
+      await expect(page.getByText("Tamanho da fonte")).toBeVisible();
     });
 
-    expect(response?.status()).toBe(200);
-    await expect(page).toHaveURL(new RegExp(`${canonicalPath}$`));
-    await expect(page).toHaveTitle(/Capítulo 1.*Obra Pública E2E/);
-    await expect(page.getByRole("heading", { name: "Capítulo 1" })).toBeVisible();
-    await expect(
-      page.getByText(
-        "Este capítulo existe somente no ambiente local descartável dos testes E2E.",
-      ),
-    ).toBeVisible();
+    test(`ignora IDs conflitantes da query após hidratar a rota canônica (${device})`, async ({
+      page,
+    }) => {
+      await page.setViewportSize(device === "mobile"
+        ? { width: 390, height: 844 } : { width: 1440, height: 900 });
+      const urlComQueryConflitante = `${canonicalPath}?obraId=outra-obra&capituloId=outro-capitulo`;
+      const hydration = publicChapterResponse(page, publicChapterNumber);
+      const response = await page.goto(urlComQueryConflitante, {
+        waitUntil: "domcontentloaded",
+      });
 
-    await page.getByRole("button", { name: "Ajustes" }).click();
-    await expect(page.getByText("Tamanho da fonte")).toBeVisible();
-  });
+      expect(response?.status()).toBe(200);
+      await hydration;
+      await expect(page).toHaveURL(urlComQueryConflitante);
+      await expectActiveChapter(page, urlComQueryConflitante, "Capítulo 1",
+        "Este capítulo existe somente no ambiente local descartável dos testes E2E.");
 
-  test("ignora IDs conflitantes da query após hidratar a rota canônica", async ({
-    page,
-  }) => {
-    const urlComQueryConflitante = `${canonicalPath}?obraId=outra-obra&capituloId=outro-capitulo`;
-    const response = await page.goto(urlComQueryConflitante, {
-      waitUntil: "domcontentloaded",
+      await activeReader(page).getByRole("button", { name: "Ajustes" }).click();
+      await expect(page.getByText("Tamanho da fonte")).toBeVisible();
     });
-
-    expect(response?.status()).toBe(200);
-    await expect(page).toHaveURL(urlComQueryConflitante);
-    await expect(page.getByRole("heading", { name: "Capítulo 1" })).toBeVisible();
-    await expect(
-      page.getByText(
-        "Este capítulo existe somente no ambiente local descartável dos testes E2E.",
-      ),
-    ).toBeVisible();
-
-    await page.getByRole("button", { name: "Ajustes" }).click();
-    await expect(page.getByText("Tamanho da fonte")).toBeVisible();
-  });
+  }
 
   for (const device of ["desktop", "mobile"]) {
     test(`sincroniza conteúdo e URL ao voltar e avançar entre capítulos (${device})`, async ({
@@ -201,6 +179,7 @@ test.describe("capítulo público canônico", () => {
 
     expect(response?.status()).toBe(200);
     await expect(page).toHaveURL(new RegExp("/ler-capitulo\\?"));
-    await expect(page.getByRole("heading", { name: "Capítulo 1" })).toBeVisible();
+    await expectActiveChapter(page, internalPath, "Capítulo 1",
+      "Este capítulo existe somente no ambiente local descartável dos testes E2E.");
   });
 });

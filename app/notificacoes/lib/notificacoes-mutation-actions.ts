@@ -25,6 +25,7 @@ type CriarAcoesMutacaoNotificacoesParams = {
   notificacoes: NotificacaoLocal[];
   notificacoesFiltradas: NotificacaoLocal[];
   usuarioNotificacoesId: string;
+  usuarioVigente: () => boolean;
   solicitacaoRespondendoId: string;
   atualizarNotificacoes: (notificacoes: NotificacaoLocal[]) => void;
   fecharMenuNotificacao: () => void;
@@ -35,12 +36,14 @@ export function criarAcoesMutacaoNotificacoes({
   notificacoes,
   notificacoesFiltradas,
   usuarioNotificacoesId,
+  usuarioVigente,
   solicitacaoRespondendoId,
   atualizarNotificacoes,
   fecharMenuNotificacao,
   setSolicitacaoRespondendoId,
 }: CriarAcoesMutacaoNotificacoesParams) {
   function marcarComoLida(id: string) {
+    if (!usuarioVigente()) return;
     const notificacaoAtual = notificacoes.find((notificacao) => notificacao.id === id);
     const novasNotificacoes = atualizarEstadoLeituraNotificacao(
       notificacoes,
@@ -56,6 +59,7 @@ export function criarAcoesMutacaoNotificacoes({
   }
 
   function marcarComoNaoLida(id: string) {
+    if (!usuarioVigente()) return;
     const notificacaoAtual = notificacoes.find((notificacao) => notificacao.id === id);
     const novasNotificacoes = atualizarEstadoLeituraNotificacao(
       notificacoes,
@@ -78,6 +82,7 @@ export function criarAcoesMutacaoNotificacoes({
     notificacao: NotificacaoLocal,
     aceitar: boolean
   ) {
+    if (!usuarioVigente()) return;
     const solicitacaoId = notificacao.solicitacaoId?.trim() || "";
 
     if (
@@ -99,6 +104,7 @@ export function criarAcoesMutacaoNotificacoes({
         }
       );
 
+      if (!usuarioVigente()) return;
       if (error || (data !== "aceita" && data !== "recusada")) {
         window.alert(
           error?.message || "Não foi possível responder esta solicitação."
@@ -135,17 +141,19 @@ export function criarAcoesMutacaoNotificacoes({
 
       fecharMenuNotificacao();
     } catch (error) {
+      if (!usuarioVigente()) return;
       window.alert(
         error instanceof Error
           ? error.message
           : "Não foi possível responder esta solicitação."
       );
     } finally {
-      setSolicitacaoRespondendoId("");
+      if (usuarioVigente()) setSolicitacaoRespondendoId("");
     }
   }
 
   function marcarTodasComoLidas() {
+    if (!usuarioVigente()) return;
     const { notificacoesParaSincronizar, novasNotificacoes } =
       marcarTodasNotificacoesComoLidasLocal(notificacoes);
 
@@ -158,6 +166,7 @@ export function criarAcoesMutacaoNotificacoes({
   }
 
   function marcarFiltradasComoLidas() {
+    if (!usuarioVigente()) return;
     const { notificacoesParaSincronizar, novasNotificacoes } =
       marcarNotificacoesFiltradasComoLidasLocal(
         notificacoes,
@@ -173,6 +182,7 @@ export function criarAcoesMutacaoNotificacoes({
   }
 
   function apagarNotificacao(id: string) {
+    if (!usuarioVigente()) return;
     const notificacaoAtual = notificacoes.find((notificacao) => notificacao.id === id);
     const novasNotificacoes = removerNotificacaoLocal(notificacoes, id);
 
@@ -188,6 +198,7 @@ export function criarAcoesMutacaoNotificacoes({
   }
 
   function limparTodas() {
+    if (!usuarioVigente()) return;
     const notificacoesParaApagar = [...notificacoes];
 
     registrarNotificacoesApagadas(
@@ -202,6 +213,7 @@ export function criarAcoesMutacaoNotificacoes({
   }
 
   function limparLidas() {
+    if (!usuarioVigente()) return;
     const { notificacoesLidas, novasNotificacoes } =
       separarNotificacoesLidasLocal(notificacoes);
 
@@ -211,7 +223,7 @@ export function criarAcoesMutacaoNotificacoes({
     );
     atualizarNotificacoes(novasNotificacoes);
     void excluirNotificacoesLidasSupabase(usuarioNotificacoesId).then((excluiu) => {
-      if (!excluiu) {
+      if (usuarioVigente() && !excluiu) {
         void apagarNotificacoesSupabase(
           notificacoesLidas,
           usuarioNotificacoesId

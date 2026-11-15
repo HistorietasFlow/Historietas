@@ -1,27 +1,5 @@
-import { supabase } from "../../../../lib/supabase/client";
-
-type PersistirRemocaoDenunciaResolvidaModeracaoParams = {
-  denunciaId: string;
-};
-
-export async function persistirRemocaoDenunciaResolvidaModeracao({
-  denunciaId,
-}: PersistirRemocaoDenunciaResolvidaModeracaoParams) {
-  const { data, error } = await supabase
-    .from("comunidade_denuncias")
-    .delete()
-    .eq("id", denunciaId)
-    .eq("status", "resolvida")
-    .select("id")
-    .maybeSingle();
-
-  if (error) {
-    throw error;
-  }
-
-  if (!data?.id) {
-    throw new Error(
-      "A denúncia resolvida não foi encontrada ou não pôde ser removida."
-    );
-  }
+import { escreverEstadoDenunciaModeracao, type EstadoDenuncia } from "../lib/admin-comunidade-confirmed-write";
+export async function persistirRemocaoDenunciaResolvidaModeracao({denunciaId, esperada}: {denunciaId: string; esperada: EstadoDenuncia}) {
+  if (denunciaId !== esperada.id || esperada.status !== "resolvida") throw new Error("Somente denúncias resolvidas podem ser removidas do painel.");
+  return escreverEstadoDenunciaModeracao(esperada, null);
 }

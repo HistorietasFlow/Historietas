@@ -69,7 +69,7 @@ test("Admin Comunidade mantém a orquestração de estado na página", () => {
   );
   assert.match(
     hook,
-    /async function carregarDenuncias\(\) \{[\s\S]*?setErro\(""\);[\s\S]*?const denunciasComContexto =[\s\S]*?await carregarDenunciasComContextoModeracao\(\);[\s\S]*?setDenuncias\(denunciasComContexto\);[\s\S]*?sincronizarObservacoesModeracao\([\s\S]*?denunciasComContexto/,
+    /async function carregarDenuncias\(\) \{[\s\S]*?const denunciasComContexto =[\s\S]*?await carregarDenunciasComContextoModeracao\(\);\s*if \(!vigente\(ctx, leitura\)\) return;\s*setDenuncias\(denunciasComContexto\);[\s\S]*?sincronizarObservacoesModeracao\([\s\S]*?denunciasComContexto/,
   );
   assert.doesNotMatch(page, /buscarDenunciasBaseModeracao/);
   assert.doesNotMatch(page, /agruparIdsAlvosDenunciados/);

@@ -1,4 +1,4 @@
-import { useEffect, type Dispatch, type SetStateAction } from "react";
+import { useEffect, useState, type Dispatch, type SetStateAction } from "react";
 import { supabase } from "../../../lib/supabase/client";
 import { totaisInteracoesObrasPerfilVazio } from "../constants";
 import type {
@@ -73,6 +73,7 @@ export function usePerfilAutorAuthIdentitySync({
   setUsuarioIdLogado: Setter<string>;
   setAutenticacaoCarregada: Setter<boolean>;
 }) {
+  const [versaoIdentidade, setVersaoIdentidade] = useState(0);
   useEffect(() => {
     let componenteAtivo = true;
 
@@ -114,6 +115,7 @@ export function usePerfilAutorAuthIdentitySync({
 
       if (resultado.mudou) {
         identidadeAutenticadaPerfilRef.current = resultado.identidade;
+        setVersaoIdentidade(resultado.identidade.versao);
         setCarregando(true);
         limparEstadoContaAnterior();
         setUsuarioIdLogado(resultado.identidade.usuarioId);
@@ -196,4 +198,5 @@ export function usePerfilAutorAuthIdentitySync({
     setUsuarioIdLogado,
     setAutenticacaoCarregada,
   ]);
+  return versaoIdentidade;
 }

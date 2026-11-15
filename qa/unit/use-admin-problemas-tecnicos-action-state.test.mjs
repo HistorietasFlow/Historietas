@@ -45,7 +45,7 @@ test("hook preserva a recarga, feedback e finalização", () => {
     "await carregarProblemas()",
     'criarMensagemErro(\n          "Erro ao atualizar problemas técnicos"',
     "finally {",
-    'setAcaoEmAndamento("")',
+    'if (atual()) setAcaoEmAndamento(acaoAtual => acaoAtual === "recarregar" ? "" : acaoAtual)',
   ].map((trecho) => hook.indexOf(trecho));
   assert.ok(ordem.every((indice) => indice >= 0));
   assert.deepEqual([...ordem].sort((a, b) => a - b), ordem);
@@ -65,7 +65,10 @@ test("página delega estados e mantém integrações existentes", () => {
   assert.doesNotMatch(page, /const \[acaoEmAndamento, setAcaoEmAndamento\]/);
   assert.match(page, /useAdminProblemasTecnicosInitialData\(\{[\s\S]*?setErro,[\s\S]*?setSucesso,/);
   assert.match(page, /useAdminProblemasTecnicosActions\(\{[\s\S]*?setAcaoEmAndamento,[\s\S]*?setErro,[\s\S]*?setSucesso,/);
-  assert.match(page, /recarregarProblemasTecnicos\(carregarProblemas\)/);
+  assert.match(page, /recarregarProblemasTecnicos\(carregarProblemas, capturarExecucao\(\)\)/);
   assert.match(card, /alternarChamadoAberto\(problema\.id\)/);
   assert.match(page, /acaoEmAndamento === "recarregar"/);
 });
+
+// Inclui os cenários executáveis no gate posttest:static existente.
+import "./admin-problemas-tecnicos-consistency.test.mjs";

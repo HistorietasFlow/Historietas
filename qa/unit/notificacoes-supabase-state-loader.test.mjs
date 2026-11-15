@@ -32,11 +32,14 @@ test("loader do estado Supabase preserva obras seguidas e IDs lidos", () => {
 
 test("loader compoe o estado autenticado sem acoplar ao loader de notificacoes diretas", () => {
   assert.match(loader, /export async function carregarEstadoSupabaseNotificacoes\(/);
-  assert.match(loader, /const \{ data \} = await supabase\.auth\.getUser\(\);/);
-  assert.match(loader, /const userId = data\.user\?\.id \|\| "";/);
+  assert.doesNotMatch(loader, /auth\.getUser/);
+  assert.match(loader, /const userId = usuarioAutenticadoId\.trim\(\);/);
   assert.match(loader, /if \(!userId\) \{\s*return null;/);
-  assert.match(loader, /await Promise\.all\(\[\s*carregarObrasSeguidasUsuario\(userId\),\s*carregarNotificacoesLidasSupabase\(userId\),\s*carregarNotificacoesDiretasSupabase\(userId\),\s*\]\);/);
-  assert.match(loader, /return \{\s*userId,\s*obrasSeguidasIds,\s*notificacoesLidasIds,\s*notificacoesDiretas,\s*\};/);
+  assert.match(loader, /await Promise\.allSettled\(\[\s*carregarObrasSeguidasUsuario\(userId\),\s*carregarNotificacoesLidasSupabase\(userId\),\s*carregarNotificacoesDiretasSupabase\(userId\),\s*\]\);/);
+  assert.match(loader, /return \{\s*userId,/);
+  for (const campo of ["obrasSeguidasIds", "notificacoesLidasIds", "notificacoesDiretas"]) {
+    assert.match(loader, new RegExp(`${campo}\\.status === "fulfilled"\\s*\\? ${campo}\\.value\\s*: \\[\\]`));
+  }
   assert.doesNotMatch(loader, /from "\.\.\/page"/);
 });
 
@@ -49,7 +52,7 @@ test("hook inicial delega o estado remoto e importa o loader de notificacoes dir
     hookInicial,
     /from "\.\.\/lib\/notificacoes-supabase-direct-loader";/,
   );
-  assert.match(hookInicial, /carregarEstadoSupabaseNotificacoes\(\s*carregarNotificacoesDiretasSupabase\s*\)/);
+  assert.match(hookInicial, /carregarEstadoSupabaseNotificacoes\(\s*carregarNotificacoesDiretasSupabase,\s*usuarioAtualId\s*\)/);
   assert.match(pagina, /useNotificacoesInitialLoad\(/);
   assert.doesNotMatch(pagina, /async function carregarNotificacoesDiretasSupabase\(/);
   assert.doesNotMatch(pagina, /async function carregarObrasSeguidasUsuario\(/);

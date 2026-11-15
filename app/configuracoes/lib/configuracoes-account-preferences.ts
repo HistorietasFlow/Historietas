@@ -17,7 +17,7 @@ export function carregarPreferencias(userId = ""): PreferenciasConta {
     const texto = lerStorageUsuarioConfiguracoes(CONFIG_STORAGE_KEY, userId);
     const json: unknown = texto ? JSON.parse(texto) : null;
 
-    if (!json || typeof json !== "object") {
+    if (!json || typeof json !== "object" || Array.isArray(json)) {
       return {
         ...preferenciasPadrao,
       };
@@ -56,17 +56,18 @@ export function salvarPreferencias(
 ) {
   const userIdLimpo = userId.trim();
 
-  salvarJsonStorageUsuarioConfiguracoes(
+  const salvo = salvarJsonStorageUsuarioConfiguracoes(
     CONFIG_STORAGE_KEY,
     userIdLimpo,
     preferencias,
   );
 
-  if (typeof window !== "undefined" && userIdLimpo) {
+  if (salvo && typeof window !== "undefined" && userIdLimpo) {
     window.dispatchEvent(
       new CustomEvent(CONFIGURACOES_ATUALIZADAS_EVENT, {
         detail: { userId: userIdLimpo },
       }),
     );
   }
+  return salvo;
 }

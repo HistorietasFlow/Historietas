@@ -60,7 +60,7 @@ test("Em Alta mantém o único consumidor no branch de carregamento", () => {
   assert.doesNotMatch(pagina, /const loadingSpinnerStyle: CSSProperties/);
   assert.equal((pagina.match(/<LoadingSpinner\b/g) || []).length, 1);
   assert.match(pagina, /<LoadingSpinner label="Carregando Em Alta" \/>/);
-  assert.match(pagina, /if \(carregandoRanking\)/);
+  assert.match(pagina, /if \(carregandoRanking \|\| !dadosDaIdentidadeAtual\)/);
   assert.match(
     pagina,
     /<EmAltaPageShell pageThemeStyle=\{pageThemeStyle\} carregando>\s*<LoadingSpinner label="Carregando Em Alta" \/>\s*<\/EmAltaPageShell>/,

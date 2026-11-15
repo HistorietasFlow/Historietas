@@ -17,16 +17,17 @@ const pagina = readFileSync(
 test("alternarSeguirUsuarioBuscaComunidade preserva guardas, lock e estado otimista", () => {
   assert.match(acao, /export async function alternarSeguirUsuarioBuscaComunidade\(/);
   assert.match(acao, /if \(!exigirLogin\(\) \|\| !usuario\) \{/);
-  assert.match(acao, /if \(usuarioAlvo\.id === usuario\.id\) \{/);
+  assert.match(acao, /if \(contextoSeguimento\.usuarioId !== usuario\.id \|\| usuarioAlvo\.id === usuario\.id\) \{/);
   assert.match(acao, /const chaveAcao = `seguir-usuario:\$\{usuarioAlvo\.id\}`;/);
   assert.match(acao, /iniciarAcaoComunidade\(acoesComunidadeRef, chaveAcao\)/);
-  assert.match(acao, /const estavaSeguindo = usuariosSeguidosIds\.includes\(usuarioAlvo\.id\);/);
+  assert.match(acao, /const estavaSeguindo = alteracaoAnterior \?\? usuariosSeguidosIds\.includes\(usuarioAlvo\.id\);/);
   assert.match(acao, /const deveSeguir = !estavaSeguindo;/);
-  assert.match(acao, /const idsAnteriores = usuariosSeguidosIds;/);
+  assert.doesNotMatch(acao, /setUsuariosSeguidosIds\(idsAnteriores\)/);
+  assert.match(acao, /contextoSeguimento\.vigente\(\)/);
   assert.match(acao, /setUsuarioSeguindoId\(usuarioAlvo\.id\);/);
   assert.match(
     acao,
-    /setUsuariosSeguidosIds\(\(idsAtuais\) =>[\s\S]*?deveSeguir[\s\S]*?Array\.from\(new Set\(\[\.\.\.idsAtuais, usuarioAlvo\.id\]\)\)[\s\S]*?idsAtuais\.filter\(\(id\) => id !== usuarioAlvo\.id\)/,
+    /setUsuariosSeguidosIds\(\(idsAtuais\) => ativo[\s\S]*?Array\.from\(new Set\(\[\.\.\.idsAtuais, usuarioAlvo\.id\]\)\)[\s\S]*?idsAtuais\.filter\(\(id\) => id !== usuarioAlvo\.id\)/,
   );
 });
 
@@ -37,7 +38,7 @@ test("alternarSeguirUsuarioBuscaComunidade preserva persistencia, rollback e fee
   );
   assert.match(
     acao,
-    /if \(!resultado\.ok\) \{[\s\S]*?setUsuariosSeguidosIds\(idsAnteriores\);[\s\S]*?resultado\.erro \|\| "Não foi possível atualizar este usuário agora\."/,
+    /if \(!resultado\.ok\) \{[\s\S]*?reverterSeguimento\(\);[\s\S]*?resultado\.erro \|\| "Não foi possível atualizar este usuário agora\."/,
   );
   assert.match(acao, /const seguindoAgora = resultado\.estado === "seguindo";/);
   assert.match(acao, /setErro\(""\);/);

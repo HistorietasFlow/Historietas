@@ -415,8 +415,9 @@ export function LerCapituloClient({
   });
 
   useLerCapituloScrollProgress({
-    capituloId:
-      capituloAtual?.id,
+    obraId: obraAtual?.id,
+    capituloId: !carregando && !erroCarregamentoInicial && !dadosPublicos.aguardandoRota && statusAcesso18 === "permitido"
+      ? capituloAtual?.id : undefined,
     setProgressoRolagem,
   });
 

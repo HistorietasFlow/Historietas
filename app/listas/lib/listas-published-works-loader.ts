@@ -119,7 +119,7 @@ export async function carregarObrasPublicadas(idsEspecificos: string[] = []) {
     );
 
     if (error || !Array.isArray(data)) {
-      return [] as ObraLista[];
+      throw error || new Error("Não foi possível carregar esta lista agora.");
     }
 
     let obras = data.map((registro, index) =>
@@ -130,7 +130,8 @@ export async function carregarObrasPublicadas(idsEspecificos: string[] = []) {
     obras = await aplicarMetricasObrasListas(obras);
 
     return obras;
-  } catch {
-    return [] as ObraLista[];
+  } catch (error) {
+    console.warn("Não consegui carregar obras da lista.");
+    throw error;
   }
 }

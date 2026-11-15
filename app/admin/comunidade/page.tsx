@@ -68,6 +68,7 @@ import { useAdminComunidadeModerationActionState } from "./hooks/use-admin-comun
 export default function AdminComunidadePage() {
   const { language } = useHistorietasLanguage();
   const {
+    controleModeracao,
     erro,
     setErro,
     sucesso,
@@ -99,8 +100,11 @@ export default function AdminComunidadePage() {
     setObservacoes,
   } = useAdminComunidadeInitialData({
     router,
+    controleModeracao,
     setErro,
     setSucesso,
+    setAcaoEmAndamento,
+    setMenuDenunciaAbertoId,
   });
 
   const denunciasAtivas = useMemo(
@@ -138,6 +142,7 @@ export default function AdminComunidadePage() {
     atualizarStatusDenunciaPerfil,
     removerDenunciaPerfilResolvida,
   } = useAdminComunidadeProfileReportActions({
+    controleModeracao,
     usuarioId,
     ehAdmin,
     acaoEmAndamento,
@@ -156,6 +161,7 @@ export default function AdminComunidadePage() {
     restaurarDenunciaArquivada,
     removerDenunciaResolvida,
   } = useAdminComunidadeContentReportActions({
+    controleModeracao,
     language,
     usuarioId,
     ehAdmin,

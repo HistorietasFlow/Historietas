@@ -31,7 +31,7 @@ test("loader agregado preserva autenticação, perfil, carregamento e fallbacks"
     "carregarMetricasConteudos({",
     "carregarComentariosCapitulosUsuarioPainel(userId, capituloIds)",
     "prepararEstadoMetricasPainel(metricas)",
-    "obraAtual.id === obraBanco.id || slugLocal === slugBanco",
+    "(!obraAtual.id || !obraBanco.id) && slugLocal === slugBanco",
     "converterObraSupabaseParaLocalPainel({",
     "totalCurtidasPainel: metrica?.audiencia.curtidoresUnicos || 0",
     "totalComentariosPainel: metrica?.audiencia.comentaristasUnicos || 0",

@@ -248,7 +248,7 @@ test("Configurações mantém domínio e toast na página", () => {
     signOutAction,
     profileSaveAction,
   ].flatMap((fonte) => fonte.match(/mostrarMensagemAcao\(/g) || []);
-  assert.equal(chamadasDominio.length, 15);
+  assert.equal(chamadasDominio.length, 12); // Privacidade usa estado persistente de pendência/erro.
   assert.match(
     pagina,
     /import \{ useConfiguracoesAccountActionHandlers \} from "\.\/hooks\/use-configuracoes-account-action-handlers";/,

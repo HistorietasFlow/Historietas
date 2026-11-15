@@ -87,6 +87,9 @@ export default function ConfiguracoesPage() {
   });
 
   const {
+    identidadeContaRef,
+    erroPreferencias,
+    tentarCarregarPreferencias,
     mostrarUsuariosBloqueados,
     usuariosBloqueados,
     carregandoUsuariosBloqueados,
@@ -98,6 +101,8 @@ export default function ConfiguracoesPage() {
   } = useConfiguracoesAccessOrchestration({
     router,
     setVerificandoAcesso,
+    setSalvando,
+    setErroUsername,
     setUsuario,
     setPreferencias,
     setPrivacidade,
@@ -120,6 +125,8 @@ export default function ConfiguracoesPage() {
   });
 
   const {
+    statusPrivacidade,
+    tentarSalvarPrivacidadeNovamente,
     atualizarPreferencia,
     alternarReceberAvisos,
     aplicarPrivacidadeAtualizada,
@@ -130,6 +137,7 @@ export default function ConfiguracoesPage() {
     preferencias,
     privacidade,
     usuarioIdLogado,
+    identidadeContaRef,
     setPreferencias,
     setPrivacidade,
     setMensagemAcao,
@@ -147,6 +155,7 @@ export default function ConfiguracoesPage() {
     sairDaConta,
   } = useConfiguracoesAccountActionHandlers({
     router,
+    identidadeContaRef,
     salvando,
     usuarioIdLogado,
     preferencias,
@@ -216,9 +225,33 @@ export default function ConfiguracoesPage() {
     );
   }
 
+  if (erroPreferencias) {
+    return <main style={pageThemeStyle}>
+      <style>{`${historietasThemeCss}${configuracoesPageCss}`}</style>
+      <p role="alert">{t(
+        "Não foi possível confirmar suas preferências. Tente novamente.",
+        "Could not confirm your preferences. Try again.",
+        "No se pudieron confirmar tus preferencias. Inténtalo de nuevo.",
+      )}</p>
+      <button type="button" onClick={tentarCarregarPreferencias}>{t("Tentar novamente", "Try again", "Intentar de nuevo")}</button>
+    </main>;
+  }
+
   return (
     <main style={pageThemeStyle}>
       <style>{`${historietasThemeCss}${configuracoesPageCss}`}</style>
+
+      {statusPrivacidade === "salvando" && <p role="status">{t(
+        "Salvando privacidade…", "Saving privacy…", "Guardando privacidad…",
+      )}</p>}
+      {statusPrivacidade === "erro" && <div role="alert">
+        <p>{t(
+          "Não foi possível confirmar a alteração de privacidade. Exibindo a última configuração confirmada.",
+          "Could not confirm the privacy change. Showing the last confirmed setting.",
+          "No se pudo confirmar el cambio de privacidad. Se muestra la última configuración confirmada.",
+        )}</p>
+        <button type="button" onClick={tentarSalvarPrivacidadeNovamente}>{t("Tentar novamente", "Try again", "Intentar de nuevo")}</button>
+      </div>}
 
       <ConfiguracoesPageContent
         busca={busca}

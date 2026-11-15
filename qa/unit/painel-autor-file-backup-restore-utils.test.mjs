@@ -195,12 +195,16 @@ test("backup local de arquivos preserva leitura, normalização e fallback", () 
   });
   assert.deepEqual(
     JSON.parse(dadosStorage.get(chaveStorage(FILE_BACKUP_STORAGE_KEY, "autor-1"))),
-    { " obra-1 ": { nome: "obra-1.txt", conteudo: "conteúdo obra-1.txt" } },
+    {
+      " obra-1 ": arquivoBackupValido("obra-1.txt"),
+      "": arquivoBackupValido("ignorado.txt"),
+      invalido: { valido: false },
+    },
   );
 
   dadosStorage.set(chaveStorage(FILE_BACKUP_STORAGE_KEY, "autor-1"), "{inválido");
   assert.deepEqual(carregarBackupArquivosObras("autor-1"), {});
-  assert.equal(dadosStorage.get(chaveStorage(FILE_BACKUP_STORAGE_KEY, "autor-1")), "{}");
+  assert.equal(dadosStorage.get(chaveStorage(FILE_BACKUP_STORAGE_KEY, "autor-1")), "{inválido");
   dadosStorage.set(chaveStorage(FILE_BACKUP_STORAGE_KEY, "autor-1"), "[]");
   assert.deepEqual(carregarBackupArquivosObras("autor-1"), {});
 });

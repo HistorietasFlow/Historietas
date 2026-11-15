@@ -11,6 +11,12 @@ import {
 } from "./home-storage-utils";
 
 type ObrasNormalizadasHome = ReturnType<typeof normalizarObrasHomeSalvas>;
+type SnapshotLocalHome = {
+  userIdHome: string;
+  obrasNormalizadas: ObrasNormalizadasHome;
+  obrasFavoritasNormalizadas: string[];
+  perfisAutoresNormalizados: ReturnType<typeof carregarPerfisAutoresHomeSalvos>;
+};
 
 export async function carregarSnapshotInicialHome({
   usuarioIdLogado,
@@ -18,15 +24,23 @@ export async function carregarSnapshotInicialHome({
   favoritesStorageKey,
   completedStorageKey,
   aoNormalizarObras,
+  aoFalhar,
+  estaAtivo = () => true,
+  resolverUsuario = true,
+  snapshotAnterior,
 }: {
   usuarioIdLogado: string;
   storageKey: string;
   favoritesStorageKey: string;
   completedStorageKey: string;
-  aoNormalizarObras: (obras: ObrasNormalizadasHome) => void;
+  aoNormalizarObras: (obras: ObrasNormalizadasHome, userId: string) => void;
+  aoFalhar?: () => void;
+  estaAtivo?: () => boolean;
+  resolverUsuario?: boolean;
+  snapshotAnterior?: SnapshotLocalHome;
 }) {
   let userIdHome = usuarioIdLogado.trim();
-  if (!userIdHome) {
+  if (!userIdHome && resolverUsuario) {
     try {
       const { data } = await supabase.auth.getUser();
       userIdHome = data.user?.id || "";
@@ -35,31 +49,52 @@ export async function carregarSnapshotInicialHome({
     }
   }
 
-  const obrasSalvasTexto = lerStorageUsuarioHome(storageKey, userIdHome);
-  const obrasSalvasJson = obrasSalvasTexto
-    ? JSON.parse(obrasSalvasTexto)
-    : [];
+  const anterior = snapshotAnterior?.userIdHome === userIdHome ? snapshotAnterior : undefined;
+  let obrasNormalizadas = anterior?.obrasNormalizadas || [];
+  let salvarObras = false;
+  if (!estaAtivo()) return {
+    userIdHome, obrasNormalizadas,
+    obrasFavoritasNormalizadas: anterior?.obrasFavoritasNormalizadas || [],
+    perfisAutoresNormalizados: anterior?.perfisAutoresNormalizados || {},
+  };
+  try {
+    const obrasSalvasTexto = lerStorageUsuarioHome(storageKey, userIdHome, aoFalhar);
+    if (obrasSalvasTexto) {
+      const obrasSalvasJson: unknown = JSON.parse(obrasSalvasTexto);
+      if (!Array.isArray(obrasSalvasJson)) throw new Error("Storage de obras inválido");
+      obrasNormalizadas = normalizarObrasHomeSalvas(obrasSalvasJson);
+    }
+    salvarObras = Boolean(obrasSalvasTexto) || !anterior;
+  } catch {
+    aoFalhar?.();
+    // Preserve a cópia válida em memória; não sobrescreva o JSON inválido.
+  }
 
-  const obrasNormalizadas = normalizarObrasHomeSalvas(obrasSalvasJson);
-
-  aoNormalizarObras(obrasNormalizadas);
-
-  salvarJsonStorageUsuarioHome(storageKey, userIdHome, obrasNormalizadas);
+  aoNormalizarObras(obrasNormalizadas, userIdHome);
+  if (estaAtivo() && salvarObras) salvarJsonStorageUsuarioHome(storageKey, userIdHome, obrasNormalizadas);
 
   let obrasFavoritasNormalizadas = carregarListaIdsHome(
     favoritesStorageKey,
-    userIdHome
+    userIdHome,
+    anterior?.obrasFavoritasNormalizadas,
+    aoFalhar,
   );
   let obrasConcluidasNormalizadas = carregarListaIdsHome(
     completedStorageKey,
-    userIdHome
+    userIdHome,
+    [],
+    aoFalhar,
   );
 
   if (userIdHome) {
     const [favoritasSupabase, concluidasSupabase] = await Promise.all([
-      carregarIdsColecaoUsuarioHome("favoritos", userIdHome),
-      carregarIdsColecaoUsuarioHome("concluidas", userIdHome),
+      carregarIdsColecaoUsuarioHome("favoritos", userIdHome, aoFalhar).catch(() => { aoFalhar?.(); return []; }),
+      carregarIdsColecaoUsuarioHome("concluidas", userIdHome, aoFalhar).catch(() => { aoFalhar?.(); return []; }),
     ]);
+    const favoritasConfirmadas = new Set<string>(favoritasSupabase);
+    if (obrasFavoritasNormalizadas.some((id) => !favoritasConfirmadas.has(id))) {
+      aoFalhar?.();
+    }
 
     obrasFavoritasNormalizadas = normalizarListaIdsHome([
       ...obrasFavoritasNormalizadas,
@@ -71,20 +106,22 @@ export async function carregarSnapshotInicialHome({
     ]);
   }
 
-  salvarListaIdsHome(
+  if (estaAtivo()) salvarListaIdsHome(
     favoritesStorageKey,
     userIdHome,
     obrasFavoritasNormalizadas
   );
 
-  salvarListaIdsHome(
+  if (estaAtivo()) salvarListaIdsHome(
     completedStorageKey,
     userIdHome,
     obrasConcluidasNormalizadas
   );
 
-  const perfisAutoresNormalizados =
-    carregarPerfisAutoresHomeSalvos(userIdHome);
+  const perfisAutoresNormalizados = {
+    ...anterior?.perfisAutoresNormalizados,
+    ...(estaAtivo() ? carregarPerfisAutoresHomeSalvos(userIdHome, aoFalhar) : {}),
+  };
 
   return {
     userIdHome,

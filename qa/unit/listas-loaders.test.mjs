@@ -224,3 +224,15 @@ test("catálogo preserva deduplicação de interações, agrupamento e fallback 
   ]);
   assert.deepEqual(autores, [{ id: userId, nome: "Autora", username: "", avatar: "", bio: "Autor no Historietas.", totalObras: 2, totalCurtidas: 5, totalComentarios: 5, notaMedia: 0, totalAvaliacoes: 0, generos: ["Fantasia", "Drama"], criadaEm: "2024-02-01" }]);
 });
+
+test("falha de registros ou obras propaga erro em vez de confirmar vazio", async () => {
+  const id = "11111111-1111-4111-8111-111111111111";
+  const mock = criarSupabaseMock({ favoritos: [{ data: null, error: Error("collection offline") }], obras: [{ data: null, error: Error("works offline") }] });
+  const records = await importarRecords(mock.supabase);
+  await assert.rejects(records.carregarRegistrosUsuario("favoritos", id), /collection offline/);
+  const works = await importarWorks(mock.supabase, async () => ({ carregado: true, obras: new Map() }));
+  await assert.rejects(works.carregarObrasPublicadas(), /works offline/);
+  const empty = criarSupabaseMock({ favoritos: [{ data: [], error: null }], obras: [{ data: [], error: null }] });
+  assert.deepEqual(await (await importarRecords(empty.supabase)).carregarRegistrosUsuario("favoritos", id), []);
+  assert.deepEqual(await (await importarWorks(empty.supabase, async () => ({ carregado: true, obras: new Map() }))).carregarObrasPublicadas(), []);
+});

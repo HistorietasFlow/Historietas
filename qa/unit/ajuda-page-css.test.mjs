@@ -12,9 +12,11 @@ const pagina = readFileSync(
   "utf8",
 );
 
-test("ajudaPageCss preserva o CSS global da Central de Ajuda", () => {
+test("ajudaPageCss preserva o CSS da Ajuda com foco do retry e contraste do envio", () => {
   assert.match(modulo, /export const ajudaPageCss = `/);
   assert.match(modulo, /--ajuda-card:/);
+  assert.match(modulo, /ajuda-refresh-tickets-button:focus-visible/);
+  assert.match(modulo, /ajuda-submit-ticket-button \{[^}]*color: #000000;/);
   assert.match(modulo, /--ajuda-border:/);
   assert.match(modulo, /\[data-historietas-ajuda-root="true"\]/);
   assert.match(modulo, /@media \(prefers-reduced-motion: reduce\)/);
@@ -22,7 +24,7 @@ test("ajudaPageCss preserva o CSS global da Central de Ajuda", () => {
     createHash("sha256")
       .update(modulo.replace(/\r\n/g, "\n"))
       .digest("hex"),
-    "1f936176798c0f6dbb4fa7d87b7b7611d32615fa984e69c677971a310fda6a2e",
+    "01f4ef0d2d7b1a344feea991a5b248218e20fda537242caaa04ba4c5c2f36d70",
   );
 });
 
