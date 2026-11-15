@@ -13,6 +13,13 @@ const title = owner => `Lista reservada ${owner === A ? "Alfa" : owner === B ? "
 const name = owner => owner === A ? "Autora Alfa" : owner === B ? "Autora Beta" : "Autora Gama";
 const routeFor = (owner, origin = "biblioteca") => `/listas?modo=perfil&origem=${origin}&usuario=${owner}`;
 const deferred = () => { let resolve; const promise = new Promise(yes => { resolve = yes; }); return { promise, resolve }; };
+function authOwner(request) {
+  const authorization = request.headers()["authorization"] || "";
+  const payload = authorization.replace(/^Bearer\s+/i, "").split(".")[1];
+  if (!payload) return "";
+  try { return JSON.parse(Buffer.from(payload, "base64url").toString("utf8")).sub || ""; }
+  catch { return ""; }
+}
 function session(owner) {
   if (!owner) return null;
   const now = Math.floor(Date.now() / 1000);
@@ -21,7 +28,9 @@ function session(owner) {
   return { access_token: `${encode({ alg: "HS256", typ: "JWT" })}.${encode({ sub: owner, aud: "authenticated", role: "authenticated", exp: now + 3600, iat: now })}.fixture`, refresh_token: "fixture", expires_at: now + 3600, expires_in: 3600, token_type: "bearer", user };
 }
 const releaseGates = new WeakMap();
+const pagesEmTeardown = new WeakSet();
 test.afterEach(async ({ page }) => {
+  pagesEmTeardown.add(page);
   releaseGates.get(page)?.();
   await page.unrouteAll({ behavior: "wait" });
 });
@@ -47,7 +56,11 @@ async function setup(page, baseURL, server, { privateProfiles = [A, B], holdProf
     const response = await server.fetch(route.request(), {
       headers: { ...headers, cookie: cookies.filter(cookie => !fixtureCookie(cookie)).join("; ") },
     });
-    await route.fulfill({ response });
+    try {
+      await route.fulfill({ response });
+    } catch (error) {
+      if (!pagesEmTeardown.has(page) || !String(error).includes("Route is already handled")) throw error;
+    }
   });
   await page.addInitScript(({ key, initial }) => {
     document.cookie = `${key}=base64-${btoa(JSON.stringify(initial)).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "")}; path=/; SameSite=Lax`;
@@ -62,7 +75,8 @@ async function setup(page, baseURL, server, { privateProfiles = [A, B], holdProf
     requests.push({ table, owner, args });
     if (url.pathname.includes("/auth/v1/user")) {
       if (holdAuthForRoute && new URL(page.url()).searchParams.get("usuario") === holdAuthForRoute) await gate.promise;
-      return viewer ? route.fulfill({ json: session(viewer).user }) : route.fulfill({ status: 401, json: { message: "no session" } });
+      const requestOwner = authOwner(request);
+      return requestOwner ? route.fulfill({ json: session(requestOwner).user }) : route.fulfill({ status: 401, json: { message: "no session" } });
     }
     if (table === "profiles_publicos") {
       if (owner === holdProfile) await gate.promise;
@@ -90,9 +104,21 @@ async function setup(page, baseURL, server, { privateProfiles = [A, B], holdProf
     async switchViewer(owner, event = owner ? "SIGNED_IN" : "SIGNED_OUT") {
       viewer = owner;
       const next = session(owner);
+      const invalidacaoRenderizada = owner
+        ? expect(page.getByText("Carregando lista...", { exact: true })).toBeVisible()
+        : null;
       const validacaoConcluida = owner ? page.waitForResponse(response => {
         const url = new URL(response.url());
-        return response.request().method() === "GET" && url.pathname === "/auth/v1/user";
+        return response.request().method() === "GET" &&
+          url.pathname === "/auth/v1/user" &&
+          authOwner(response.request()) === owner;
+      }) : null;
+      const identidadeAplicada = owner ? page.waitForResponse(response => {
+        const url = new URL(response.url());
+        const filtro = url.searchParams.get("user_id") || url.searchParams.get("id");
+        return response.request().method() === "GET" &&
+          url.pathname === "/rest/v1/profiles_publicos" &&
+          filtro === `eq.${owner}`;
       }) : null;
       await page.evaluate(({ key, next, event }) => {
         document.cookie = next
@@ -102,11 +128,18 @@ async function setup(page, baseURL, server, { privateProfiles = [A, B], holdProf
         channel.postMessage({ event, session: next });
         channel.close();
       }, { key, next, event });
+      if (invalidacaoRenderizada) await invalidacaoRenderizada;
       if (validacaoConcluida) {
         const response = await validacaoConcluida;
         expect(await response.finished()).toBeNull();
         expect(response.status()).toBe(200);
         expect((await response.json()).id).toBe(owner);
+      }
+      if (identidadeAplicada) {
+        const response = await identidadeAplicada;
+        expect(await response.finished()).toBeNull();
+        expect(response.status()).toBe(200);
+        expect((await response.json()).user_id).toBe(owner);
       }
     },
   };
