@@ -3127,3 +3127,11 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 - GET/HEAD/erros sem cache; recusa de fontes locais dinâmicas no Proxy antes do
   cache de `/_next/image`, além de `localPatterns`. UI/legado preservados.
 - Evidências, limites e dependências: `docs/memory/ENTREGA_PRIVADA_CAPAS_BASE.md`.
+
+## Diário de edição de capítulo — contrato independente
+
+Preparada infraestrutura de `editou_capitulo` com gate desligado, RPC por versão,
+recibo/tombstone transacional e leitura condicionada ao conteúdo atual. Preservados
+os tipos anteriores e suas policies. Sem integração automática, alteração da #2307,
+aplicação remota ou ativação. Contratos e rollback em
+[Diário de edição](diario-edicao-evento-seguro.md).
