@@ -1,6 +1,7 @@
 import { appendFile, mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { SAFE_FLOW_MARKER, sanitizeSafeFlowDiagnostic } from "./playwright-safe-flow-schema.mjs";
 
 const TEST_OUTCOMES = new Set(["expected", "flaky", "skipped", "unexpected"]);
 const RESULT_STATUSES = new Set(["failed", "interrupted", "passed", "skipped", "timedOut"]);
@@ -56,6 +57,23 @@ function summarizeErrorKinds(errors = [], resultStatus) {
   return [...new Set(errors.map((error) => errorKind(error, resultStatus)))].sort();
 }
 
+function safeFlowDiagnostics(stdout = []) {
+  const diagnostics = [];
+  for (const chunk of Array.isArray(stdout) ? stdout : []) {
+    const text = typeof chunk === "string" ? chunk : typeof chunk?.text === "string" ? chunk.text : "";
+    for (const line of text.split(/\r?\n/)) {
+      const marker = line.indexOf(SAFE_FLOW_MARKER);
+      if (marker < 0) continue;
+      try {
+        const diagnostic = sanitizeSafeFlowDiagnostic(JSON.parse(line.slice(marker + SAFE_FLOW_MARKER.length)));
+        if (diagnostic) diagnostics.push(diagnostic);
+      } catch {}
+      if (diagnostics.length >= 8) return diagnostics;
+    }
+  }
+  return diagnostics;
+}
+
 function resultMatchesExpected(resultStatus, expectedStatus) {
   if (expectedStatus === "failed") return resultStatus === "failed" || resultStatus === "timedOut";
   return resultStatus === expectedStatus;
@@ -97,6 +115,7 @@ function summarizeTest(spec, test, classification, sourceIndex, testIndex) {
       errorCount: errors.length,
       errorKinds: summarizeErrorKinds(errors, result?.status),
       attachments: summarizeAttachments(result?.attachments),
+      safeFlow: safeFlowDiagnostics(result?.stdout),
     };
   });
 
@@ -140,7 +159,7 @@ export function buildSafeSummary(report) {
       : "passed";
 
   return {
-    schemaVersion: 2,
+    schemaVersion: 3,
     classification,
     shouldUpload: classification === "flaky" || classification === "failed",
     totals,
@@ -163,7 +182,7 @@ export async function collectDiagnostics(reportPath, outputPath) {
   } catch (error) {
     const unavailableReason = error?.code === "ENOENT" ? "report_missing" : "report_invalid";
     summary = {
-      schemaVersion: 2,
+      schemaVersion: 3,
       classification: "unavailable",
       shouldUpload: false,
       unavailableReason,

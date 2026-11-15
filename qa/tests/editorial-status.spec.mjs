@@ -3,6 +3,7 @@ import {test, expect} from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import {createClient} from "@supabase/supabase-js";
 import {authorEmail, authorPassword, destructiveEnabled, hasAuthorCredentials, loginAsAuthor} from "./helpers.mjs";
+import {observeSafeFlow} from "./playwright-safe-flow-diagnostics.mjs";
 
 let client, userId, editWork;
 const ids = [], works = [], storagePaths = [];
@@ -36,7 +37,7 @@ test.afterAll(async () => {
   if(storagePaths.length)check(await client.storage.from("capas-obras").remove(storagePaths));
 });
 
-async function editor(page) {
+async function editor(page, diagnostics = null) {
   const obraCarregada = page.waitForResponse(response => {
     const url = new URL(response.url());
     return response.request().method() === "GET" &&
@@ -50,6 +51,10 @@ async function editor(page) {
       url.searchParams.get("obra_id") === `eq.${editWork.id}`;
   });
   await page.goto(`/editar-obra?obraId=${editWork.id}`);
+  await diagnostics?.capture("editor-navigation", {
+    authState: "authenticated",
+    rendered: { loading: page.getByText(/carregando/i), "editor-enabled": select(page) },
+  });
   expect((await obraCarregada).ok()).toBe(true);
   expect((await capitulosCarregados).ok()).toBe(true);
   await expect(select(page)).toBeEnabled();
@@ -160,16 +165,30 @@ for(const [device,viewport] of [["desktop",{width:1440,height:900}],["mobile",{w
   });
 
   test(`edição confirmada atualiza a projeção pública — ${device}`,async({page})=>{
-    await reset();await page.setViewportSize(viewport);await loginAsAuthor(page);await editor(page);
-    await select(page).selectOption("concluida");await save(page).click();
-    await expect(page.getByRole("button",{name:"Atualizada",exact:true})).toBeVisible();
-    expect(check(await client.from("obras").select("status_editorial").eq("id",editWork.id).single()).status_editorial).toBe("concluida");
-    await page.goto(`/obra/${editWork.slug}`);
-    const publicRoot=page.locator('[data-historietas-obra-dinamica-root="true"][data-public-work-state="confirmada"]:visible');
-    await expect(publicRoot).toHaveCount(1);
-    await expect(publicRoot).toHaveAttribute("aria-busy","false");
-    await expect(page.locator('[data-historietas-obra-dinamica-root="true"]:visible')).toHaveCount(1);
-    await expect(publicRoot.getByText("Estado da história: Concluída",{exact:true})).toBeVisible();
+    const diagnostics=observeSafeFlow(page,"editorial-status");
+    try {
+      await diagnostics.capture("start");
+      await reset();await page.setViewportSize(viewport);await loginAsAuthor(page);
+      await diagnostics.capture("after-login",{authState:"authenticated"});
+      await editor(page,diagnostics);
+      await diagnostics.capture("editor-ready",{authState:"authenticated",rendered:{"editor-enabled":select(page)}});
+      await select(page).selectOption("concluida");await save(page).click();
+      const updated=page.getByRole("button",{name:"Atualizada",exact:true});
+      await expect(updated).toBeVisible();
+      await diagnostics.capture("save-confirmed",{authState:"authenticated",rendered:{updated}});
+      expect(check(await client.from("obras").select("status_editorial").eq("id",editWork.id).single()).status_editorial).toBe("concluida");
+      await page.goto(`/obra/${editWork.slug}`);
+      const publicRoot=page.locator('[data-historietas-obra-dinamica-root="true"][data-public-work-state="confirmada"]:visible');
+      await expect(publicRoot).toHaveCount(1);
+      await expect(publicRoot).toHaveAttribute("aria-busy","false");
+      await expect(page.locator('[data-historietas-obra-dinamica-root="true"]:visible')).toHaveCount(1);
+      await expect(publicRoot.getByText("Estado da história: Concluída",{exact:true})).toBeVisible();
+      await diagnostics.capture("public-confirmed",{authState:"authenticated",rendered:{"public-confirmed":publicRoot}});
+    } finally {
+      await diagnostics.capture("final");
+      diagnostics.emit();
+      diagnostics.dispose();
+    }
   });
 
   test(`limpeza atualiza a projeção pública e preserva i18n e acessibilidade — ${device}`,async({page})=>{

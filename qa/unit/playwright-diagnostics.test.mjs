@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { test } from "node:test";
 import { buildSafeSummary, collectDiagnostics } from "../scripts/collect-playwright-diagnostics.mjs";
+import { SAFE_FLOW_MARKER } from "../scripts/playwright-safe-flow-schema.mjs";
 
 function reportWith(testCase, resultOverrides = {}) {
   return {
@@ -70,7 +71,7 @@ test("flaky run requests an upload and keeps only allowlisted attempt metadata",
 
   assert.equal(summary.classification, "flaky");
   assert.equal(summary.shouldUpload, true);
-  assert.equal(summary.schemaVersion, 2);
+  assert.equal(summary.schemaVersion, 3);
   assert.equal(summary.tests[0].sourceIndex, 0);
   assert.equal(summary.tests[0].testIndex, 0);
   assert.deepEqual(Object.keys(summary.tests[0]).sort(), [
@@ -109,7 +110,7 @@ test("unknown free-form metadata is reduced to closed enums and numeric fields",
   assert.equal(summary.tests[0].attempts[0].retry, 0);
   assert.equal(summary.tests[0].attempts[0].durationMs, 0);
   assert.deepEqual(Object.keys(summary.tests[0].attempts[0]).sort(), [
-    "attachments", "attempt", "durationMs", "errorCount", "errorKinds", "retry", "status",
+    "attachments", "attempt", "durationMs", "errorCount", "errorKinds", "retry", "safeFlow", "status",
   ]);
   assert.doesNotMatch(JSON.stringify(summary), /maria@example\.com|personal-token/);
 });
@@ -125,6 +126,31 @@ test("definitive failure still requests an upload", () => {
   assert.equal(summary.totals.failed, 1);
   assert.equal(summary.tests[0].attempts[0].status, "timedOut");
   assert.deepEqual(summary.tests[0].attempts[0].errorKinds, ["timeout"]);
+});
+
+test("safe flow stdout is re-sanitized before entering summary.json", () => {
+  const payload = {
+    scenario: "editorial-status",
+    token: "Bearer secret-token",
+    network: [{ endpoint: "works", method: "GET", requestCount: 1, failedCount: 0, statuses: [{ code: 200, count: 1, body: "Maria Silva" }] }],
+    snapshots: [{ phase: "editor-ready", route: "editor", readyState: "complete", authState: "authenticated", rendered: [{ state: "editor-enabled", count: 1, title: "Private title" }], cookie: "session-secret" }],
+  };
+  const report = reportWith({
+    status: "flaky",
+    results: [{ status: "failed", stdout: [{ text: `unrelated fixture-password\n${SAFE_FLOW_MARKER}${JSON.stringify(payload)}\n` }] }, { status: "passed", retry: 1 }],
+  });
+  const summary = buildSafeSummary(report);
+
+  assert.deepEqual(summary.tests[0].attempts[0].safeFlow, [{
+    schemaVersion: 1,
+    scenario: "editorial-status",
+    network: [{ endpoint: "works", method: "GET", requestCount: 1, failedCount: 0, statuses: [{ code: 200, count: 1 }] }],
+    snapshots: [{ phase: "editor-ready", route: "editor", readyState: "complete", authState: "authenticated", rendered: [{ state: "editor-enabled", count: 1 }] }],
+  }]);
+  const serialized = JSON.stringify(summary);
+  for (const secret of ["fixture-password", "secret-token", "session-secret", "Maria Silva", "Private title"]) {
+    assert.ok(!serialized.includes(secret));
+  }
 });
 
 test("an expected failure is not mistaken for a failed run", () => {

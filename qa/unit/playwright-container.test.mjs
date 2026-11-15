@@ -59,6 +59,8 @@ test("official image matches the locked Playwright and stays immutable/isolated 
   const diagnostics = job.steps.find((step) => step.id === "playwright_diagnostics");
   assert.equal(diagnostics.if, "${{ always() }}");
   assert.equal(diagnostics.run, "node qa/scripts/collect-playwright-diagnostics.mjs");
+  const diagnosticsValidation = job.steps.find((step) => step.name === "Validar preparo seguro do Chromium");
+  assert.match(diagnosticsValidation.run, /playwright-safe-flow-diagnostics\.test\.mjs/);
   assert.ok(job.steps.indexOf(e2e) < job.steps.indexOf(diagnostics));
   const upload = job.steps.find((step) => step.with?.name === "playwright-diagnostics");
   assert.equal(upload.if, "${{ failure() || steps.playwright_diagnostics.outputs.should_upload == 'true' }}");

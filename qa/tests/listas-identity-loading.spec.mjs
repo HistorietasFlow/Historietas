@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
+import { observeSafeFlow } from "./playwright-safe-flow-diagnostics.mjs";
 
 // All SDK and prefetch traffic must stay inside the HTTP fixture boundary.
 // Service-worker fetches bypass Playwright page.route interception.
@@ -197,22 +198,37 @@ for (const device of [{ name: "desktop", viewport: { width: 1440, height: 900 } 
   });
 
   test(`Listas invalida logout e troca de conta sem navegar (${device.name})`, async ({ page, baseURL, request }) => {
-    assertLocal(baseURL); await page.setViewportSize(device.viewport);
-    const f = await setup(page, baseURL, request);
-    await page.goto(routeFor(A)); await expect(page.getByText(title(A), { exact: true })).toBeVisible();
-    await f.switchViewer(null);
-    await expect(page.getByText("Esta lista é privada", { exact: true })).toBeVisible();
-    await expect(page.getByText(title(A), { exact: true })).toHaveCount(0);
-    await f.switchViewer(B);
-    await expect(page.getByText("Esta lista é privada", { exact: true })).toBeVisible();
-    await navigate(page, routeFor(B));
-    await expect(page.getByText(title(B), { exact: true })).toBeVisible();
-    await expect(page.getByText(title(A), { exact: true })).toHaveCount(0);
-    const count = f.requests.length;
-    await page.getByRole("button", { name: /^Favoritas/ }).click();
-    await expect(page).toHaveURL(/categoria=favoritas/);
-    await expect(page.getByText(title(B), { exact: true })).toBeVisible();
-    expect(f.requests.length).toBe(count);
+    const diagnostics = observeSafeFlow(page, "listas-identity");
+    try {
+      await diagnostics.capture("start");
+      assertLocal(baseURL); await page.setViewportSize(device.viewport);
+      const f = await setup(page, baseURL, request);
+      await page.goto(routeFor(A)); await expect(page.getByText(title(A), { exact: true })).toBeVisible();
+      await diagnostics.capture("account-a-ready", { authState: "authenticated", rendered: { target: page.getByText(title(A), { exact: true }) } });
+      await f.switchViewer(null);
+      const privateState = page.getByText("Esta lista é privada", { exact: true });
+      await expect(privateState).toBeVisible();
+      await expect(page.getByText(title(A), { exact: true })).toHaveCount(0);
+      await diagnostics.capture("signed-out", { authState: "anonymous", rendered: { private: privateState, previous: page.getByText(title(A), { exact: true }) } });
+      await f.switchViewer(B);
+      await expect(privateState).toBeVisible();
+      await diagnostics.capture("account-b-authenticated", { authState: "authenticated", rendered: { private: privateState, loading: page.getByText("Carregando lista...", { exact: true }) } });
+      await navigate(page, routeFor(B));
+      const target = page.getByText(title(B), { exact: true });
+      await expect(target).toBeVisible();
+      await expect(page.getByText(title(A), { exact: true })).toHaveCount(0);
+      await diagnostics.capture("route-b", { authState: "authenticated", rendered: { target, previous: page.getByText(title(A), { exact: true }), organizing: page.getByText("Organizando a lista...", { exact: true }) } });
+      const count = f.requests.length;
+      await page.getByRole("button", { name: /^Favoritas/ }).click();
+      await expect(page).toHaveURL(/categoria=favoritas/);
+      await expect(target).toBeVisible();
+      expect(f.requests.length).toBe(count);
+      await diagnostics.capture("favorites", { authState: "authenticated", rendered: { target } });
+    } finally {
+      await diagnostics.capture("final");
+      diagnostics.emit();
+      diagnostics.dispose();
+    }
   });
 
   test(`Listas distingue falha de favoritos de vazio confirmado (${device.name})`, async ({ page, baseURL, request }) => {
