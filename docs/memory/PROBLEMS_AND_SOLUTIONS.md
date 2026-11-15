@@ -551,6 +551,23 @@ falha E2E, confirme também que a porta local foi liberada; instabilidade do
 Supabase local continua sendo reportada separadamente, sem ser ocultada pelo
 cleanup do servidor.
 
+## CI: diagnósticos de testes Playwright flaky
+
+O resultado geral do Playwright pode ser verde quando uma tentativa falha e um
+retry passa. Portanto, `failure()` sozinho não identifica todos os casos que
+precisam de evidência. A CI classifica o relatório JSON após a suíte e solicita
+o upload quando encontra resultado `flaky`; falhas definitivas continuam sendo
+preservadas pela condição de falha do job.
+
+O artefato não deve incluir o relatório bruto, HTML, traces nem contexto de erro,
+pois esses formatos podem conter URLs, headers, cookies, tokens ou payloads. O
+resumo usa uma allowlist com índices numéricos de origem/teste, posição, projeto,
+status, duração, retry, categoria fixa de erro e contagens de erros/anexos.
+Títulos, caminhos, mensagens livres, screenshots e vídeos não acompanham o
+resumo: o conteúdo de uma mídia não pode ser considerado seguro apenas pelo MIME
+ou pelo teste que a produziu. Não resolver perda de diagnóstico aumentando
+retries ou timeouts.
+
 Os downloads oficiais de k6 e Gitleaks tiveram HTTP 504/503, conexão interrompida
 e timeout antes de executar as ferramentas. O instalador compartilhado usa
 arquivos oficiais com versão, tamanho e SHA-256 fixos, cache separado por
