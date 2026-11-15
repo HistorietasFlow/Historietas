@@ -2723,8 +2723,8 @@ const ciContracts = [
           : workflow;
         return install && !install.includes("||") &&
           workflow.includes("node --test qa/unit/install-ci-tool.test.mjs") &&
-          workflow.includes("actions/cache/restore@caa296126883cff596d87d8935842f9db880ef25") &&
-          workflow.includes("actions/cache/save@caa296126883cff596d87d8935842f9db880ef25") &&
+          workflow.includes("actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9") &&
+          workflow.includes("actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9") &&
           workflow.includes("hashFiles('qa/scripts/install-ci-tool.mjs')") &&
           mandatoryJob.length > 0 && !mandatoryJob.includes("continue-on-error:") &&
           !workflow.includes("--insecure");
