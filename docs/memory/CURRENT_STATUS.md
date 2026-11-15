@@ -1123,3 +1123,13 @@ save segue compatível; gate desligado/RPC ausente não repetem capítulo. Pend�
 são recuperadas por ação explícita sem repetir notificações; NULL permanece incerto.
 Schema/ativação e homologação conjunta seguem separados. Ver
 `app/editar-capitulo/INTEGRACAO_DIARIO_RPC.md` para ordem de implantação e limites.
+
+### Integração conjunta local — 15/11/2026
+
+Preparada sobre `main deeb839b`, na ordem #2316 → #2307 → #2321, preservando
+ancestralidade e branches originais. Conflitos somente documentais, sem alterações
+adicionais da aplicação/SQL. Gate do Diário continua desligado. Homologação focada:
+244 unitários, 52 pgTAP e cinco cenários reais Data API/Auth/Playwright aprovados,
+desktop/mobile, um worker e zero retries. Registro de falhas do preparo/harness,
+métricas e limites em [Integração editor/Diário](../integracao-editor-diario-20261115.md).
+Não inferir merge, migration remota ou autorização para ativar o Diário.

@@ -3142,3 +3142,12 @@ Integração isolada sobre #2307 para o contrato #2316: sem INSERT direto, token
 UPDATE confirmado, recuperação por intenção e compatibilidade antes da migration.
 Sem alteração das branches de origem, migration ou ativação. Contrato e implantação
 em [Integração do Diário](../app/editar-capitulo/INTEGRACAO_DIARIO_RPC.md).
+
+## Homologação conjunta do editor e Diário — 15/11/2026
+
+Integração isolada sobre `main deeb839b`, #2316 → #2307 → #2321, sem duplicar a
+ancestralidade da #2307. Gate persistente desligado; sem alterações adicionais
+da aplicação/SQL ou das branches originais. Aprovados 244 unitários, 52 pgTAP e
+cinco cenários focados reais de Data API/Auth/Playwright, desktop/mobile, concorrência
+1 e zero retries. Evidências, correções do harness e limites em
+[Homologação integrada](integracao-editor-diario-20261115.md). Sem merge ou produção.
