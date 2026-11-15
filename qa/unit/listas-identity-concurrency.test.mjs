@@ -146,22 +146,20 @@ function sessionHarness(lookup) {
 }
 const auth = id => ({ data: { user: id ? { id } : null }, error: null });
 
-test("rota nova fica oculta no render antes do cleanup; respostas fora de ordem são ignoradas", async () => {
-  const second = deferred();
-  const h = sessionHarness(n => n === 2 ? second.promise : auth(A));
+test("rota nova troca a chave sem revalidar a sessão já confirmada", async () => {
+  const h = sessionHarness(() => auth(A));
   h.render("A"); await flush();
-  assert.equal(h.render("A").usuario.id, A);
+  const original = h.render("A");
+  assert.equal(original.usuario.id, A);
   const changing = h.render("B", false);
-  assert.equal(changing.carregando, true);
-  assert.equal(changing.usuario, null);
+  assert.equal(changing.carregando, false);
+  assert.equal(changing.usuario.id, A);
+  assert.notEqual(changing.chave, original.chave);
   h.commit(); await flush();
-  h.render("C"); await flush();
-  const current = h.render("C");
-  assert.equal(current.carregando, false);
-  second.resolve(auth(B)); await flush();
-  assert.equal(h.render("C").chave, current.chave);
-  assert.equal(h.render("C").usuario.id, A);
-  assert.equal(h.calls.length, 3);
+  const current = h.render("C"); await flush();
+  assert.equal(current.usuario.id, A);
+  assert.notEqual(current.chave, changing.chave);
+  assert.equal(h.calls.length, 1);
   h.stop();
 });
 
