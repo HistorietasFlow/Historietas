@@ -187,3 +187,61 @@ já aprovados. A suíte completa continua obrigatória na CI, sem gates alterado
 Permanecem os pré-requisitos administrativos de comprovação das migrations
 em produção na ordem indicada acima e o bloqueio 18+ com capa existente.
 Esta correção não consulta produção nem comprova instalação remota.
+
+## Validação real da edição de obras de texto — 2026-11-13
+
+Base `98be8c31`, branch `codex-local/editar-obra-e2e-seguranca`. Sem defeito
+funcional reproduzido nos cenários executados; alteração restrita ao novo
+`qa/tests/editar-obra-security.spec.mjs` e a este registro. Os arquivos
+`obra-critical.spec.mjs` e `chapter-canonical.spec.mjs` permanecem intactos.
+
+Ambiente: Node 22.23.4, CLI 2.116.0, Playwright 1.62.1/Chromium, Supabase local
+descartável `obra-leitor-e2e` (API 64421/DB 64422), fixtures existentes preparadas
+pelo procedimento local. Reutilizado o build de produção Next.js 16.4.5 da
+validação da #2304: comparação Git dos arquivos da aplicação, dependências e
+configuração de build com a base não apresentou diferenças; URL e chaves locais
+do build foram conferidas em memória, sem registrar valores. Servidor `next start`,
+um worker e retries=0. Nenhum reset, migration nova ou operação remota.
+
+Cobertura e resultados:
+
+- **6/6** cenários existentes de `editorial-status.spec.mjs`, desktop/mobile,
+  em 36,7 s: conflito entre duas sessões reais com reconciliação explícita;
+  PATCH real confirmado no banco seguido de perda da resposta, sem falso sucesso
+  nem remoção compensatória de arquivo; bloqueio 18+ com capa pública, sem escrita
+  na obra/Storage e com bytes originais preservados.
+- **2/2** novos salvamentos normais, desktop/mobile: obra Romance com capítulo
+  de texto em rascunho; um PATCH condicionado ao proprietário, sem campos
+  editoriais, versão/status preservados, título/sinopse confirmados remotamente
+  e após recarga, texto/ordem/publicação do capítulo inalterados, nenhuma escrita
+  no Storage e nenhuma leitura do rascunho por terceiro.
+- **2/2** novos cenários de resposta atrasada após logout/troca de conta,
+  desktop/mobile, em 19,7 s após correção do próprio teste: o PATCH de A foi
+  realmente concluído antes do logout, a resposta retida foi entregue somente
+  após login real de B; não houve sucesso, persistência tardia no cache de A/B,
+  segunda escrita ou permissão de B para ler/alterar o rascunho. A operação antiga
+  terminou, os controles permaneceram bloqueados e a recarga por B não abriu
+  a edição. Não se simularam sessão, resposta de sucesso ou RLS.
+- Na primeira execução do arquivo novo, os dois salvamentos passaram e os dois
+  cenários de troca pararam em uma asserção incorreta de QA: `toBeDisabled()`
+  reportou enabled apesar de resolver `<fieldset disabled>`. Corrigida para
+  verificar diretamente a propriedade DOM `disabled`, mantendo também as
+  asserções dos controles. O teardown aguarda os handlers liberados antes de
+  remover as rotas; evita o erro subsequente `Route is already handled`.
+  Reexecutados somente os dois cenários afetados, sem retry automático ou timeout
+  adicional. Não apresentar o primeiro resultado como totalmente aprovado.
+- **32/32 unitários focados**: aplicação/ciclo editorial, atualização remota,
+  payload, propriedade, preparação de assets e hook de salvamento. Lint focado
+  e `git diff --check` aprovados; sem repetir build, banco ou suíte completa
+  porque não houve mudança na aplicação. A CI completa mantém todos os gates.
+
+Limites: o conflito coberto é a mudança editorial condicionada pela versão;
+edições somente de outros metadados continuam sem CAS geral, conforme contrato
+existente. Logout não desfaz uma escrita já autorizada e commitada: a garantia
+testada é não aceitar a resposta como sucesso nem aplicá-la à identidade nova.
+Uma leitura posterior não substitui recibo causal de escrita. A transição 18+
+com capa pública continua bloqueada; esta validação não certifica entrega privada,
+revogação de URLs/CDN ou produção gerenciada. Tokens, senhas, envs gerados e
+configuração local não entram no Git. Dados/volumes e alterações anteriores
+preservados; os onze containers antigos foram reiniciados, o servidor de teste
+encerrado e os cinco containers descartáveis parados, sem remover volumes.

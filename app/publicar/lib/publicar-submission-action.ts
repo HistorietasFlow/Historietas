@@ -26,6 +26,7 @@ import { STORAGE_KEY } from "./publicar-static-options";
 import {
   desfazerPublicacaoParcialPublicar,
   enviarArquivoStorage,
+  UploadPublicarIncertoError,
 } from "./publicar-storage-operations";
 import { criarSlugUnicoSupabase } from "./publicar-slug-supabase-loader";
 import { campoValido } from "./publicar-text-utils";
@@ -60,6 +61,12 @@ export type SalvarObraPublicarParams = {
   validarFormulario: () => string;
 };
 
+function escritaFoiRejeitadaPublicar(erro: { code?: string }) {
+  // Classes de erro de dados, integridade, acesso e exceção explícita do banco
+  // comprovam rejeição. Erros de conexão/completion unknown e proxies não.
+  return /^(?:22|23|42|44|P0)[0-9A-Z]{3}$/.test(erro.code || "");
+}
+
 export async function salvarObraPublicar(
   {
     statusEditorial,
@@ -89,6 +96,10 @@ export async function salvarObraPublicar(
 ) {
   event.preventDefault();
 
+    if (jaSalvouRef.current) {
+      return;
+    }
+
     const mensagemErro = validarFormulario();
 
     if (mensagemErro) {
@@ -102,16 +113,14 @@ export async function salvarObraPublicar(
       return;
     }
 
-    if (jaSalvouRef.current) {
-      return;
-    }
-
     setErro("");
     jaSalvouRef.current = true;
     setProcessando(true);
 
     const arquivosEnviados: ArquivoStoragePublicar[] = [];
     let obraCriadaId = "";
+    let userId = "";
+    let escritaIncerta = false;
     let publicacaoConcluida = false;
 
     try {
@@ -122,7 +131,7 @@ export async function salvarObraPublicar(
         throw new Error("Entre na sua conta antes de publicar uma obra.");
       }
 
-      const userId = dadosUsuario.user.id;
+      userId = dadosUsuario.user.id;
       const autorFallbackPublicacao =
         autor.trim() ||
         obterNomeMetadataPublicar({
@@ -210,7 +219,8 @@ export async function salvarObraPublicar(
         arquivoObraEnviado?.caminho || "";
       const link = `/obra/${slug}`;
 
-      const { error: erroObra } = await supabase.from("obras").insert({
+      escritaIncerta = true;
+      const { data: obraPreparada, error: erroObra } = await supabase.from("obras").insert({
         id: obraId,
         user_id: userId,
         titulo: titulo.trim(),
@@ -235,16 +245,22 @@ export async function salvarObraPublicar(
         link,
         criada_em: criadaEm,
         atualizado_em: criadaEm,
-      });
+      }).select("id, user_id").single();
 
       if (erroObra) {
+        escritaIncerta = !escritaFoiRejeitadaPublicar(erroObra);
         throw new Error(`Não consegui salvar a obra agora: ${erroObra.message}`);
+      }
+      if (obraPreparada?.id !== obraId || obraPreparada.user_id !== userId) {
+        throw new Error("A criação da obra não foi confirmada.");
       }
 
       obraCriadaId = obraId;
+      escritaIncerta = false;
 
       if (capitulosIniciais.length > 0) {
-        const { error: erroCapitulo } = await supabase.from("capitulos").insert(
+        escritaIncerta = true;
+        const { data: capitulosSalvos, error: erroCapitulo } = await supabase.from("capitulos").insert(
           capitulosIniciais.map((capitulo, index) => ({
             id: capitulo.id,
             obra_id: obraId,
@@ -256,15 +272,23 @@ export async function salvarObraPublicar(
             criado_em: criadaEm,
             atualizado_em: criadaEm,
           }))
-        );
+        ).select("id, obra_id, user_id");
 
         if (erroCapitulo) {
+          escritaIncerta = !escritaFoiRejeitadaPublicar(erroCapitulo);
           throw new Error(
             `Não consegui salvar o capítulo inicial: ${erroCapitulo.message}`
           );
         }
+        if (!Array.isArray(capitulosSalvos) || capitulosSalvos.length !== 1 ||
+            capitulosSalvos[0]?.id !== capituloId || capitulosSalvos[0]?.obra_id !== obraId ||
+            capitulosSalvos[0]?.user_id !== userId) {
+          throw new Error("A criação do capítulo inicial não foi confirmada.");
+        }
+        escritaIncerta = false;
       }
 
+      escritaIncerta = true;
       const { data: obraPublicada, error: erroPublicarObra } = await supabase
         .from("obras")
         .update({
@@ -273,14 +297,16 @@ export async function salvarObraPublicar(
         })
         .eq("id", obraId)
         .eq("user_id", userId)
-        .select("id, publicado")
+        .select("id, user_id, publicado")
         .maybeSingle();
 
       if (
         erroPublicarObra ||
-        !obraPublicada?.id ||
+        obraPublicada?.id !== obraId ||
+        obraPublicada.user_id !== userId ||
         obraPublicada.publicado !== true
       ) {
+        if (erroPublicarObra) escritaIncerta = !escritaFoiRejeitadaPublicar(erroPublicarObra);
         const detalheErro =
           erroPublicarObra?.message ||
           "a atualização não confirmou a publicação da obra.";
@@ -289,6 +315,10 @@ export async function salvarObraPublicar(
           `A obra foi preparada, mas não pôde ser publicada: ${detalheErro}`
         );
       }
+
+      escritaIncerta = false;
+      // A confirmação remota é o marco irreversível, antes de Diário/cache/router.
+      publicacaoConcluida = true;
 
       const novaObra: ObraLocal = {
         id: obraId,
@@ -355,15 +385,16 @@ export async function salvarObraPublicar(
 
       salvarObrasLocalmente(novasObrasDoUsuario, userId);
 
-      publicacaoConcluida = true;
       router.replace("/painel-autor");
       router.refresh();
     } catch (erroDesconhecido) {
-      const publicacaoDesfeita = publicacaoConcluida
+      const resultadoIncerto = escritaIncerta || erroDesconhecido instanceof UploadPublicarIncertoError;
+      const publicacaoDesfeita = publicacaoConcluida || resultadoIncerto
         ? false
         : await desfazerPublicacaoParcialPublicar(
             obraCriadaId,
-            arquivosEnviados
+            arquivosEnviados,
+            userId,
           );
 
       jaSalvouRef.current = publicacaoConcluida || !publicacaoDesfeita;
@@ -377,7 +408,9 @@ export async function salvarObraPublicar(
           ? erroDesconhecido.message
           : "Não consegui salvar a obra agora. Tente novamente.";
       const mensagem = publicacaoConcluida
-        ? "A obra foi publicada, mas não consegui abrir o Painel do Autor. Acesse o painel antes de tentar publicar novamente."
+        ? "A obra foi publicada, mas uma etapa posterior falhou. Acesse o Painel do Autor antes de tentar publicar novamente."
+        : resultadoIncerto
+        ? "Não consegui confirmar o resultado do envio. Confira o Painel do Autor antes de tentar novamente. Nenhum novo envio ou remoção será feito automaticamente."
         : publicacaoDesfeita
         ? mensagemBase
         : `${mensagemBase} A publicação parcial não pôde ser removida automaticamente. Confira o Painel do Autor antes de tentar novamente.`;

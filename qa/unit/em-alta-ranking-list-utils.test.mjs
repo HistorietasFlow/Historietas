@@ -200,19 +200,19 @@ test("Em Alta delega helpers de listas e ranking para a fronteira pura", () => {
     rankingLoaderFase891,
     /import \{ carregarColecoesRankingEmAlta \} from "\.\.\/lib\/em-alta-ranking-collections-loader";/,
   );
-  assert.match(rankingLoaderFase891, /carregarColecoesRankingEmAlta\(userIdAtual\)/);
+  assert.match(rankingLoaderFase891, /carregarColecoesRankingEmAlta\(usuarioLogadoId, atual\)/);
   assert.match(
     moduloColecoesRanking,
     /import \{ normalizarListaIdsEmAlta \} from "\.\/em-alta-ranking-list-utils";/,
   );
-  assert.match(moduloColecoesRanking, /normalizarListaIdsEmAlta\(\[/);
+  assert.match(moduloColecoesRanking, /normalizarListaIdsEmAlta\(resultados/);
   assert.match(
     pagina,
     /import \{ useEmAltaRankingCollectionActions \} from "\.\/hooks\/use-em-alta-ranking-collection-actions";/,
   );
   assert.match(
     moduloAcoesColecao,
-    /import \{[\s\S]*?adicionarRankingObraNaLista,[\s\S]*?listaTemRankingObra,[\s\S]*?normalizarListaIdsEmAlta,[\s\S]*?removerRankingObraDaLista,[\s\S]*?\} from "\.\.\/lib\/em-alta-ranking-list-utils";/,
+    /import \{[\s\S]*?adicionarRankingObraNaLista,[\s\S]*?listaTemRankingObra,[\s\S]*?removerRankingObraDaLista[\s\S]*?\} from "\.\.\/lib\/em-alta-ranking-list-utils";/,
   );
 
   assert.match(
@@ -223,7 +223,6 @@ test("Em Alta delega helpers de listas e ranking para a fronteira pura", () => {
   for (const helper of [
     "adicionarRankingObraNaLista",
     "listaTemRankingObra",
-    "normalizarListaIdsEmAlta",
     "removerRankingObraDaLista",
   ]) {
     assert.doesNotMatch(pagina, new RegExp(`\\b${helper}\\b`));
@@ -236,7 +235,6 @@ test("Em Alta delega helpers de listas e ranking para a fronteira pura", () => {
   }
 
   for (const helper of [
-    "normalizarListaIdsEmAlta",
     "obterIdentificadoresRankingObra",
     "listaTemRankingObra",
     "removerRankingObraDaLista",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import {
   carregarDadosLocaisSeguindo,
   salvarDadosLocaisSeguindo,
@@ -26,6 +26,14 @@ type AtividadeSeguindo =
   DadosRemotosPreparadosSeguindo["atividades"][number];
 
 type Setter<T> = (valor: T) => void;
+
+type ContextoCargaSeguindo = {
+  usuarioLogadoId: string;
+  perfilSocialId: string;
+  ativo: boolean;
+  versao: number;
+  timers: Set<number>;
+};
 
 type UseSeguindoDataLoaderParams = {
   perfilSocialId: string;
@@ -58,77 +66,145 @@ export function useSeguindoDataLoader({
   setObrasConcluidas,
   setCarregando,
 }: UseSeguindoDataLoaderParams) {
+  const contextoRef = useRef<ContextoCargaSeguindo | null>(null);
+
+  useEffect(() => {
+    const contexto: ContextoCargaSeguindo = {
+      usuarioLogadoId, perfilSocialId, ativo: true,
+      versao: 0, timers: new Set(),
+    };
+    contextoRef.current = contexto;
+
+    // Limpar o contexto anterior também no logout, quando o trigger não chama
+    // o loader. Este timer pertence ao contexto, não a uma tentativa de carga.
+    const timerContexto = window.setTimeout(() => {
+      if (!contexto.ativo) return;
+      setObras([]);
+      setObrasSeguidas([]);
+      setAutoresSeguidos([]);
+      setUsuariosSeguidos([]);
+      setUsuariosSeguidores([]);
+      setSolicitacoesSeguidores([]);
+      setSolicitacoesEnviadasIds([]);
+      setAtividadesSeguindo([]);
+      setObrasFavoritas([]);
+      setObrasConcluidas([]);
+      if (!usuarioLogadoId) setCarregando(false);
+    }, 0);
+
+    return () => {
+      contexto.ativo = false;
+      window.clearTimeout(timerContexto);
+      contexto.timers.forEach(timer => window.clearTimeout(timer));
+      contexto.timers.clear();
+    };
+  }, [
+    perfilSocialId,
+    setAtividadesSeguindo,
+    setAutoresSeguidos,
+    setCarregando,
+    setObras,
+    setObrasConcluidas,
+    setObrasFavoritas,
+    setObrasSeguidas,
+    setSolicitacoesEnviadasIds,
+    setSolicitacoesSeguidores,
+    setUsuariosSeguidores,
+    setUsuariosSeguidos,
+    usuarioLogadoId,
+  ]);
+
   return useCallback(async () => {
-    window.setTimeout(() => {
-      setCarregando(true);
-    }, 0);
+    const contexto = contextoRef.current;
+    if (!contexto?.ativo || !usuarioLogadoId ||
+        contexto.usuarioLogadoId !== usuarioLogadoId || contexto.perfilSocialId !== perfilSocialId) {
+      return;
+    }
+    const versao = ++contexto.versao;
+    const cargaAtual = () => contexto.ativo && contexto.versao === versao;
+    contexto.timers.forEach(timer => window.clearTimeout(timer));
+    contexto.timers.clear();
+    const agendarAtualizacao = (atualizar: () => void) => {
+      const timer = window.setTimeout(() => {
+        contexto.timers.delete(timer);
+        if (cargaAtual()) atualizar();
+      }, 0);
+      contexto.timers.add(timer);
+    };
 
-    const dadosLocaisSeguindo = carregarDadosLocaisSeguindo(usuarioLogadoId);
-    let {
-      obras: obrasNormalizadas,
-      obrasSeguidas: seguindoNormalizado,
-      obrasFavoritas: favoritasNormalizadas,
-      obrasConcluidas: concluidasNormalizadas,
-    } = dadosLocaisSeguindo;
-    const autoresNormalizados = dadosLocaisSeguindo.autoresSeguidos;
+    setCarregando(true);
 
-    window.setTimeout(() => {
-      setObras(obrasNormalizadas);
-      setObrasSeguidas(perfilSocialId ? [] : seguindoNormalizado);
-      setAutoresSeguidos(autoresNormalizados);
-      setObrasFavoritas(favoritasNormalizadas);
-      setObrasConcluidas(concluidasNormalizadas);
-      setCarregando(false);
-    }, 0);
+    try {
+      const dadosLocaisSeguindo = carregarDadosLocaisSeguindo(usuarioLogadoId);
+      const {
+        obras: obrasNormalizadas,
+        obrasSeguidas: seguindoNormalizado,
+        obrasFavoritas: favoritasNormalizadas,
+        obrasConcluidas: concluidasNormalizadas,
+      } = dadosLocaisSeguindo;
+      const autoresNormalizados = dadosLocaisSeguindo.autoresSeguidos;
 
-    const {
-      dadosSupabase,
-      usuariosSeguidosSupabase,
-      usuariosSeguidoresSupabase,
-      solicitacoesSeguidoresSupabase,
-      solicitacoesEnviadasSupabase,
-    } = await carregarDadosRemotosSeguindo({
-      obrasLocais: obrasNormalizadas,
-      obrasSeguidasLocais: seguindoNormalizado,
-      obrasFavoritasLocais: favoritasNormalizadas,
-      obrasConcluidasLocais: concluidasNormalizadas,
-      perfilSocialId,
-      usuarioLogadoId,
-    });
+      agendarAtualizacao(() => {
+        setObras(obrasNormalizadas);
+        setObrasSeguidas(perfilSocialId ? [] : seguindoNormalizado);
+        setAutoresSeguidos(autoresNormalizados);
+        setObrasFavoritas(favoritasNormalizadas);
+        setObrasConcluidas(concluidasNormalizadas);
+        setCarregando(false);
+      });
 
-    const dadosRemotosPreparados = await prepararDadosRemotosSeguindo({
-      dadosSupabase,
-      usuariosSeguidosSupabase,
-      usuarioLogadoId,
-    });
-    obrasNormalizadas = dadosRemotosPreparados.obras;
-    seguindoNormalizado = dadosRemotosPreparados.obrasSeguidas;
-    favoritasNormalizadas = dadosRemotosPreparados.obrasFavoritas;
-    concluidasNormalizadas = dadosRemotosPreparados.obrasConcluidas;
-    const atividadesSeguindoSupabase = dadosRemotosPreparados.atividades;
+      const {
+        dadosSupabase,
+        usuariosSeguidosSupabase,
+        usuariosSeguidoresSupabase,
+        solicitacoesSeguidoresSupabase,
+        solicitacoesEnviadasSupabase,
+      } = await carregarDadosRemotosSeguindo({
+        obrasLocais: obrasNormalizadas,
+        obrasSeguidasLocais: seguindoNormalizado,
+        obrasFavoritasLocais: favoritasNormalizadas,
+        obrasConcluidasLocais: concluidasNormalizadas,
+        perfilSocialId,
+        usuarioLogadoId,
+      });
+      if (!cargaAtual()) return;
 
-    salvarDadosLocaisSeguindo({
-      userId: usuarioLogadoId,
-      obras: obrasNormalizadas,
-      obrasSeguidas: seguindoNormalizado,
-      autoresSeguidos: autoresNormalizados,
-      obrasFavoritas: favoritasNormalizadas,
-      obrasConcluidas: concluidasNormalizadas,
-    });
+      const dadosRemotosPreparados = await prepararDadosRemotosSeguindo({
+        dadosSupabase,
+        usuariosSeguidosSupabase,
+        usuarioLogadoId,
+      });
+      if (!cargaAtual()) return;
+      const atividadesSeguindoSupabase = dadosRemotosPreparados.atividades;
 
-    window.setTimeout(() => {
-      setObras(obrasNormalizadas);
-      setObrasSeguidas(seguindoNormalizado);
-      setAutoresSeguidos(autoresNormalizados);
-      setUsuariosSeguidos(usuariosSeguidosSupabase);
-      setUsuariosSeguidores(usuariosSeguidoresSupabase);
-      setSolicitacoesSeguidores(solicitacoesSeguidoresSupabase);
-      setSolicitacoesEnviadasIds(solicitacoesEnviadasSupabase);
-      setAtividadesSeguindo(atividadesSeguindoSupabase);
-      setObrasFavoritas(favoritasNormalizadas);
-      setObrasConcluidas(concluidasNormalizadas);
-      setCarregando(false);
-    }, 0);
+      salvarDadosLocaisSeguindo({
+        userId: usuarioLogadoId,
+        obras: dadosRemotosPreparados.obras,
+        obrasSeguidas: dadosRemotosPreparados.obrasSeguidas,
+        autoresSeguidos: autoresNormalizados,
+        obrasFavoritas: dadosRemotosPreparados.obrasFavoritas,
+        obrasConcluidas: dadosRemotosPreparados.obrasConcluidas,
+      });
+
+      agendarAtualizacao(() => {
+        setObras(dadosRemotosPreparados.obras);
+        setObrasSeguidas(dadosRemotosPreparados.obrasSeguidas);
+        setAutoresSeguidos(autoresNormalizados);
+        setUsuariosSeguidos(usuariosSeguidosSupabase);
+        setUsuariosSeguidores(usuariosSeguidoresSupabase);
+        setSolicitacoesSeguidores(solicitacoesSeguidoresSupabase);
+        setSolicitacoesEnviadasIds(solicitacoesEnviadasSupabase);
+        setAtividadesSeguindo(atividadesSeguindoSupabase);
+        setObrasFavoritas(dadosRemotosPreparados.obrasFavoritas);
+        setObrasConcluidas(dadosRemotosPreparados.obrasConcluidas);
+        setCarregando(false);
+      });
+    } catch (erro) {
+      if (cargaAtual()) {
+        console.warn("Não consegui atualizar os dados de Seguindo:", erro);
+        setCarregando(false);
+      }
+    }
   }, [
     perfilSocialId,
     setAtividadesSeguindo,

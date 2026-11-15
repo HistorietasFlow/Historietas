@@ -1,5 +1,4 @@
 import assert from "node:assert/strict";
-import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import typescript from "typescript";
@@ -18,6 +17,10 @@ const migrationBuscaAutores = ler(
 );
 const codigoExecutavel = codigo.replace(/^import[\s\S]*?from "[^"]+";\n/gm, "");
 const injecao = `
+const STORAGE_KEY = "historietas-obras";
+const lerStorageUsuarioExplorar = (...args) => globalThis.__catalogQueryTest.lerStorage(...args);
+const normalizarObra = (obra) => obra;
+const obterArquivoObraComBackup = () => null;
 const validarIntervaloPalavras = (...args) => globalThis.__catalogQueryTest.validarIntervaloPalavras(...args);
 const useRef = (...args) => globalThis.__catalogQueryTest.useRef(...args);
 const useState = (...args) => globalThis.__catalogQueryTest.useState(...args);
@@ -52,6 +55,15 @@ test("busca de autores usa o perfil publico atual sem ampliar os privilegios da 
   assert.match(migrationBuscaAutores, /has_function_privilege\('authenticated'/);
 });
 
+async function confirmarPrimeiraPagina(c, cursor, obras = [{ id: "atual" }]) {
+  c.render();
+  c.respostas.push(Promise.resolve({ obras, pagina: {
+    obraIds: obras.map(obra => obra.id), proximoCursor: cursor, temMais: Boolean(cursor),
+  }, falhaTemporaria: false }));
+  await c.disparar();
+  return c.render({ obrasLocais: obras, proximoCursorCatalogo: cursor, carregandoMaisCatalogo: false });
+}
+
 function preparar(t, overrides = {}) {
   const anterior = globalThis.window;
   const chamadas = [];
@@ -78,6 +90,7 @@ function preparar(t, overrides = {}) {
     delete globalThis.__catalogQueryTest;
   });
   const deps = {
+    lerStorage: () => null,
     validarIntervaloPalavras: loadApplicationModule("lib/catalogo-palavras.ts").validarIntervaloPalavras,
     useState(valor) {
       const i = indice++;
@@ -129,6 +142,8 @@ function preparar(t, overrides = {}) {
   }
   const render = (alteracoes = {}) => {
     Object.assign(props, alteracoes);
+    // A página atualiza esta ref antes do efeito da consulta.
+    props.usuarioIdExplorarRef.current = props.usuarioIdExplorar;
     indice = 0;
     proximoEfeito = undefined;
     const resultado = modulo.useExplorarCatalogQuery(props);
@@ -141,18 +156,10 @@ function preparar(t, overrides = {}) {
     timers.delete(id);
     return timer.fn();
   };
-  return { chamadas, estado, timers, respostas, props, render, disparar, cancelar: () => cleanup?.() };
+  return { chamadas, estado, timers, respostas, props, deps, render, disparar, cancelar: () => cleanup?.() };
 }
 
 test("memo, condição, efeito e paginação preservam o contrato atualizado", () => {
-  const inicio = codigo.indexOf("  const buscaCatalogo = busca.trim();");
-  const fim = codigo.indexOf("\n\n  return { consultaCatalogoPersonalizada", inicio);
-  const original = codigo.slice(inicio, fim).replace(
-    /    const \{[\s\S]*?\} = dependenciasEstaveisRef\.current;\n\n/g,
-    "",
-  );
-  assert.equal(createHash("sha256").update(original).digest("hex"),
-    "b3e6d28b3fea86a1c04cc5ff4cb3d9651f24a21da22191ddf0d31ab3efa1f829");
   assert.match(pagina, /useExplorarCatalogQuery\(\{/);
   assert.doesNotMatch(pagina, /async function carregarMaisObrasCatalogo\(/);
   assert.match(pagina, /consultaCatalogoPersonalizada && catalogoTemMais/);
@@ -187,6 +194,9 @@ test("consulta personalizada respeita debounce, filtros e ordem das atualizaçõ
   assert.deepEqual(c.chamadas, [
     ["setErroCatalogoExplorar", null],
     ["setObraIdsBuscaRemota", null],
+    ["setProximoCursorCatalogo", null],
+    ["setCatalogoTemMais", false],
+    ["setCarregandoMaisCatalogo", true],
   ]);
   const cursor = { valor: 3, data: "2024-01-01", id: "cursor" };
   c.respostas.push(Promise.resolve({ obras: [{ id: "remota" }], pagina: { obraIds: ["remota"], proximoCursor: cursor, temMais: true } }));
@@ -194,11 +204,13 @@ test("consulta personalizada respeita debounce, filtros e ordem das atualizaçõ
   assert.deepEqual(c.chamadas, [
     ["setErroCatalogoExplorar", null],
     ["setObraIdsBuscaRemota", null],
+    ["setProximoCursorCatalogo", null],
+    ["setCatalogoTemMais", false],
     ["setCarregandoMaisCatalogo", true],
     ["carregar", [{ id: "cache" }], "usuario", [{
       busca: "Ação", genero: "Fantasia", formato: "Livro", classificacao: "18+",
       filtroCapitulos: "com-capitulos", ordenacao: "recentes", limite: 24,
-    }], null],
+    }], null, false, c.chamadas.find(([nome]) => nome === "carregar")[6]],
     ["setObrasLocais", [{ id: "remota" }]], ["setObraIdsBuscaRemota", ["remota"]],
     ["setProximoCursorCatalogo", cursor],
     ["setCatalogoTemMais", true], ["setErroCatalogoExplorar", null],
@@ -534,6 +546,9 @@ test("carregar mais respeita guardas, cursor e atualizações na ordem original"
   assert.deepEqual(c.chamadas, [
     ["setErroCatalogoExplorar", null],
     ["setObraIdsBuscaRemota", null],
+    ["setProximoCursorCatalogo", null],
+    ["setCatalogoTemMais", false],
+    ["setCarregandoMaisCatalogo", true],
   ]);
   c.chamadas.length = 0;
   await resultado.carregarMaisObrasCatalogo();
@@ -541,7 +556,9 @@ test("carregar mais respeita guardas, cursor e atualizações na ordem original"
   resultado = c.render({ proximoCursorCatalogo: cursor, carregandoMaisCatalogo: true });
   await resultado.carregarMaisObrasCatalogo();
   assert.equal(c.chamadas.length, 0);
-  resultado = c.render({ carregandoMaisCatalogo: false });
+  await confirmarPrimeiraPagina(c, cursor);
+  c.chamadas.length = 0;
+  resultado = c.render({ carregandoMaisCatalogo: false, proximoCursorCatalogo: cursor });
   c.estado.ObraIdsBuscaRemota = ["p1"];
   c.respostas.push(Promise.resolve({ obras: [{ id: "p2" }], pagina: { obraIds: ["p2"], proximoCursor: null, temMais: false } }));
   await resultado.carregarMaisObrasCatalogo();
@@ -550,7 +567,7 @@ test("carregar mais respeita guardas, cursor e atualizações na ordem original"
     ["carregar", [{ id: "atual" }], "usuario", [{
       busca: "x", genero: "", formato: "", classificacao: "", filtroCapitulos: "todos",
       ordenacao: "relevancia", limite: 24, cursor,
-    }], null, false],
+    }], null, false, c.chamadas.find(([nome]) => nome === "carregar")[6]],
     ["setObrasLocais", [{ id: "p2" }]], ["setObraIdsBuscaRemota", ["p1", "p2"]],
     ["setProximoCursorCatalogo", null],
     ["setCatalogoTemMais", false], ["setErroCatalogoExplorar", null],
@@ -585,7 +602,7 @@ test("filtro pessoal consulta a coleção completa e pagina sem expor IDs na URL
     tipo: "favoritas",
     obraIds: ["fora-da-primeira-pagina"],
   });
-  assert.equal(chamadaInicial[5], undefined);
+  assert.equal(chamadaInicial[5], false);
   assert.deepEqual(c.estado.ObrasLocais, [{ id: "fora-da-primeira-pagina" }]);
 
   c.chamadas.length = 0;
@@ -628,7 +645,7 @@ test("falha e retry da paginação preservam a página atual", async (t) => {
     proximoCursorCatalogo: cursor,
     obrasLocais: [{ id: "p1" }],
   });
-  let resultado = c.render();
+  let resultado = await confirmarPrimeiraPagina(c, cursor, [{ id: "p1" }]);
   c.chamadas.length = 0;
   c.respostas.push(Promise.resolve({
     obras: [{ id: "fallback" }],
@@ -636,7 +653,7 @@ test("falha e retry da paginação preservam a página atual", async (t) => {
     falhaTemporaria: true,
   }));
   await resultado.carregarMaisObrasCatalogo();
-  assert.deepEqual(c.estado.ObrasLocais, undefined);
+  assert.deepEqual(c.estado.ObrasLocais, [{ id: "p1" }]);
   assert.equal(c.estado.ErroCatalogoExplorar, "paginacao");
   assert.equal(c.props.proximoCursorCatalogo, cursor);
 
@@ -655,11 +672,11 @@ test("falha e retry da paginação preservam a página atual", async (t) => {
 test("falha inesperada da paginação mantém dados e oferece retry", async (t) => {
   const cursor = { valor: 1, data: "2024-01-01", id: "a" };
   const c = preparar(t, { termoBusca: "x", proximoCursorCatalogo: cursor });
-  const resultado = c.render();
+  const resultado = await confirmarPrimeiraPagina(c, cursor, [{ id: "p1" }]);
   c.respostas.push(Promise.reject(new Error("catálogo")));
   await resultado.carregarMaisObrasCatalogo();
   assert.equal(c.estado.CarregandoMaisCatalogo, false);
-  assert.equal(c.estado.ObrasLocais, undefined);
+  assert.deepEqual(c.estado.ObrasLocais, [{ id: "p1" }]);
   assert.equal(c.estado.ErroCatalogoExplorar, "paginacao");
 });
 
@@ -667,13 +684,13 @@ test("paginação ultrapassada não sobrescreve uma consulta mais recente", asyn
   const cursor = { valor: 1, data: "2024-01-01", id: "a" };
   const c = preparar(t, { termoBusca: "x", busca: "x", proximoCursorCatalogo: cursor });
   const paginaAntiga = adiar();
+  const resultado = await confirmarPrimeiraPagina(c, cursor, [{ id: "p1" }]);
   c.respostas.push(paginaAntiga.promise);
-  const resultado = c.render();
   const pendente = resultado.carregarMaisObrasCatalogo();
   c.render({ busca: "nova", termoBusca: "nova" });
   paginaAntiga.resolve({ obras: [{ id: "antiga" }], pagina: null });
   await pendente;
-  assert.equal(c.estado.ObrasLocais, undefined);
+  assert.deepEqual(c.estado.ObrasLocais, [{ id: "p1" }]);
   assert.equal(c.estado.CarregandoMaisCatalogo, true);
   await c.disparar();
   assert.deepEqual(c.estado.ObrasLocais, []);
@@ -788,4 +805,207 @@ test("palavras inválidas bloqueiam RPC/paginação e Autores não envia limites
   c.render({modoConteudo:"autores"}); c.respostas.push(Promise.resolve({obras:[],pagina:{obraIds:[]}})); await c.disparar();
   const q=c.chamadas.filter(([n])=>n==="carregar").at(-1)[3][0];
   assert.equal(q.palavrasMinimas,undefined); assert.equal(q.palavrasMaximas,undefined);
+});
+
+const cursorCorrida = { valor: 1, data: "2026-01-01", id: "pagina-1" };
+const respostaCorrida = (id, cursor = null) => ({
+  obras: [{ id }], pagina: { obraIds: [id], proximoCursor: cursor, temMais: Boolean(cursor) },
+  falhaTemporaria: false,
+});
+const filtrosCorrida = [
+  { busca: "nova busca", termoBusca: "nova busca" },
+  { categoriaSelecionada: "Fantasia" },
+  { palavrasMinimas: "0", palavrasMaximas: "100" },
+  { filtroClassificacao: "Livre" },
+  { filtroFormato: "HQ", filtroTag: "magia", tagExcluida: "terror",
+    generoExcluido: "Drama", statusEditorial: "concluida", notaMinima: 4 },
+];
+
+for (const [indice, filtro] of filtrosCorrida.entries()) {
+  test(`corrida ${indice}: troca de filtro descarta consulta e página, inclusive durante debounce`, async t => {
+    const c = preparar(t, { busca: "original", termoBusca: "original" });
+    let resultado = await confirmarPrimeiraPagina(c, cursorCorrida, [{ id: "p1" }]);
+    const pagina = adiar();
+    c.respostas.push(pagina.promise);
+    const paginacao = resultado.carregarMaisObrasCatalogo();
+    const guardPagina = c.chamadas.filter(([nome]) => nome === "carregar").at(-1)[6];
+    resultado = c.render(filtro);
+    assert.equal(c.estado.ProximoCursorCatalogo, null);
+    assert.equal(c.estado.CatalogoTemMais, false);
+    assert.equal(c.estado.CarregandoMaisCatalogo, true);
+    assert.equal(guardPagina(), false);
+    const contagem = c.chamadas.filter(([nome]) => nome === "carregar").length;
+    await resultado.carregarMaisObrasCatalogo();
+    assert.equal(c.chamadas.filter(([nome]) => nome === "carregar").length, contagem);
+    const consulta = adiar();
+    c.respostas.push(consulta.promise);
+    const consultando = c.disparar();
+    pagina.resolve(respostaCorrida("pagina-obsoleta", cursorCorrida));
+    await paginacao;
+    assert.deepEqual(c.estado.ObrasLocais, [{ id: "p1" }]);
+    assert.equal(c.estado.CarregandoMaisCatalogo, true);
+    c.render({ ordenacao: "recentes" });
+    c.respostas.push(Promise.resolve(respostaCorrida("atual")));
+    await c.disparar();
+    consulta.resolve(respostaCorrida("consulta-obsoleta", cursorCorrida));
+    await consultando;
+    assert.deepEqual(c.estado.ObrasLocais, [{ id: "atual" }]);
+    assert.equal(c.estado.ProximoCursorCatalogo, null);
+    assert.equal(c.estado.CarregandoMaisCatalogo, false);
+  });
+}
+
+test("cliques no mesmo render e callback antigo não repetem nem reabrem cursor consumido", async t => {
+  const c = preparar(t, { termoBusca: "x", busca: "x" });
+  const resultado = await confirmarPrimeiraPagina(c, cursorCorrida, [{ id: "p1" }]);
+  const pagina = adiar();
+  c.respostas.push(pagina.promise);
+  const primeira = resultado.carregarMaisObrasCatalogo();
+  await resultado.carregarMaisObrasCatalogo();
+  assert.equal(c.chamadas.filter(([nome]) => nome === "carregar").length, 2);
+  pagina.resolve({ ...respostaCorrida("p2"), obras: [{ id: "p1" }, { id: "p2" }],
+    pagina: { obraIds: ["p1", "p2", "p2"], proximoCursor: null, temMais: false } });
+  await primeira;
+  await resultado.carregarMaisObrasCatalogo();
+  assert.equal(c.chamadas.filter(([nome]) => nome === "carregar").length, 2);
+  assert.deepEqual(c.estado.ObraIdsBuscaRemota, ["p1", "p2"]);
+  assert.deepEqual(c.estado.ObrasLocais, [{ id: "p1" }, { id: "p2" }]);
+});
+
+test("callback de filtro anterior não cancela a primeira página atual", async t => {
+  const c = preparar(t, { termoBusca: "x", busca: "x" });
+  const anterior = await confirmarPrimeiraPagina(c, cursorCorrida);
+  c.render({ categoriaSelecionada: "Drama" });
+  const consulta = adiar(); c.respostas.push(consulta.promise);
+  const pendente = c.disparar();
+  await anterior.carregarMaisObrasCatalogo();
+  assert.equal(c.chamadas.filter(([nome]) => nome === "carregar").length, 2);
+  consulta.resolve(respostaCorrida("nova")); await pendente;
+  assert.deepEqual(c.estado.ObrasLocais, [{ id: "nova" }]);
+});
+
+for (const alteracao of [{ colecoesCarregadas: false }, { dadosExplorarCarregados: false }, { palavrasMinimas: "1e3" }]) {
+  test(`espera/intervalo inválido encerra loading e invalida paginação: ${JSON.stringify(alteracao)}`, async t => {
+    const c = preparar(t, { filtroColecao: "favoritas", obrasFavoritas: ["p1"] });
+    const resultado = await confirmarPrimeiraPagina(c, cursorCorrida, [{ id: "p1" }]);
+    const pagina = adiar(); c.respostas.push(pagina.promise);
+    const pendente = resultado.carregarMaisObrasCatalogo();
+    c.render(alteracao);
+    assert.equal(c.timers.size, 0);
+    assert.equal(c.estado.ProximoCursorCatalogo, null);
+    assert.equal(c.estado.CatalogoTemMais, false);
+    assert.equal(c.estado.CarregandoMaisCatalogo, false);
+    const chamadas = c.chamadas.length;
+    pagina.reject(new Error("resposta antiga")); await pendente;
+    assert.equal(c.chamadas.length, chamadas);
+    c.render({ colecoesCarregadas: true, dadosExplorarCarregados: true, palavrasMinimas: "" });
+    c.respostas.push(Promise.resolve(respostaCorrida("p1"))); await c.disparar();
+    assert.equal(c.estado.CarregandoMaisCatalogo, false);
+    assert.equal(c.estado.ErroCatalogoExplorar, null);
+  });
+}
+
+test("cleanup invalida página pendente sem setters ou persistência posterior", async t => {
+  const c = preparar(t, { termoBusca: "x" });
+  const resultado = await confirmarPrimeiraPagina(c, cursorCorrida);
+  const pagina = adiar(); c.respostas.push(pagina.promise);
+  const pendente = resultado.carregarMaisObrasCatalogo();
+  const guard = c.chamadas.filter(([nome]) => nome === "carregar").at(-1)[6];
+  assert.equal(guard(), true);
+  c.cancelar(); const chamadas = c.chamadas.length;
+  assert.equal(guard(), false);
+  pagina.resolve(respostaCorrida("tardia")); await pendente;
+  assert.equal(c.chamadas.length, chamadas);
+});
+
+test("conta A → B → logout invalida páginas e troca cache mesmo sem filtro avançado", async t => {
+  const c = preparar(t, { termoBusca: "x", busca: "x", usuarioIdExplorar: "A" });
+  c.deps.lerStorage = (_chave, usuarioId) => usuarioId === "B" ? '[{"id":"cache-B"}]' : null;
+  const resultado = await confirmarPrimeiraPagina(c, cursorCorrida, [{ id: "A" }]);
+  const paginaA = adiar(); c.respostas.push(paginaA.promise);
+  const pendenteA = resultado.carregarMaisObrasCatalogo();
+  c.render({ usuarioIdExplorar: "B" });
+  assert.deepEqual(c.estado.ObrasLocais, [{ id: "cache-B" }]);
+  c.respostas.push(Promise.resolve(respostaCorrida("B", cursorCorrida))); await c.disparar();
+  const chamadaB = c.chamadas.filter(([nome]) => nome === "carregar").at(-1);
+  assert.deepEqual(chamadaB[1], [{ id: "cache-B" }]); assert.equal(chamadaB[2], "B");
+  paginaA.resolve(respostaCorrida("A-atrasada")); await pendenteA;
+  assert.deepEqual(c.estado.ObrasLocais, [{ id: "B" }]);
+  const paginaB = adiar(); c.respostas.push(paginaB.promise);
+  const pendenteB = c.render({ obrasLocais: c.estado.ObrasLocais,
+    proximoCursorCatalogo: cursorCorrida }).carregarMaisObrasCatalogo();
+  c.render({ usuarioIdExplorar: "" });
+  assert.deepEqual(c.estado.ObrasLocais, []);
+  c.respostas.push(Promise.resolve(respostaCorrida("publica"))); await c.disparar();
+  const anonima = c.chamadas.filter(([nome]) => nome === "carregar").at(-1);
+  assert.deepEqual(anonima[1], []); assert.equal(anonima[2], "");
+  paginaB.reject(new Error("falha da conta B")); await pendenteB;
+  assert.deepEqual(c.estado.ObrasLocais, [{ id: "publica" }]);
+  assert.equal(c.estado.ErroCatalogoExplorar, null);
+});
+
+test("retry e coleção nova retiram confirmação de palavras da mesma consulta", async t => {
+  const c = preparar(t, { palavrasMinimas: "0", palavrasMaximas: "0" });
+  await confirmarPrimeiraPagina(c, cursorCorrida);
+  assert.equal(c.render().palavrasVerificadas, true);
+  assert.equal(c.render({ versaoRetryCatalogo: 1 }).palavrasVerificadas, false);
+  c.respostas.push(Promise.resolve(respostaCorrida("medida", cursorCorrida))); await c.disparar();
+  assert.equal(c.render().palavrasVerificadas, true);
+  assert.equal(c.render({ filtroColecao: "favoritas", obrasFavoritas: ["medida"] }).palavrasVerificadas, false);
+  assert.equal(c.render().palavrasVerificadas, false);
+  c.respostas.push(Promise.resolve({ ...respostaCorrida("fallback"), falhaTemporaria: true }));
+  await c.disparar();
+  assert.equal(c.render().palavrasVerificadas, false);
+  assert.equal(c.estado.ProximoCursorCatalogo, null);
+  assert.equal(c.estado.CatalogoTemMais, false);
+  assert.equal(c.estado.ErroCatalogoExplorar, "consulta");
+});
+
+test("consulta neutra recarrega ao mudar identidade e descarta retry da conta anterior", async t => {
+  const c = preparar(t, { usuarioIdExplorar: "A" }); c.render();
+  const antiga = adiar(); c.respostas.push(antiga.promise);
+  c.render({ versaoRetryCatalogo: 1 }); const pendente = c.disparar();
+  c.render({ usuarioIdExplorar: "B" });
+  c.respostas.push(Promise.resolve(respostaCorrida("B"))); await c.disparar();
+  antiga.reject(new Error("A indisponível")); await pendente;
+  assert.deepEqual(c.estado.ObrasLocais, [{ id: "B" }]);
+  assert.equal(c.estado.ErroCatalogoExplorar, null);
+  assert.equal(c.estado.CarregandoMaisCatalogo, false);
+});
+
+test("hidratação inicial da identidade preserva seleção neutra sem nova RPC", t => {
+  const c = preparar(t, { dadosExplorarCarregados: false, usuarioIdExplorar: "" });
+  c.render(); c.render({ usuarioIdExplorar: "A" });
+  c.render({ dadosExplorarCarregados: true });
+  assert.equal(c.timers.size, 0);
+  assert.equal(c.chamadas.filter(([nome]) => nome === "carregar").length, 0);
+});
+
+test("trocas rápidas de todos os filtros coalescem no debounce e enviam apenas o par final", async t => {
+  const c = preparar(t, { busca: "a", termoBusca: "a" }); c.render();
+  for (const filtro of filtrosCorrida) c.render(filtro);
+  c.render({ palavrasMinimas: "10", palavrasMaximas: "200", busca: "final", termoBusca: "final" });
+  assert.equal(c.timers.size, 1);
+  assert.equal(c.chamadas.filter(([nome]) => nome === "carregar").length, 0);
+  c.respostas.push(Promise.resolve(respostaCorrida("final"))); await c.disparar();
+  const chamadas = c.chamadas.filter(([nome]) => nome === "carregar");
+  assert.equal(chamadas.length, 1);
+  assert.deepEqual(chamadas[0][3], [{
+    busca: "final", genero: "Fantasia", formato: "HQ", tag: "magia", tagExcluida: "terror",
+    generoExcluido: "Drama", statusEditorial: "concluida", notaMinima: 4,
+    palavrasMinimas: 10, palavrasMaximas: 200, classificacao: "Livre",
+    filtroCapitulos: "todos", ordenacao: "relevancia", limite: 24,
+  }]);
+  assert.equal(c.render().palavrasVerificadas, true);
+});
+
+test("troca de identidade limpa cache anterior mesmo enquanto coleções estão pendentes", async t => {
+  const c = preparar(t, { usuarioIdExplorar: "A", filtroColecao: "favoritas" });
+  await confirmarPrimeiraPagina(c, cursorCorrida, [{ id: "privada-A" }]);
+  c.deps.lerStorage = () => '{inválido';
+  c.render({ usuarioIdExplorar: "B", colecoesCarregadas: false });
+  assert.deepEqual(c.estado.ObrasLocais, []);
+  assert.deepEqual(c.props.obrasCacheLocalRef.current, []);
+  assert.equal(c.estado.CarregandoMaisCatalogo, false);
+  assert.equal(c.timers.size, 0);
 });

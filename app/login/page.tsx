@@ -93,7 +93,6 @@ export default function LoginPage() {
       ),
     [],
   );
-  useLoginExistingSessionRedirect({ router, salvarProfile, t, setErro });
 
   useLoginPasswordChangedNotice({
     t,
@@ -102,7 +101,7 @@ export default function LoginPage() {
     setAviso,
   });
   const isDesktop = useLoginDesktopMode();
-  const { enviarFormulario } = useLoginSubmitAction({
+  const { enviarFormulario, capturarNavegacao, finalizarLogin, prepararContinuacao, continuacaoPendente, continuarLogin } = useLoginSubmitAction({
     router,
     language,
     t,
@@ -122,6 +121,9 @@ export default function LoginPage() {
     setCarregando,
     setErro,
     setAviso,
+  });
+  useLoginExistingSessionRedirect({
+    capturarNavegacao, finalizarLogin, prepararContinuacao, salvarProfile, t, setErro,
   });
 
   return (
@@ -369,6 +371,12 @@ export default function LoginPage() {
                         ? t("create")
                         : t("signIn")}
                 </button>
+
+                {continuacaoPendente && (
+                  <button type="button" onClick={continuarLogin} style={secondaryButtonStyle}>
+                    {t("continueWithSession")}
+                  </button>
+                )}
 
                 {recuperandoSenha && (
                   <button

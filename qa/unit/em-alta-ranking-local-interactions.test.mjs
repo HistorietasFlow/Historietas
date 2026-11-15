@@ -115,7 +115,7 @@ test("carrega e normaliza visualizações e avaliações na ordem atual", () => 
   ]);
 });
 
-test("preserva os fallbacks vazios e a propagação de falhas do storage", () => {
+test("isola storage bloqueado ou JSON inválido das métricas remotas", () => {
   comBrowser(
     { getItem: () => null },
     () => {
@@ -133,14 +133,14 @@ test("preserva os fallbacks vazios e a propagação de falhas do storage", () =>
       },
     },
     () => {
-      assert.throws(() => carregarInteracoesLocaisRankingEmAlta("usuario-a"));
+      assert.deepEqual(carregarInteracoesLocaisRankingEmAlta("usuario-a"), { visualizacoesNormalizadas: {}, avaliacoesLocaisNormalizadas: {} });
     },
   );
 
   comBrowser(
     { getItem: () => "{inválido" },
     () => {
-      assert.throws(() => carregarInteracoesLocaisRankingEmAlta("usuario-a"));
+      assert.deepEqual(carregarInteracoesLocaisRankingEmAlta("usuario-a"), { visualizacoesNormalizadas: {}, avaliacoesLocaisNormalizadas: {} });
     },
   );
 });
@@ -167,7 +167,7 @@ test("a página delega a leitura local sem alterar o lifecycle do ranking", () =
     rankingLoaderFase891,
     /import \{ carregarInteracoesLocaisRankingEmAlta \} from "\.\.\/lib\/em-alta-ranking-local-interactions";/,
   );
-  assert.match(rankingLoaderFase891, /carregarInteracoesLocaisRankingEmAlta\(userIdAtual\)/);
+  assert.match(rankingLoaderFase891, /carregarInteracoesLocaisRankingEmAlta\(usuarioLogadoId\)/);
   assert.match(pagina, /useEmAltaRankingLoader\(/);
   assert.doesNotMatch(pagina, /const chaveVisualizacoesUsuario =/);
   assert.doesNotMatch(pagina, /const chaveAvaliacoesUsuario =/);

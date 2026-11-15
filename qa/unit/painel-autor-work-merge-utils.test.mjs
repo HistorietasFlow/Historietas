@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import typescript from "typescript";
+// Executa a recuperação no gate de sessão existente.
+import "./painel-autor-recovery.test.mjs";
 
 const utilsSource = readFileSync(
   new URL(
@@ -39,7 +41,7 @@ const { mesclarObrasPainelAutor } = await import(
 
 test("mesclarObrasPainelAutor preserva correspondência, prioridade e ordem", () => {
   const localPorId = { id: "1", slug: "local", titulo: "Local", origem: "local" };
-  const localPorSlug = { id: "2", slug: "", titulo: "Outra Obra", origem: "local" };
+  const localPorSlug = { id: "", slug: "", titulo: "Outra Obra", origem: "local" };
   const supabasePorId = { id: "1", slug: "remota", titulo: "Remota", origem: "supabase" };
   const supabasePorSlug = { id: "3", slug: "outra-obra", titulo: "Outra remota", origem: "supabase" };
   const supabaseNova = { id: "4", slug: "nova", titulo: "Nova", origem: "supabase" };
@@ -83,7 +85,7 @@ test("Painel do Autor delega somente a mesclagem de obras ao módulo extraído",
   assert.match(loaderSource, /import \{ mesclarResultadoSupabasePainelAutor \} from "\.\/painel-autor-supabase-result-merge";/);
   assert.match(loaderSource, /const resultado = mesclarResultadoSupabasePainelAutor\(\{ obrasLocaisUsuario, obrasSupabase, userId, nomeProfileAutor, obrasFavoritasUsuario, obrasConcluidasUsuario, favoritosSupabase, concluidasSupabase \}\);/);
   assert.match(loaderSource, /return resultado;/);
-  assert.match(resultMergeSource, /mesclarObrasPainelAutor\(obrasLocaisUsuario, obrasSupabase\)/);
+  assert.match(resultMergeSource, /mesclarObrasPainelAutor\([\s\S]*?obrasLocaisUsuario\.filter[\s\S]*?obrasSupabase\.filter/);
   assert.match(
     readFileSync(new URL("../../app/painel-autor/hooks/use-painel-autor-initial-data.ts", import.meta.url), "utf8"),
     /import \{[\s\S]*?carregarPainelAutorSupabase,[\s\S]*?\} from "\.\.\/lib\/painel-autor-supabase-data-loader";/,

@@ -121,7 +121,7 @@ test("Login mantém a orquestração e delega preparação e validação", () =>
   assert.match(submitActionSource, /setErro\(t\(chaveErro\)\);/);
   assert.match(
     submitActionSource,
-    /if \(chaveErro\) \{[\s\S]*?setErro\(t\(chaveErro\)\);[\s\S]*?return;[\s\S]*?\}\s*\n\s*setCarregando\(true\);/,
+    /if \(chaveErro\) \{[\s\S]*?setErro\(t\(chaveErro\)\);[\s\S]*?return;[\s\S]*?\}\s*const versao = \+\+fluxo\.current\.versao;[\s\S]*?fluxo\.current\.enviando = true;\s*setCarregando\(true\);/,
   );
   assert.doesNotMatch(
     `${preparationSource}\n${validationSource}`,

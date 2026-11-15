@@ -30,8 +30,9 @@ export function mesclarResultadoSupabasePainelAutor<T extends ObraPainelAutorRes
   concluidasSupabase: Set<string>;
 }) {
   const obrasMescladasUsuario = aplicarNomeProfileNasObrasPainel(
-    mesclarObrasPainelAutor(obrasLocaisUsuario, obrasSupabase).filter((obra) =>
-      obraPertenceAoUsuarioPainel(obra, userId)
+    mesclarObrasPainelAutor(
+      obrasLocaisUsuario.filter(obra => obraPertenceAoUsuarioPainel(obra, userId)),
+      obrasSupabase.filter(obra => obraPertenceAoUsuarioPainel(obra, userId)),
     ),
     userId,
     nomeProfileAutor

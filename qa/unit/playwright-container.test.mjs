@@ -56,6 +56,16 @@ test("official image matches the locked Playwright and stays immutable/isolated 
   assert.ok(job.steps.indexOf(step) < job.steps.findIndex((step) => step.name === "Iniciar ambiente Supabase local descartável"));
   const e2e = job.steps.find((step) => step.run === "npm --prefix qa test");
   assert.equal(e2e.env.PW_TEST_CONNECT_WS_ENDPOINT, endpoint);
+  const diagnostics = job.steps.find((step) => step.id === "playwright_diagnostics");
+  assert.equal(diagnostics.if, "${{ always() }}");
+  assert.equal(diagnostics.run, "node qa/scripts/collect-playwright-diagnostics.mjs");
+  const diagnosticsValidation = job.steps.find((step) => step.name === "Validar preparo seguro do Chromium");
+  assert.match(diagnosticsValidation.run, /playwright-safe-flow-diagnostics\.test\.mjs/);
+  assert.ok(job.steps.indexOf(e2e) < job.steps.indexOf(diagnostics));
+  const upload = job.steps.find((step) => step.with?.name === "playwright-diagnostics");
+  assert.equal(upload.if, "${{ failure() || steps.playwright_diagnostics.outputs.should_upload == 'true' }}");
+  assert.match(upload.with.path, /qa\/reports\/playwright-diagnostics\/summary\.json/);
+  assert.doesNotMatch(upload.with.path, /test-results|\.png|\.webm|playwright-report|playwright-results\.json|trace\.zip|error-context/);
   assert.equal(job.steps.find((step) => step.name === "Remover servidor Chromium").if, "${{ always() }}");
   assert.ok(job.steps.some((step) => step.run === "lhci autorun"));
 });

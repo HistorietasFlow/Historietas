@@ -81,3 +81,11 @@ test("seleciona apenas os cookies Auth do projeto atual", () => {
     [chave, `${chave}.0`, `${chave}.1`, `${chave}-code-verifier`],
   );
 });
+
+// Executar as regressões de redefinição no gate de sessão já existente da CI.
+import "./redefinir-senha-recovery-validation.test.mjs";
+import "./use-redefinir-senha-save-action.test.mjs";
+import "./redefinir-senha-static-modules.test.mjs";
+import "./redefinir-senha-sessao-segura.test.mjs";
+import "./redefinir-senha-session-mutation.test.mjs";
+import "./redefinir-senha-page-accessibility.test.mjs";

@@ -9,13 +9,16 @@ import { normalizarTermoBuscaUsuariosComunidade } from "../components/community-
 import { buscarUsuariosComunidadeSupabase } from "../components/community-supabase-user-search";
 import { carregarUsuariosSeguidosComunidade } from "../components/community-supabase-followed-users-loader";
 import type { PostComunidade } from "../components/community-post-model";
+import { aplicarAlteracoesSeguimentoComunidade } from "../components/community-user-follow-context";
+import type { ContextoSeguimentoComunidade } from "../components/community-user-follow-context";
 import type { UsuarioBuscaComunidade } from "../components/community-user";
 
 type UseComunidadeUserSearchSyncOptions = {
   buscaComunidadeAberta: boolean;
   posts: PostComunidade[];
-  termoBuscaAdiado: string;
+  termoBusca: string;
   usuarioId: string | undefined;
+  contextoSeguimento: ContextoSeguimentoComunidade;
   setUsuariosBuscaComunidade: Dispatch<SetStateAction<UsuarioBuscaComunidade[]>>;
   setCarregandoUsuariosBuscaComunidade: Dispatch<SetStateAction<boolean>>;
   setUsuariosSeguidosIds: Dispatch<SetStateAction<string[]>>;
@@ -24,8 +27,9 @@ type UseComunidadeUserSearchSyncOptions = {
 export function useComunidadeUserSearchSync({
   buscaComunidadeAberta,
   posts,
-  termoBuscaAdiado,
+  termoBusca,
   usuarioId,
+  contextoSeguimento,
   setUsuariosBuscaComunidade,
   setCarregandoUsuariosBuscaComunidade,
   setUsuariosSeguidosIds,
@@ -33,10 +37,11 @@ export function useComunidadeUserSearchSync({
   useEffect(() => {
     let cancelado = false;
     const userId = usuarioId || "";
+    const vigente = () => !cancelado && contextoSeguimento.vigente();
 
     if (!userId) {
       const limparUsuariosSeguidosTimer = window.setTimeout(() => {
-        if (!cancelado) {
+        if (vigente()) {
           setUsuariosSeguidosIds([]);
         }
       }, 0);
@@ -48,23 +53,29 @@ export function useComunidadeUserSearchSync({
     }
 
     void carregarUsuariosSeguidosComunidade(userId).then((idsSeguidos) => {
-      if (!cancelado) {
-        setUsuariosSeguidosIds(idsSeguidos);
+      if (vigente()) {
+        contextoSeguimento.idsCarregados = idsSeguidos;
+        setUsuariosSeguidosIds(aplicarAlteracoesSeguimentoComunidade(
+          idsSeguidos, contextoSeguimento.alteracoes
+        ));
       }
+    }).catch(() => {
+      // Não substitua as ações locais por um snapshot que não foi obtido.
     });
 
     return () => {
       cancelado = true;
     };
-  }, [usuarioId, setUsuariosSeguidosIds]);
+  }, [usuarioId, contextoSeguimento, setUsuariosSeguidosIds]);
 
   useEffect(() => {
     let cancelado = false;
-    const termoLimpo = normalizarTermoBuscaUsuariosComunidade(termoBuscaAdiado);
+    const vigente = () => !cancelado && contextoSeguimento.vigente();
+    const termoLimpo = normalizarTermoBuscaUsuariosComunidade(termoBusca);
 
     if (deveLimparBuscaUsuariosComunidade(buscaComunidadeAberta, termoLimpo)) {
       const limparBuscaUsuariosTimer = window.setTimeout(() => {
-        if (!cancelado) {
+        if (vigente()) {
           setUsuariosBuscaComunidade([]);
           setCarregandoUsuariosBuscaComunidade(false);
         }
@@ -77,7 +88,7 @@ export function useComunidadeUserSearchSync({
     }
 
     const buscaTimer = window.setTimeout(() => {
-      if (cancelado) {
+      if (!vigente()) {
         return;
       }
 
@@ -90,7 +101,7 @@ export function useComunidadeUserSearchSync({
 
       void buscarUsuariosComunidadeSupabase(termoLimpo)
         .then((usuariosSupabase) => {
-          if (cancelado) {
+          if (!vigente()) {
             return;
           }
 
@@ -103,8 +114,15 @@ export function useComunidadeUserSearchSync({
 
           setUsuariosBuscaComunidade(usuariosOrdenados);
         })
+        .catch(() => {
+          if (vigente()) {
+            setUsuariosBuscaComunidade(prepararResultadosBuscaUsuariosComunidade(
+              [], usuariosLocais, termoLimpo
+            ));
+          }
+        })
         .finally(() => {
-          if (!cancelado) {
+          if (vigente()) {
             setCarregandoUsuariosBuscaComunidade(false);
           }
         });
@@ -116,9 +134,10 @@ export function useComunidadeUserSearchSync({
     };
   }, [
     buscaComunidadeAberta,
+    contextoSeguimento,
     posts,
     setCarregandoUsuariosBuscaComunidade,
     setUsuariosBuscaComunidade,
-    termoBuscaAdiado,
+    termoBusca,
   ]);
 }

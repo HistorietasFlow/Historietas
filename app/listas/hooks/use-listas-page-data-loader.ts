@@ -10,6 +10,7 @@ import {
   type PreferenciasPrivacidadeHistorietas,
 } from "../../../lib/historietasPrivacy";
 import { normalizarTexto } from "../../../lib/utils";
+import type { UsuarioAutenticadoListas } from "./use-listas-session-scope";
 import {
   carregarAvaliacaoDiarioListas,
   carregarPerfil,
@@ -63,6 +64,7 @@ type UseListasPageDataLoaderParams<
   TCategoria extends string,
   TItem extends ItemObraListaLike<TCategoria>,
 > = {
+  usuarioAutenticado?: UsuarioAutenticadoListas;
   modo: ModoLista;
   origemPerfil: OrigemPerfil;
   userIdUrl: string;
@@ -96,6 +98,7 @@ export function useListasPageDataLoader<
   TCategoria extends string,
   TItem extends ItemObraListaLike<TCategoria>,
 >({
+  usuarioAutenticado,
   modo,
   origemPerfil,
   userIdUrl,
@@ -132,12 +135,15 @@ export function useListasPageDataLoader<
       }));
 
       try {
-        const { data: authData } = await supabase.auth.getUser();
+        const { data: authData, error: authError } = usuarioAutenticado === undefined
+          ? await supabase.auth.getUser()
+          : { data: { user: usuarioAutenticado }, error: null };
         const usuarioLogadoId = authData.user?.id || "";
 
         if (cancelado) {
           return;
         }
+        if (authError && authError.name !== "AuthSessionMissingError") throw authError;
 
         setUsuarioAtualId(usuarioLogadoId);
 
@@ -178,6 +184,7 @@ export function useListasPageDataLoader<
         } else {
           setUsuarioAtualPerfil(null);
         }
+        if (cancelado) return;
 
         if (modo === "perfil") {
           const perfilIdRecebido = userIdUrl.trim() || usuarioLogadoId;
@@ -201,6 +208,7 @@ export function useListasPageDataLoader<
                         pegarTexto(authData.user?.email)
                     : "",
                 );
+          if (cancelado) return;
           const perfilUserId =
             perfilCarregado.userId.trim() || perfilIdRecebido;
           const proprioPerfil =
@@ -213,9 +221,11 @@ export function useListasPageDataLoader<
               usarFallbackLocal: proprioPerfil,
             },
           );
+          if (cancelado) return;
           const permissoes = proprioPerfil
             ? permissoesProprioPerfil
             : await carregarPermissoesAbasPerfil(perfilUserId, preferencias);
+          if (cancelado) return;
           const permitido =
             origemPerfil === "biblioteca"
               ? permissoes.biblioteca
@@ -258,6 +268,7 @@ export function useListasPageDataLoader<
             }
           }
 
+          if (cancelado) return;
           if (!permitido) {
             setBloqueado(true);
             setListasPerfil(listasPerfilVazias);
@@ -295,6 +306,7 @@ export function useListasPageDataLoader<
 
         if (secao === "recomendacoes") {
           const idsInteracoes = await carregarIdsInteracoesUsuario(usuarioLogadoId);
+          if (cancelado) return;
           obrasPreparadas = ordenarRecomendacoes(obrasPreparadas, idsInteracoes);
         } else {
           obrasPreparadas = ordenarObrasDaSecao(obrasPreparadas, secao);

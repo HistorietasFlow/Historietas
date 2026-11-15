@@ -109,8 +109,8 @@ test("Em Alta mantém os mounts e as fronteiras fora do CSS extraído", () => {
   assert.doesNotMatch(pagina, /EmAltaLanguageBridge/);
   assert.match(bridge, /export function EmAltaLanguageBridge\(\)/);
   assert.equal((shell.match(/<EmAltaLanguageBridge \/>/g) || []).length, 2);
-  assert.match(pagina, /if \(carregandoRanking\)/);
+  assert.match(pagina, /if \(carregandoRanking \|\| !dadosDaIdentidadeAtual\)/);
   assert.match(pagina, /const isDesktop = useEmAltaDesktopMode\(\);/);
   assert.match(pagina, /useEmAltaRankingLoader\(/);
-  assert.match(rankingLoaderFase891, /supabase\.auth\.getUser\(\)/);
+  assert.doesNotMatch(rankingLoaderFase891, /supabase\.auth\.getUser\(\)/);
 });

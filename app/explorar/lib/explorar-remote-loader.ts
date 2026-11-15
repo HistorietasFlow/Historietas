@@ -309,6 +309,7 @@ export async function carregarObrasPublicadasSupabase(
     CONSULTAS_INICIAIS_CATALOGO_EXPLORAR,
   filtroColecao: FiltroColecaoCatalogoExplorar | null = null,
   acumularObrasLocais = false,
+  consultaVigente: () => boolean = () => true,
 ): Promise<ResultadoCarregamentoCatalogoExplorar> {
   try {
     let obraIdsCatalogo: readonly string[] = [];
@@ -375,7 +376,7 @@ export async function carregarObrasPublicadasSupabase(
       if (obraIdsCatalogo.length === 0) {
         return {
           obras: await aplicarMetricasExplorar(
-            filtroColecao ? [] : obrasLocais,
+            filtroColecao && !acumularObrasLocais ? [] : obrasLocais,
             userId,
           ),
           pagina: paginaCatalogo,
@@ -500,7 +501,9 @@ export async function carregarObrasPublicadasSupabase(
       userId,
     );
 
-    if (!filtroColecao) {
+    // A resposta pode ter sido substituída enquanto perfis/capítulos/métricas
+    // carregavam. O guard do hook deve valer antes das gravações também.
+    if (!filtroColecao && consultaVigente()) {
       salvarBackupsArquivosObras(obrasComProgresso, userId);
       salvarJsonStorageUsuarioExplorar(STORAGE_KEY, userId, obrasComProgresso);
     }

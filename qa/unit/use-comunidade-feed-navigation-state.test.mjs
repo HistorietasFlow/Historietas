@@ -43,7 +43,7 @@ test("hook centraliza somente o estado de filtros e navegação do feed", () => 
   assert.doesNotMatch(hook, /useEffect|useMemo|supabase|localStorage|router|return\s*\(\s*</);
 });
 
-test("página delega o estado e preserva lifecycles, busca adiada e consumidores", () => {
+test("página preserva busca adiada do feed e usa termo atual para usuários", () => {
   assert.match(
     pagina,
     /import \{ useComunidadeFeedNavigationState \} from "\.\/hooks\/use-comunidade-feed-navigation-state";/,
@@ -72,7 +72,8 @@ test("página delega o estado e preserva lifecycles, busca adiada e consumidores
     pagina,
     /useComunidadeFeedLifecycle\(\{[\s\S]*?obraRelacionadaFiltro,[\s\S]*?\}\);/,
   );
-  assert.match(pagina, /useComunidadeUserSearchSync\(\{[\s\S]*?termoBuscaAdiado,/);
+  assert.match(pagina, /useComunidadeUserSearchSync\(\{[\s\S]*?termoBusca,/);
+  assert.match(pagina, /normalizarTermoBuscaComunidade\(termoBuscaAdiado\)/);
   assert.match(pagina, /obterPostsVisiveisComunidade\(\{[\s\S]*?categoriaAtiva,[\s\S]*?ordenacaoAtiva,/);
   assert.match(pagina, /selecionarAbaFeedComunidade\(\{/);
   assert.match(pagina, /limparFiltrosComunidade\(\{/);

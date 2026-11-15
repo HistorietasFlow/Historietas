@@ -116,7 +116,7 @@ test("estilos estáticos de Redefinir Senha preservam os contratos visuais", () 
   assert.match(stylesSource, /!important/);
 });
 
-test("página delega estilos sem mover autenticação, effects ou regra de senha", () => {
+test("página delega estilos e mantém autenticação nos hooks", () => {
   assert.match(
     pageSource,
     /from "\.\/styles\/redefinir-senha-styles";/,
@@ -128,10 +128,9 @@ test("página delega estilos sem mover autenticação, effects ou regra de senha
     pageSource,
     /\{`\$\{historietasThemeCss\}\$\{redefinirSenhaPageCss\}`\}/,
   );
-  assert.match(pageSource, /useEffect\(\(\) =>/);
-  assert.match(pageSource, /supabase\.auth\.updateUser/);
-  assert.match(pageSource, /sessaoEhRecuperacao\(\)/);
-  assert.match(pageSource, /\[A-Za-zÀ-ÖØ-öø-ÿ\]/);
+  assert.match(pageSource, /useRedefinirSenhaRecoveryValidation\(/);
+  assert.match(pageSource, /useRedefinirSenhaSaveAction\(/);
+  assert.doesNotMatch(pageSource, /supabase\.auth\./);
 });
 
 test("módulos estáticos não recebem runtime ou regras da página", () => {

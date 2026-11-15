@@ -10,7 +10,8 @@ const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT
 let author, userId;
 const works = [];
 const check = (response) => { expect(response.error).toBeNull(); return response.data; };
-const reader = (page) => page.locator('main[data-historietas-ler-capitulo-root="true"]');
+// Next streaming may retain an offscreen copy; target the sole visible reader.
+const reader = (page) => page.locator('main[data-historietas-ler-capitulo-root="true"]:visible');
 const apiResponse = (page) => page.waitForResponse(r => new URL(r.url()).pathname === "/api/leitura-publica");
 // Exercita também no Windows a animação nativa observada no Chromium da CI Linux.
 test.use({ launchOptions: { args: ["--enable-smooth-scrolling"] } });
@@ -107,6 +108,7 @@ for (const device of ["desktop", "mobile"]) {
       const f = await fixture();
       const hydration = apiResponse(page);
       await page.goto(f.path); await hydration;
+      await expect(reader(page)).toHaveCount(1);
       await expect(reader(page).getByText("Texto público antes da edição.")).toBeVisible();
       await page.route("**/api/leitura-publica?**", route => route.fulfill({ status: 503, json: { erro: "Temporário" } }));
       const failure = apiResponse(page);

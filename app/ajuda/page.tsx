@@ -65,6 +65,11 @@ export default function AjudaPage() {
     usuarioAutenticado,
     carregandoChamados,
     chamadosTecnicos,
+    erroChamados,
+    chamadosCarregados,
+    sessaoConfirmada,
+    envioIncerto,
+    recarregarChamados,
     atualizarCategoriaProblema,
     setPaginaProblema,
     setTituloProblema,
@@ -139,6 +144,8 @@ export default function AjudaPage() {
             titulo={tituloProblema}
             descricao={descricaoProblema}
             enviando={enviandoProblema}
+            sessaoConfirmada={sessaoConfirmada}
+            envioIncerto={envioIncerto}
             usuarioAutenticado={usuarioAutenticado}
             language={language}
             onCategoriaChange={atualizarCategoriaProblema}
@@ -148,11 +155,13 @@ export default function AjudaPage() {
             onSubmit={enviarProblemaTecnico}
           />
 
-          {usuarioAutenticado &&
-            (carregandoChamados || chamadosTecnicos.length > 0) ? (
+          {usuarioAutenticado || carregandoChamados || erroChamados ? (
             <AjudaSupportTickets
               carregando={carregandoChamados}
-              chamados={chamadosTecnicos}
+              chamados={sessaoConfirmada ? chamadosTecnicos : []}
+              erro={erroChamados}
+              carregados={sessaoConfirmada && chamadosCarregados}
+              onRecarregar={recarregarChamados}
               language={language}
             />
           ) : null}

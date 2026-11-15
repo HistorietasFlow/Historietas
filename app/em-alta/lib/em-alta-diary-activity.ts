@@ -5,13 +5,15 @@ import type { ObraRanking } from "./em-alta-models";
 export async function registrarColecaoRankingNoDiario(
   tipo: "favoritou_obra" | "concluiu_obra",
   obra: Pick<ObraRanking, "storageId" | "titulo"> | null,
+  userIdEsperado?: string,
+  execucaoEstaAtual: () => boolean = () => true,
 ) {
   try {
     const { data } = await supabase.auth.getUser();
     const userId = data.user?.id || "";
     const obraId = obra?.storageId?.trim() || "";
 
-    if (!userId || !obraId || !idObraSupabaseValido(obraId)) {
+    if (!execucaoEstaAtual() || (userIdEsperado && userId !== userIdEsperado) || !userId || !obraId || !idObraSupabaseValido(obraId)) {
       return;
     }
 
@@ -32,7 +34,7 @@ export async function registrarColecaoRankingNoDiario(
 
     const { error } = await supabase.from("diario_atividades").insert(payload);
 
-    if (error) {
+    if (error && ["PGRST204", "42703"].includes(error.code) && error.message.includes("visibilidade") && execucaoEstaAtual()) {
       await supabase.from("diario_atividades").insert({
         user_id: payload.user_id,
         obra_id: payload.obra_id,

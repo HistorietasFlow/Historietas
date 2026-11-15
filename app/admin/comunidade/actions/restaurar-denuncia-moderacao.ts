@@ -1,26 +1,5 @@
-import { supabase } from "../../../../lib/supabase/client";
-
-type PersistirRestauracaoDenunciaModeracaoParams = {
-  denunciaId: string;
-};
-
-export async function persistirRestauracaoDenunciaModeracao({
-  denunciaId,
-}: PersistirRestauracaoDenunciaModeracaoParams) {
-  const { data, error } = await supabase
-    .from("comunidade_denuncias")
-    .update({ arquivada: false })
-    .eq("id", denunciaId)
-    .select("id")
-    .maybeSingle();
-
-  if (error) {
-    throw error;
-  }
-
-  if (!data?.id) {
-    throw new Error(
-      "A denúncia não foi encontrada ou não pôde ser restaurada."
-    );
-  }
+import { escreverEstadoDenunciaModeracao, type EstadoDenuncia } from "../lib/admin-comunidade-confirmed-write";
+export async function persistirRestauracaoDenunciaModeracao({denunciaId, esperada}: {denunciaId: string; esperada: EstadoDenuncia}) {
+  if (denunciaId !== esperada.id) throw new Error("A denúncia mudou durante a ação.");
+  return escreverEstadoDenunciaModeracao(esperada, {arquivada: false});
 }

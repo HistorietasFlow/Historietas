@@ -45,16 +45,14 @@ export default function EmAltaPage() {
   const [usuarioLogado, setUsuarioLogado] = useState(false);
   const [usuarioLogadoId, setUsuarioLogadoId] = useState("");
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
-  const { usuarioTemSessaoAtiva } = useEmAltaAuthSession({
+  const { usuarioTemSessaoAtiva, identidadeSessaoRef, autenticacaoCarregada, versaoIdentidade } = useEmAltaAuthSession({
     setUsuarioLogado,
     setUsuarioLogadoId,
   });
 
-  useEmAltaRankingLoader({
-    usuarioLogadoId,
+  const { erroRanking, tentarCarregarRanking, dadosDaIdentidadeAtual } = useEmAltaRankingLoader({
+    usuarioLogadoId, autenticacaoCarregada, versaoIdentidade, identidadeSessaoRef,
     setCarregandoRanking,
-    setUsuarioLogado,
-    setUsuarioLogadoId,
     setObrasLocais,
     setObrasFavoritas,
     setObrasConcluidas,
@@ -98,19 +96,20 @@ export default function EmAltaPage() {
     router.push(criarLoginHrefEmAlta());
   }
 
-  const { alternarFavorito, alternarConcluido } =
+  const { alternarFavorito, alternarConcluido, mensagemColecao, salvandoColecao } =
     useEmAltaRankingCollectionActions({
       ranking,
       obrasFavoritas,
       obrasConcluidas,
       usuarioLogadoId,
+      identidadeSessaoRef,
       usuarioTemSessaoAtiva,
       avisarLoginRanking,
       setObrasFavoritas,
       setObrasConcluidas,
     });
 
-  if (carregandoRanking) {
+  if (carregandoRanking || !dadosDaIdentidadeAtual) {
     return (
       <EmAltaPageShell pageThemeStyle={pageThemeStyle} carregando>
         <LoadingSpinner label="Carregando Em Alta" />
@@ -125,7 +124,13 @@ export default function EmAltaPage() {
       <section style={isDesktop ? desktopContainerStyle : containerStyle}>
         <EmAltaHeader isDesktop={isDesktop} titulo={tituloCabecalho} />
 
-        <EmAltaRankingContent
+        {erroRanking && <div role="alert">
+          <p>Não foi possível atualizar todos os dados do Em Alta.</p>
+          <button type="button" onClick={tentarCarregarRanking}>Tentar novamente</button>
+        </div>}
+        {salvandoColecao && <p role="status">Salvando coleção…</p>}
+        {mensagemColecao && <p role="alert">{mensagemColecao}</p>}
+        {(!erroRanking || ranking.length > 0) && <EmAltaRankingContent
           ranking={ranking}
           rankingTemAtividadeReal={rankingTemAtividadeReal}
           rankingAutores={rankingAutores}
@@ -142,7 +147,7 @@ export default function EmAltaPage() {
           onAlternarFavorito={alternarFavorito}
           onAlternarConcluido={alternarConcluido}
           isDesktop={isDesktop}
-        />
+        />}
       </section>
     </EmAltaPageShell>
   );

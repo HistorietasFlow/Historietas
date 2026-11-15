@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
+import "./notificacoes-consistency.test.mjs";
 import "./notificacoes-supabase-sync.test.mjs";
 import "./notificacoes-supabase-state-loader.test.mjs";
 import "./notificacoes-supabase-work-loader.test.mjs";

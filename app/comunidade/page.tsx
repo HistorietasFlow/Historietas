@@ -99,6 +99,8 @@ export default function ComunidadePage() {
   const router = useRouter();
   const { language } = useHistorietasLanguage();
   const {
+    versaoAutenticacao,
+    setVersaoAutenticacao,
     usuario,
     setUsuario,
     usuarioEhAdmin,
@@ -225,7 +227,13 @@ export default function ComunidadePage() {
     setUsuariosSeguidosIds,
     usuarioSeguindoId,
     setUsuarioSeguindoId,
-  } = useComunidadeUserSearchFollowState();
+    contextoSeguimento,
+  } = useComunidadeUserSearchFollowState({
+    usuarioId: usuario?.id,
+    termoBusca,
+    versaoAutenticacao,
+    autenticacaoComunidadeVersaoRef,
+  });
   const isDesktop = useComunidadeDesktopMode();
   const { pageThemeStyle } = useHistorietasTheme(communityPageStyle);
 
@@ -259,6 +267,7 @@ export default function ComunidadePage() {
     acoesComunidadeRef,
     textoPostRef,
     obraRelacionadaRef,
+    setVersaoAutenticacao,
     setUsuario,
     setUsuarioEhAdmin,
     setCarregandoUsuario,
@@ -269,8 +278,6 @@ export default function ComunidadePage() {
     setPostsSalvosIds,
     setVotosEnquetes,
     setResultadosEnquetes,
-    setUsuariosSeguidosIds,
-    setUsuarioSeguindoId,
     setPostCurtindoId,
     setPostSalvandoId,
     setPostCompartilhandoId,
@@ -350,8 +357,9 @@ export default function ComunidadePage() {
   useComunidadeUserSearchSync({
     buscaComunidadeAberta,
     posts,
-    termoBuscaAdiado,
+    termoBusca,
     usuarioId: usuario?.id,
+    contextoSeguimento,
     setUsuariosBuscaComunidade,
     setCarregandoUsuariosBuscaComunidade,
     setUsuariosSeguidosIds,
@@ -429,6 +437,7 @@ export default function ComunidadePage() {
       usuarioAlvo,
       exigirLogin,
       usuario,
+      contextoSeguimento,
       acoesComunidadeRef,
       usuariosSeguidosIds,
       setUsuariosSeguidosIds,
@@ -704,7 +713,10 @@ export default function ComunidadePage() {
             area="desktop-header"
             termoBusca={termoBusca}
             menuAcoesRapidasComunidadeAberto={menuAcoesRapidasComunidadeAberto}
-            onAlterarTermoBusca={(event) => setTermoBusca(event.target.value)}
+            onAlterarTermoBusca={(event) => {
+              setTermoBusca(event.target.value);
+              setBuscaComunidadeAberta(true);
+            }}
             onAlternarMenuAcoes={() =>
               setMenuAcoesRapidasComunidadeAberto((aberto) => !aberto)
             }

@@ -27,19 +27,20 @@ export function salvarJsonStorageUsuarioConfiguracoes(
   const userIdLimpo = userId.trim();
 
   if (typeof window === "undefined" || !userIdLimpo) {
-    return;
+    return false;
   }
 
   try {
     const chaveStorage = criarStorageKeyUsuarioConfiguracoes(chave, userIdLimpo);
 
     if (!chaveStorage) {
-      return;
+      return false;
     }
 
     localStorage.setItem(chaveStorage, JSON.stringify(valor));
+    return true;
   } catch {
-    // localStorage é fallback; as configurações continuam em memória.
+    return false;
   }
 }
 

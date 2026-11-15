@@ -14,7 +14,12 @@ export function calcularRankingObrasLocais(
   avaliacoesLocaisRegistradas: Record<string, number>,
   visualizacoesRegistradas: Record<string, number>,
 ): ObraRanking[] {
-  return obrasLocais
+  // IDs repetidos não podem inflar tops nem o ranking de autores. Quando
+  // representações divergem em acesso, prevalece a restrição mais conservadora.
+  const restritas = new Set(obrasLocais.filter(obra => !obra.publicado || ehClassificacao18(obra.classificacaoIndicativa)).map(obra => obra.id.trim()));
+  const unicas = new Map(obrasLocais.map(obra => [obra.id.trim(), obra]));
+  return [...unicas.values()]
+    .filter(obra => Boolean(obra.id.trim()) && !restritas.has(obra.id.trim()))
     .filter(
       (obra) =>
         obra.publicado && !ehClassificacao18(obra.classificacaoIndicativa),

@@ -7,6 +7,7 @@ type UseAdicionarCapituloImportActionProps = {
   erro: string;
   capituloCriado: object | null;
   notificacaoCriada: object | null;
+  preservarCriacao?: boolean;
   setTitulo: Dispatch<SetStateAction<string>>;
   setTexto: Dispatch<SetStateAction<string>>;
   setErro: Dispatch<SetStateAction<string>>;
@@ -22,6 +23,7 @@ export function useAdicionarCapituloImportAction({
   erro,
   capituloCriado,
   notificacaoCriada,
+  preservarCriacao = false,
   setTitulo,
   setTexto,
   setErro,
@@ -35,11 +37,11 @@ export function useAdicionarCapituloImportAction({
       setErro("");
     }
 
-    if (capituloCriado) {
+    if (capituloCriado && !preservarCriacao) {
       setCapituloCriado(null);
     }
 
-    if (notificacaoCriada) {
+    if (notificacaoCriada && !preservarCriacao) {
       setNotificacaoCriada(null);
     }
   }

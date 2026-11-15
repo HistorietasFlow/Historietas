@@ -107,7 +107,7 @@ test("prioriza ID selecionado e usa perfil remoto como fallback", () => {
   assert.equal(remotoResolvido.perfilAtual, remoto);
 });
 
-test("resolve por nome normalizado quando não encontra por ID", () => {
+test("ID explícito desconhecido não seleciona outro autor pelo nome", () => {
   const ana = perfil("user-a", "Ana Silva");
   const resultado = resolverEstadoPerfilAutor({
     perfisAutores: [ana],
@@ -118,9 +118,9 @@ test("resolve por nome normalizado quando não encontra por ID", () => {
     autenticacaoCarregada: true,
   });
 
-  assert.equal(resultado.perfilAtual, ana);
-  assert.equal(resultado.autorNaoEncontrado, false);
-  assert.equal(resultado.perfilParaMostrar, ana);
+  assert.equal(resultado.perfilAtual, null);
+  assert.equal(resultado.autorNaoEncontrado, true);
+  assert.equal(resultado.perfilParaMostrar, null);
 });
 
 test("sem parâmetros mostra o perfil do usuário logado", () => {
@@ -158,7 +158,7 @@ test("sem parâmetros e sem login não mostra perfil e redireciona após autenti
   assert.equal(resultado.redirecionandoParaLogin, true);
 });
 
-test("preserva autor não encontrado e propriedade pelo ID da URL", () => {
+test("autor não encontrado não recebe privilégios pelo ID da URL", () => {
   const resultado = resolverEstadoPerfilAutor({
     perfisAutores: [],
     autorSelecionado: "",
@@ -171,7 +171,7 @@ test("preserva autor não encontrado e propriedade pelo ID da URL", () => {
   assert.equal(resultado.perfilAtual, null);
   assert.equal(resultado.autorNaoEncontrado, true);
   assert.equal(resultado.perfilParaMostrar, null);
-  assert.equal(resultado.perfilPertenceAoUsuario, true);
+  assert.equal(resultado.perfilPertenceAoUsuario, false);
 });
 
 

@@ -127,8 +127,12 @@ test("capítulo público configurado abre sem erro", async ({ page }) => {
     { waitUntil: "domcontentloaded" }
   );
   expect(response?.status()).toBeLessThan(500);
-  const reader = page.locator('main[data-historietas-ler-capitulo-root="true"]');
-  await expect(reader).toBeVisible();
+  // Streaming pode deixar uma cópia oculta; exigir só um leitor visível e pronto.
+  const reader = page.locator('main[data-historietas-ler-capitulo-root="true"]:visible');
+  await expect(reader).toHaveCount(1);
+  await expect(reader).not.toHaveAttribute("aria-busy", "true");
+  await expect(reader).not.toHaveAttribute("inert", "");
+  await expect(page.locator("main:visible")).toHaveCount(1);
   await expect(reader.getByRole("heading", { level: 1 })).toBeVisible();
   if (process.env.E2E_ALLOW_DESTRUCTIVE === "true") {
     await expect(reader.getByRole("heading", { name: "Capítulo 1", exact: true })).toBeVisible();

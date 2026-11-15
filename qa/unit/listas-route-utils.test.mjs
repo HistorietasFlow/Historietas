@@ -218,7 +218,7 @@ test("Listas delega normalizacao de rota e armazenamento local", () => {
   assert.match(pagina, /const searchParams = useSearchParams\(\);/);
   assert.match(
     pagina,
-    /import \{ obterEstadoRotaListas \} from "\.\/lib\/listas-page-route-state";/,
+    /import \{ criarChaveCarregamentoListas, obterEstadoRotaListas \} from "\.\/lib\/listas-page-route-state";/,
   );
   assert.match(pagina, /\} = obterEstadoRotaListas\(searchParams\);/);
   assert.match(pagina, /useState/);
