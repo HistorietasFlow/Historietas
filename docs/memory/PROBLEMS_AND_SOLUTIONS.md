@@ -568,6 +568,14 @@ resumo: o conteúdo de uma mídia não pode ser considerado seguro apenas pelo M
 ou pelo teste que a produziu. Não resolver perda de diagnóstico aumentando
 retries ou timeouts.
 
+Quando um fluxo flaky exigir contexto adicional, o teste pode emitir um registro
+estruturado que o coletor sanitiza novamente antes de incluí-lo no `summary.json`.
+Esse registro aceita somente cenários, fases, rotas, endpoints e estados de uma
+allowlist fechada, além de códigos HTTP e contagens limitadas. Não registrar
+URLs, queries, headers, corpos, textos renderizados, credenciais, cookies,
+tokens, identidades ou conteúdo privado; dados desconhecidos devem ser
+descartados, nunca mascarados ou copiados como texto livre.
+
 Os downloads oficiais de k6 e Gitleaks tiveram HTTP 504/503, conexão interrompida
 e timeout antes de executar as ferramentas. O instalador compartilhado usa
 arquivos oficiais com versão, tamanho e SHA-256 fixos, cache separado por

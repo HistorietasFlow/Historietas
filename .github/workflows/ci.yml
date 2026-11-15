@@ -117,7 +117,7 @@ jobs:
           npm --prefix qa ci
 
       - name: Validar preparo seguro do Chromium
-        run: node --test qa/unit/playwright-container.test.mjs qa/unit/playwright-diagnostics.test.mjs
+        run: node --test qa/unit/playwright-container.test.mjs qa/unit/playwright-diagnostics.test.mjs qa/unit/playwright-safe-flow-diagnostics.test.mjs
 
       - name: Preparar Chromium e dependências oficiais
         id: playwright-server
