@@ -19,6 +19,7 @@ export function useListasSessionScope(chaveRota: string) {
   const versaoRef = useRef(0);
   const usuarioObservadoRef = useRef<string | undefined>(undefined);
   const [validacao, setValidacao] = useState<ValidacaoListas | null>(null);
+  const chaveSessao = JSON.stringify([versao]);
   const chave = JSON.stringify([chaveRota, versao]);
 
   useEffect(() => {
@@ -49,15 +50,16 @@ export function useListasSessionScope(chaveRota: string) {
           throw new Error("Identidade alterada durante o carregamento");
         }
         usuarioObservadoRef.current = id;
-        setValidacao({ chave, usuario: data.user, erro: "" });
+        setValidacao({ chave: chaveSessao, usuario: data.user, erro: "" });
       } catch {
-        if (atual()) setValidacao({ chave, usuario: null, erro: "Não foi possível carregar esta lista agora." });
+        if (atual()) setValidacao({ chave: chaveSessao, usuario: null, erro: "Não foi possível carregar esta lista agora." });
       }
     })();
     return () => { cancelado = true; };
-  }, [chave, versao]);
+  }, [chaveSessao, versao]);
 
-  // Route changes are hidden during render, before the old effect's cleanup.
-  const dados = validacao?.chave === chave ? validacao : null;
+  // Auth is validated per session version. Route changes still replace the
+  // child synchronously through `chave`, without starting a redundant getUser.
+  const dados = validacao?.chave === chaveSessao ? validacao : null;
   return { chave, carregando: !dados, erro: dados?.erro || "", usuario: dados?.usuario ?? null };
 }
