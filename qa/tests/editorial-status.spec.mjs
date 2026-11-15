@@ -37,7 +37,21 @@ test.afterAll(async () => {
 });
 
 async function editor(page) {
+  const obraCarregada = page.waitForResponse(response => {
+    const url = new URL(response.url());
+    return response.request().method() === "GET" &&
+      url.pathname === "/rest/v1/obras" &&
+      url.searchParams.get("id") === `eq.${editWork.id}`;
+  });
+  const capitulosCarregados = page.waitForResponse(response => {
+    const url = new URL(response.url());
+    return response.request().method() === "GET" &&
+      url.pathname === "/rest/v1/capitulos" &&
+      url.searchParams.get("obra_id") === `eq.${editWork.id}`;
+  });
   await page.goto(`/editar-obra?obraId=${editWork.id}`);
+  expect((await obraCarregada).ok()).toBe(true);
+  expect((await capitulosCarregados).ok()).toBe(true);
   await expect(select(page)).toBeEnabled();
   await expect(page.getByLabel("Título da obra",{exact:true})).toHaveValue(editWork.titulo);
 }
