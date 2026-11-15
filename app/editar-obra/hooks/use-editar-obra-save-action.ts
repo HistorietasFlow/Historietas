@@ -108,6 +108,7 @@ export function useEditarObraSaveAction({
   setArquivoObraRemovidoManualmente,
 }: UseEditarObraSaveActionProps) {
   const envioEmAndamento = useRef(false);
+  const escritaConfirmada = useRef<{ vigente: () => boolean } | null>(null);
   async function salvarEdicao(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -116,6 +117,11 @@ export function useEditarObraSaveAction({
       return;
     }
 
+    if (escritaConfirmada.current?.vigente()) {
+      setErro("A alteração já foi confirmada no servidor. Recarregue a página antes de salvar novamente.");
+      setSalvou(false);
+      return;
+    }
     const erroValidacao = validarFormularioEdicaoObra({
       titulo,
       autor,
@@ -141,6 +147,7 @@ export function useEditarObraSaveAction({
 
     envioEmAndamento.current = true;
     setProcessando(true);
+    setSalvou(false);
     setErro("");
 
     const valoresSalvamento = prepararValoresSalvamentoEdicaoObra({
@@ -268,12 +275,14 @@ export function useEditarObraSaveAction({
         editorial: capturaEditorial.confirmado && capturaEditorial.escolha !== capturaEditorial.confirmado.status
           ? { confirmado: capturaEditorial.confirmado, escolha: capturaEditorial.escolha } : undefined,
       });
+      if (!capturaEditorial.vigente()) return;
       capturaEditorial.concluir(resultadoRemoto);
       if (resultadoRemoto.estado !== "confirmada" || !capturaEditorial.vigente()) {
         setSalvou(false);
         return;
       }
 
+      escritaConfirmada.current = capturaEditorial;
       await removerArquivosStorageEdicaoObra(arquivosAntigosParaRemover);
 
       if (!capturaEditorial.vigente()) return;
@@ -313,16 +322,20 @@ export function useEditarObraSaveAction({
       setArquivoObra(arquivoObraFinal);
       setArquivoObraArquivo(null);
       setArquivoObraRemovidoManualmente(false);
+      escritaConfirmada.current = null;
       setSalvou(true);
 
 
     } catch (erroDesconhecido) {
+      if (!capturaEditorial.vigente()) return;
       const mensagem =
         erroDesconhecido instanceof Error
           ? erroDesconhecido.message
           : "Não consegui salvar as alterações. Tente usar uma capa/arquivo menor ou atualizar a página e salvar novamente.";
 
-      setErro(mensagem);
+      setErro(escritaConfirmada.current?.vigente()
+        ? "A alteração foi confirmada no servidor, mas a persistência local falhou. Recarregue a página antes de salvar novamente."
+        : mensagem);
       setSalvou(false);
 
       window.scrollTo({
