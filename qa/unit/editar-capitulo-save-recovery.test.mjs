@@ -10,7 +10,7 @@ test("clique duplo salva uma única vez, preservando o rascunho não publicado",
   assert.equal(updates(h), 1);
   assert.equal(h.row.publicado, false);
   assert.equal(h.state.salvou, true);
-  assert.equal(h.calls.filter(call => call === "diario").length, 1);
+  assert.equal(h.calls.filter(call => call === "diario").length, 0);
 });
 test("erro antes de escrever preserva texto e permite repetição explícita", async t => {
   const h = criarEdicaoHarness(t), texto = h.params.texto;
@@ -79,7 +79,7 @@ test("rejeição SQLSTATE comprovada permite repetir explicitamente sem duplicar
   await h.save(); assert.equal(h.state.salvou, false);
   h.falhas.clear(); await h.save(); await h.save();
   assert.equal(updates(h), 2);
-  assert.equal(h.calls.filter(call => call === "diario").length, 1);
+  assert.equal(h.calls.filter(call => call === "diario").length, 0);
   assert.equal(h.state.salvou, true);
 });
 
@@ -91,7 +91,7 @@ test("falha de cache após confirmação recupera somente a etapa local, sem rep
   assert.match(h.state.erro, /salvo no servidor/);
   h.falhas.delete("cache"); await h.save(); await h.save();
   assert.equal(updates(h), 1); assert.equal(h.state.salvou, true);
-  assert.equal(h.calls.filter(call => call === "diario").length, 1);
+  assert.equal(h.calls.filter(call => call === "diario").length, 0);
 });
 
 test("capítulo local só confirma após persistência; repetição e recuperação preservam publicado=false", async t => {

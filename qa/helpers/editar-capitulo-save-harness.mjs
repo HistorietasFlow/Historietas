@@ -7,13 +7,13 @@ export function adiarEdicao() {
   const promise = new Promise((res, rej) => {resolve = res; reject = rej;});
   return {promise, resolve, reject};
 }
-export function criarEdicaoHarness(t, {local = false} = {}) {
+export function criarEdicaoHarness(t, {local = false, publicado = false} = {}) {
   const obraId = local ? "obra-local" : "00000000-0000-4000-8000-000000000001";
   const capituloId = local ? "capitulo-local" : "00000000-0000-4000-8000-000000000002";
   const row = {id: capituloId, obra_id: obraId, user_id: "A", titulo: "Título original", texto: "Texto original suficientemente longo.",
-    ordem: 1, publicado: false, tipo_conteudo: "texto", atualizado_em: "2026-11-13T00:00:00.000001+00:00"};
-  const capitulo = {id: capituloId, titulo: row.titulo, texto: row.texto, ordem: 1, publicado: false};
-  const obra = {id: obraId, autorId: "A", titulo: "Obra", autor: "Autora", publicado: false, capitulos: [capitulo]};
+    ordem: 1, publicado, tipo_conteudo: "texto", atualizado_em: "2026-11-13T00:00:00.000001+00:00"};
+  const capitulo = {id: capituloId, titulo: row.titulo, texto: row.texto, ordem: 1, publicado};
+  const obra = {id: obraId, autorId: "A", titulo: "Obra", autor: "Autora", publicado, capitulos: [capitulo]};
   const cache = new Map([["historietas-obras:A", JSON.stringify([obra])]]), recovery = new Map();
   const calls = [], falhas = new Map(), state = {obras: [obra], erro: "", salvou: false, processando: false};
   const previous = {window: globalThis.window, localStorage: globalThis.localStorage, sessionStorage: globalThis.sessionStorage};
@@ -54,7 +54,7 @@ export function criarEdicaoHarness(t, {local = false} = {}) {
           return executar(`${table}:${operation}`, () => {
             if (table === "obras") return {data: {id: obraId}, error: null};
             const matches = filters.every(([key, value]) => row[key] === value);
-            if (matches && operation === "update") Object.assign(row, payload, {atualizado_em: `2026-11-14T00:00:00.${String(calls.length).padStart(6, "0")}+00:00`});
+            if (matches && operation === "update") Object.assign(row, payload, {diario_edicao_versao: `00000000-0000-4000-8000-${String(calls.length).padStart(12, "0")}`, atualizado_em: `2026-11-14T00:00:00.${String(calls.length).padStart(6, "0")}+00:00`});
             return {data: singular ? (matches ? {...row} : null) : (matches ? [{...row}] : []), error: null};
           }).then(resolve, reject);
         },
@@ -64,7 +64,7 @@ export function criarEdicaoHarness(t, {local = false} = {}) {
   };
   const mocks = {react, "../../../lib/supabase/client": {supabase: client},
     "../actions/carregar-nome-profile-editar-capitulo": {carregarNomeProfileEditarCapitulo: async () => ""},
-    "../actions/registrar-diario-edicao-capitulo": {registrarDiarioEdicaoCapitulo: async () => {calls.push("diario");}},
+    "../actions/registrar-diario-edicao-capitulo": {registrarDiarioEdicaoCapitulo: async params => executar("diario", () => {calls.push(["diario-params", params]); return "confirmado";})},
     "../actions/atualizar-notificacao-capitulo": {atualizarNotificacaoCapituloSupabase: async () => {calls.push("notificacao");}},
   };
   const {useEditarCapituloSaveAction: executarHook} = loadApplicationModule("app/editar-capitulo/hooks/useEditarCapituloSaveAction.ts", mocks);

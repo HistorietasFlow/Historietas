@@ -1,86 +1,21 @@
 import { supabase } from "../../../lib/supabase/client";
-import { idObraSupabaseValido } from "../../../lib/utils";
-import { criarHrefLeituraCapitulo } from "../lib/editar-capitulo-route-utils";
+import { uuidDiarioEdicaoValido, type IntencaoDiarioEdicao } from "../lib/editar-capitulo-save-recovery";
 
-type ObraParaDiarioEditarCapitulo = {
-  id: string;
-  titulo: string;
-  slug: string;
-  publicado: boolean;
-};
-
-export async function registrarDiarioEdicaoCapitulo({
-  userId,
-  obra,
-  capituloId,
-  tituloCapitulo,
-  numeroCapitulo,
-  atualizadoEm,
-}: {
-  userId: string;
-  obra: ObraParaDiarioEditarCapitulo;
-  capituloId: string;
-  tituloCapitulo: string;
-  numeroCapitulo: number;
-  atualizadoEm: string;
-}) {
-  const usuarioId = userId.trim();
-
-  if (
-    !usuarioId ||
-    !idObraSupabaseValido(obra.id) ||
-    !idObraSupabaseValido(capituloId)
-  ) {
-    return;
-  }
-
-  const hrefCapitulo = criarHrefLeituraCapitulo(
-    obra,
-    capituloId,
-    numeroCapitulo
-  );
-  const visibilidade = obra.publicado ? "publico" : "privado";
-
+type ResultadoDiario = Exclude<IntencaoDiarioEdicao["estado"], "pendente" | "inelegivel">;
+// A indisponibilidade desta etapa nunca autoriza INSERT legado ou novo PATCH.
+export async function registrarDiarioEdicaoCapitulo({capituloId, versao}: {capituloId: string; versao: string}): Promise<ResultadoDiario> {
+  if (!uuidDiarioEdicaoValido(capituloId) || !uuidDiarioEdicaoValido(versao)) return "conflito";
   try {
-    const payload = {
-      user_id: usuarioId,
-      tipo: "editou_capitulo",
-      obra_id: obra.id,
-      capitulo_id: capituloId,
-      texto: "",
-      visibilidade,
-      metadata: {
-        obra_titulo: obra.titulo,
-        titulo_obra: obra.titulo,
-        capitulo_titulo: tituloCapitulo,
-        numero_capitulo: numeroCapitulo,
-        href: hrefCapitulo,
-      },
-      criado_em: atualizadoEm,
-      atualizado_em: atualizadoEm,
-    };
-
-    const { error } = await supabase.from("diario_atividades").insert(payload);
-
-    if (!error) {
-      return;
+    const {data, error, status} = await supabase.rpc("registrar_diario_edicao_capitulo", {p_capitulo_id: capituloId, p_versao: versao});
+    if (error) {
+      if (["55000", "42883", "PGRST202"].includes(error.code)) return "indisponivel";
+      if (["PT409", "42501", "22023"].includes(error.code)) return "conflito";
+      return "incerto";
     }
-
-    // A compatibilidade sem metadata só é segura quando o servidor comprova
-    // que a coluna foi rejeitada. Transporte incerto pode ocorrer após commit.
-    if (error.code !== "42703" && error.code !== "PGRST204") throw error;
-
-    const { error: erroFallback } = await supabase.from("diario_atividades").insert({
-      user_id: usuarioId,
-      tipo: "editou_capitulo",
-      obra_id: obra.id,
-      capitulo_id: capituloId,
-      texto: "",
-      visibilidade,
-      criado_em: atualizadoEm,
-    });
-    if (erroFallback) throw erroFallback;
-  } catch (error) {
-    console.warn("Não consegui registrar a edição do capítulo no Diário:", error);
-  }
+    if (status !== 200) return "incerto";
+    // O SDK também retorna data=null para HTTP 200 sem corpo. Não presumir
+    // tombstone nem confirmação; a mesma intenção pode ser consultada por RPC.
+    if (data === null) return "incerto";
+    return uuidDiarioEdicaoValido(data) ? "confirmado" : "incerto";
+  } catch {return "incerto";}
 }

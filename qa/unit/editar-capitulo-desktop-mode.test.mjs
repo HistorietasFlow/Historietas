@@ -61,7 +61,11 @@ test("Editar Capitulo delega somente o lifecycle desktop e mantem consumidores",
   );
   assert.doesNotMatch(pageSource, /setIsDesktop/);
   assert.doesNotMatch(pageSource, /window\.matchMedia/);
-  assert.equal((pageSource.match(/\bisDesktop\b/g) || []).length, 31);
+  for (const [desktop, mobile] of [["desktopMainGridStyle", "mainGridStyle"], ["desktopTitleHeaderStyle", "titleHeaderStyle"], ["desktopTextareaStyle", "textareaStyle"], ["desktopImportBoxStyle", "importBoxStyle"]]) {
+    assert.ok(pageSource.includes(`isDesktop ? ${desktop} : ${mobile}`), `consumidor responsivo preservado: ${desktop}`);
+  }
+  assert.match(pageSource, /isDesktop && <div style=\{desktopTopWaterFadeStyle\} aria-hidden="true"/);
+  assert.match(pageSource, /!isDesktop && <div style=\{mobileTopWaterFadeStyle\} aria-hidden="true"/);
   assert.match(pageSource, /isDesktop \? desktopContainerStyle : containerStyle/);
   assert.match(pageSource, /isDesktop \? desktopFormStyle : formStyle/);
   assert.match(pageSource, /isDesktop \? desktopPreviewPanelStyle : previewPanelStyle/);

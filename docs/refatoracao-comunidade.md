@@ -3135,3 +3135,10 @@ recibo/tombstone transacional e leitura condicionada ao conteúdo atual. Preserv
 os tipos anteriores e suas policies. Sem integração automática, alteração da #2307,
 aplicação remota ou ativação. Contratos e rollback em
 [Diário de edição](diario-edicao-evento-seguro.md).
+
+## Editar capítulo — Diário por RPC segura
+
+Integração isolada sobre #2307 para o contrato #2316: sem INSERT direto, token do
+UPDATE confirmado, recuperação por intenção e compatibilidade antes da migration.
+Sem alteração das branches de origem, migration ou ativação. Contrato e implantação
+em [Integração do Diário](../app/editar-capitulo/INTEGRACAO_DIARIO_RPC.md).

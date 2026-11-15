@@ -1114,3 +1114,12 @@ em `docs/diario-edicao-evento-seguro.md`. Local: 52/52 pgTAP focados, 1.132/1.13
 na rodada completa, duas conexões com lock real, rollback e reaplicação aprovados.
 Advisor sem problemas, auditoria 199/199; seis apontamentos SQL antigos comprovados
 antes/depois. REST/Playwright e integração do save pendentes. Não inferir ativação/aplicação remota.
+
+### Editar capítulo — integração do Diário por RPC (sobre #2307)
+
+Branch derivada da #2307 usa somente a RPC do contrato #2316, com token extraído do
+PATCH confirmado e guardado na recuperação da intenção. Sem migration/coluna, o
+save segue compatível; gate desligado/RPC ausente não repetem capítulo. Pendências
+são recuperadas por ação explícita sem repetir notificações; NULL permanece incerto.
+Schema/ativação e homologação conjunta seguem separados. Ver
+`app/editar-capitulo/INTEGRACAO_DIARIO_RPC.md` para ordem de implantação e limites.

@@ -70,8 +70,10 @@ test("Editar Capítulo delega somente a ação de excluir capítulo", () => {
   );
   assert.match(pageSource, /const \{ excluirCapitulo \} = useEditarCapituloDeleteAction\(/);
   assert.doesNotMatch(pageSource, /async function excluirCapitulo/);
-  assert.match(pageSource, /function marcarAlteracao\(\)/);
-  assert.match(pageSource, /async function importarArquivoTexto/);
+  assert.match(pageSource, /setTitulo\(event.target.value\);\s*marcarAlteracao\(\);/);
+  assert.match(pageSource, /setTexto\(event.target.value\);\s*marcarAlteracao\(\);/);
+  assert.match(pageSource, /const \{ marcarAlteracao, importarArquivoTexto \} =\s*useEditarCapituloImportAction\(/);
+  assert.match(pageSource, /onChange=\{importarArquivoTexto\}/);
   assert.match(pageSource, /const \{ salvarEdicao \} = useEditarCapituloSaveAction\(/);
   assert.match(pageSource, /onClick=\{\(\) => \{[\s\S]*?void excluirCapitulo\(\);[\s\S]*?\}\}/);
   assert.match(pageSource, /<form onSubmit=\{salvarEdicao\}/);

@@ -13,7 +13,7 @@ import { salvarObrasEditarCapituloStorage } from "../lib/editar-capitulo-local-w
 import { criarLoginHrefEditarCapitulo } from "../lib/editar-capitulo-route-utils";
 import { lerStorageUsuarioEditarCapitulo } from "../lib/editar-capitulo-storage-utils";
 import { salvarTextoCapituloRemoto } from "../lib/editar-capitulo-remote-save";
-import { guardarRecuperacaoTexto, lerRecuperacaoTexto, type ReferenciaTextoCapitulo, type RecuperacaoTextoCapitulo } from "../lib/editar-capitulo-save-recovery";
+import { guardarRecuperacaoTexto, lerRecuperacaoTexto, type IntencaoDiarioEdicao, type ReferenciaTextoCapitulo, type RecuperacaoTextoCapitulo } from "../lib/editar-capitulo-save-recovery";
 import { validarCapitulo } from "../lib/editar-capitulo-validation";
 import { normalizarObra } from "../lib/editar-capitulo-work-normalizer";
 
@@ -49,6 +49,9 @@ type Contexto = {
   concluido: string;
   efeitosPendentes: boolean;
   remotoConfirmado: string;
+  diario: IntencaoDiarioEdicao[];
+  baseConfirmada: boolean;
+  leituraDivergente: boolean;
 };
 const mensagemIncerta = "Não consegui confirmar o resultado da escrita. Seu texto foi preservado nesta aba. Confira o capítulo antes de reenviar; nenhum novo envio será feito automaticamente.";
 
@@ -66,10 +69,14 @@ export function useEditarCapituloSaveAction({
     catch { bloqueio = "Não consegui ler a cópia de recuperação. Preserve seu texto antes de continuar."; }
     const contexto: Contexto = {ativo: true, identidadeValida: true, emCurso: false,
       bloqueio: bloqueio || (recuperacao?.estado === "incerto" ? mensagemIncerta : ""),
+      diario: recuperacao?.diario || [],
+      leituraDivergente: !!recuperacao?.referencia && !!referenciaRemota &&
+        (recuperacao.escritaConfirmada === true || recuperacao.estado === "confirmado") &&
+        referenciaRemota.atualizado_em !== recuperacao.referencia.atualizado_em,
+      baseConfirmada: !!recuperacao?.referencia && (recuperacao.escritaConfirmada === true || recuperacao.estado === "confirmado"),
       base: recuperacao?.referencia || referenciaRemota, localEsperado: recuperacao?.local || null, concluido: "", efeitosPendentes: false,
-      remotoConfirmado: recuperacao?.estado === "confirmado" && referenciaRemota &&
-        referenciaRemota.atualizado_em === recuperacao.referencia?.atualizado_em
-        ? JSON.stringify([referenciaRemota.titulo, referenciaRemota.texto]) : ""};
+      remotoConfirmado: recuperacao?.referencia && (recuperacao.escritaConfirmada === true || recuperacao.estado === "confirmado")
+        ? JSON.stringify([recuperacao.referencia.titulo, recuperacao.referencia.texto]) : ""};
     contextoRef.current = contexto;
     const {data: {subscription}} = supabase.auth.onAuthStateChange((_evento, sessao) => {
       if (usuarioEdicaoId && (sessao?.user.id || "") !== usuarioEdicaoId) {
@@ -92,7 +99,7 @@ export function useEditarCapituloSaveAction({
       if (anterior || titulo !== capituloAtual.titulo || texto !== capituloAtual.texto) {
         contexto.localEsperado ||= anterior?.local || capituloAtual;
         guardarRecuperacaoTexto(usuarioEdicaoId, obraId, capituloId, {
-          titulo, texto, estado: anterior?.estado || "pronto", referencia: contexto.base,
+          titulo, texto, estado: anterior?.estado || "pronto", referencia: contexto.base, diario: contexto.diario, escritaConfirmada: contexto.baseConfirmada,
           local: anterior?.local || contexto.localEsperado || capituloAtual,
         });
       }
@@ -118,10 +125,32 @@ export function useEditarCapituloSaveAction({
     const intencao = JSON.stringify([tituloFinal, textoFinal]);
     const referenciaAnterior = contexto.base;
     const guardar = (estado: RecuperacaoTextoCapitulo["estado"]) => guardarRecuperacaoTexto(usuarioEdicaoId, obraId, capituloId, {
-      titulo: ultimosRef.current.titulo, texto: ultimosRef.current.texto, estado, referencia: contexto.base,
+      titulo: ultimosRef.current.titulo, texto: ultimosRef.current.texto, estado, referencia: contexto.base, diario: contexto.diario, escritaConfirmada: contexto.baseConfirmada,
       local: contexto.localEsperado || capituloAtual || undefined,
     });
-    let confirmadoRemotamente = false;
+    async function sincronizarDiario() {
+      for (const item of contexto!.diario) {
+        if (!["pendente", "incerto", "indisponivel"].includes(item.estado)) continue;
+        const identidade = await supabase.auth.getUser();
+        if (!vigente()) return;
+        if (identidade.error || identidade.data.user?.id !== usuarioEdicaoId) throw new Error("Não consegui confirmar a conta para recuperar o Diário. A recuperação foi preservada.");
+        item.estado = "incerto";
+        guardar("confirmado"); // Persistir intenção antes de enviar a RPC.
+        const resultado = await registrarDiarioEdicaoCapitulo({capituloId, versao: item.versao});
+        if (!vigente()) return;
+        const depois = await supabase.auth.getUser();
+        if (!vigente()) return;
+        if (depois.error || depois.data.user?.id !== usuarioEdicaoId) throw new Error("A conta mudou durante o registro no Diário. A recuperação foi preservada sem confirmar o resultado.");
+        item.estado = resultado;
+        guardar("confirmado");
+      }
+    }
+    function avisarDiario() {
+      if (contexto!.diario.some(item => item.estado === "incerto")) setErro("O capítulo foi salvo. Ainda não foi possível confirmar o registro no Diário. A pendência foi preservada para você tentar novamente.");
+      else if (contexto!.diario.some(item => item.estado === "indisponivel")) setErro("O capítulo foi salvo. O Diário está indisponível ou desativado; a intenção foi preservada.");
+      else if (contexto!.diario.some(item => item.estado === "conflito")) setErro("O capítulo foi salvo. O Diário recusou uma intenção de edição; ela foi preservada sem reenviar o capítulo.");
+    }
+    let confirmadoRemotamente = contexto.remotoConfirmado === intencao;
     try {
       if (!usuarioEdicaoId || obraAtual.id !== obraId || capituloAtual.id !== capituloId) {
         throw new Error("Não consegui confirmar o contexto da edição. Seu texto foi mantido.");
@@ -138,7 +167,16 @@ export function useEditarCapituloSaveAction({
       if (userId !== usuarioEdicaoId || (autorIdObra && autorIdObra !== userId)) {
         throw new Error("Você não tem permissão para editar este capítulo.");
       }
+      if (contexto.leituraDivergente) {
+        await sincronizarDiario();
+        if (!vigente()) return;
+        setErro("A versão carregada difere da edição confirmada. Compare as versões antes de salvar; o rascunho e a recuperação do Diário foram preservados sem reenviar o capítulo.");
+        return;
+      }
       if (contexto.concluido === intencao) {
+        await sincronizarDiario();
+        if (!vigente()) return;
+        avisarDiario();
         setSalvou(ultimosRef.current.titulo === titulo && ultimosRef.current.texto === texto);
         return;
       }
@@ -171,7 +209,14 @@ export function useEditarCapituloSaveAction({
             }
             throw new Error(contexto.bloqueio || resultado.mensagem || "Não consegui salvar o capítulo agora.");
           }
+          // Outra versão confirmada torna a conclusão anterior obsoleta, mesmo
+          // quando cache/Diário falharem antes de concluir a nova intenção.
+          contexto.concluido = "";
           contexto.base = resultado.referencia;
+          contexto.baseConfirmada = true;
+          if (resultado.versaoDiario && !contexto.diario.some(item => item.versao === resultado.versaoDiario)) {
+            contexto.diario.push({versao: resultado.versaoDiario, estado: resultado.referencia.publicado && obraAtual.publicado ? "pendente" : "inelegivel"});
+          }
           contexto.remotoConfirmado = intencao;
           contexto.efeitosPendentes = true;
           confirmadoRemotamente = true;
@@ -209,15 +254,16 @@ export function useEditarCapituloSaveAction({
       contexto.localEsperado = novasObrasDoUsuario.find(obra => obra.id === obraId)!.capitulos.find(capitulo => capitulo.id === capituloId)!;
       setObras(novasObrasDoUsuario);
       guardar("confirmado");
+      await sincronizarDiario();
+      if (!vigente()) return;
       if (registroSupabase && contexto.efeitosPendentes) {
         contexto.efeitosPendentes = false;
         const parametros = {userId, obra: obraAtualizadaParaAcoes, capituloId, tituloCapitulo: tituloFinal, numeroCapitulo: numeroCapituloFinal, atualizadoEm};
-        await registrarDiarioEdicaoCapitulo(parametros);
-        if (!vigente()) return;
         await atualizarNotificacaoCapituloSupabase(parametros);
         if (!vigente()) return;
       }
       contexto.concluido = intencao;
+      avisarDiario();
       setSalvou(ultimosRef.current.titulo === titulo && ultimosRef.current.texto === texto);
     } catch (erroDesconhecido) {
       if (!vigente()) return;
