@@ -154,7 +154,8 @@ const assertLocal = baseURL => {
 for (const device of [{ name: "desktop", viewport: { width: 1440, height: 900 } }, { name: "mobile", viewport: { width: 390, height: 844 } }]) {
   test(`Listas remove perfil e contagens anteriores antes de autorizar o destino (${device.name})`, async ({ page, baseURL, request }) => {
     assertLocal(baseURL); await page.setViewportSize(device.viewport);
-    const f = await setup(page, baseURL, request, { holdAuthForRoute: B });
+    // A troca de rota reutiliza a sessão validada; segure o perfil de B para testar a renderização pendente.
+    const f = await setup(page, baseURL, request, { holdProfile: B });
     await page.goto(routeFor(A));
     await expect(page.getByText(title(A), { exact: true })).toBeVisible();
     // Exercise server prefetch even on mobile, where Link may not prefetch by
@@ -168,7 +169,7 @@ for (const device of [{ name: "desktop", viewport: { width: 1440, height: 900 } 
     await expect(page.getByText("Carregando lista...", { exact: true })).toBeVisible();
     await expect(page.getByText(title(A), { exact: true })).toHaveCount(0);
     await expect(page.getByRole("heading", { name: new RegExp(name(A)) })).toHaveCount(0);
-    // Keep checking painted frames while validation of B is held.
+    // Keep checking painted frames while B's target profile request is held.
     const leaked = await page.evaluate(async secret => {
       let leaked = false;
       for (let n = 0; n < 8; n++) { await new Promise(requestAnimationFrame); leaked ||= document.body.innerText.includes(secret); }
