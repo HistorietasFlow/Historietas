@@ -1,0 +1,72 @@
+name: Historias em Comum - isolated evidence
+
+on:
+  push:
+    branches:
+      - qa/historias-comum-etapa1-diagnostico
+
+permissions:
+  contents: read
+
+concurrency:
+  group: historias-comum-etapa1-diagnostico
+  cancel-in-progress: false
+
+jobs:
+  focused:
+    if: ${{ github.repository == 'HistorietasFlow/Historietas' && github.event_name == 'push' && github.ref == 'refs/heads/qa/historias-comum-etapa1-diagnostico' && github.event.created == true && github.run_attempt == 1 }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      CI: 'true'
+      HISTORIAS_DISPOSABLE: '1'
+    steps:
+      - name: Checkout harness from the diagnostic creation push
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          path: harness
+          persist-credentials: false
+          sparse-checkout: |
+            qa/historias-comum
+            .github/workflows
+
+      - name: Checkout immutable main reference with 90 migrations
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: 5b8d439f5bd50d14ab53e0fdddfe8f84d30a5f86
+          path: base-source
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /supabase/migrations/
+            /qa/integration/supabase/
+
+      - name: Node 22
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version: 22.23.4
+
+      - name: Offline harness contracts and privacy of diagnostics
+        run: node --test --test-concurrency=1 harness/qa/historias-comum/static.test.mjs harness/qa/historias-comum/orchestration.test.mjs
+
+      - name: Same pinned Supabase CLI as main CI
+        uses: supabase/setup-cli@689adcfb80d947100a1eab127289b97d1fb07b13
+        with:
+          version: 2.116.0
+
+      - name: Single attempt - local Auth Data API and pending SQL only
+        env:
+          HISTORIAS_REPORT_DIR: ${{ runner.temp }}/historias-comum-results
+        run: node harness/qa/historias-comum/runner.mjs base-source
+
+      - name: Upload only schema summary, predefined checks and sanitized plans
+        if: ${{ always() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: historias-comum-sanitized-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/historias-comum-results/summary.json
+            ${{ runner.temp }}/historias-comum-results/schema.json
+            ${{ runner.temp }}/historias-comum-results/plans.json
+          if-no-files-found: warn
+          retention-days: 7

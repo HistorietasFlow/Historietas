@@ -1,0 +1,366 @@
+{
+  "sha": "5b8d439f5bd50d14ab53e0fdddfe8f84d30a5f86",
+  "migrations": [
+    {
+      "name": "20260806000300_schema_public_baseline.sql",
+      "sha256": "f90f6671de250b3216cd16aee9682e929f4bb77a94597d900c05fbc2ca678154"
+    },
+    {
+      "name": "20260806000400_storage_baseline.sql",
+      "sha256": "1e1ebd44dff8ec396d3d9344648399adf3d84e743f14b4261ff9c2e982aa199e"
+    },
+    {
+      "name": "20260806000500_corrigir_lint_funcoes_notificacoes.sql",
+      "sha256": "1231d87d0ccdeba13646dda2e6028291cae055cb52887aafc97d5c5ac7a4bf84"
+    },
+    {
+      "name": "20260806000600_corrigir_lint_metadata_notificacoes.sql",
+      "sha256": "df88a97d0780b55753224d635d8f27d03c6fee0b9b0745c512d861459ad7d9e4"
+    },
+    {
+      "name": "20260806000700_fortalecer_moderacao_denuncias.sql",
+      "sha256": "08edbebbcfbe7ecccea495d0351fd3c353348f57b12dcc38327b5895db5444dd"
+    },
+    {
+      "name": "20260807000100_corrigir_policy_storage_arquivos.sql",
+      "sha256": "2ed8af9617d9a26bcb8e756588b9d39cefb5cfcfb5c0acc323b36636917d8b46"
+    },
+    {
+      "name": "20260807000200_limitar_bucket_capas_obras.sql",
+      "sha256": "d609a3b306b757d15c683a4143bebe2fad5db118e3ea5f65bd6fc03d5ad5b5c8"
+    },
+    {
+      "name": "20260807000300_limitar_bucket_avatars.sql",
+      "sha256": "58f092e5219e2874ad5830e3e892231ac7a10c21de805c9685a86322ef812d30"
+    },
+    {
+      "name": "20260808000100_sincronizar_nome_perfil.sql",
+      "sha256": "96fb334065006bba9cae3f8510a95dec3f01b2d0702ccd919fad9508ce9b1ab7"
+    },
+    {
+      "name": "20260808000200_sincronizar_avatar_perfil.sql",
+      "sha256": "e22a70c08874c13605952b5a8850fb4ced711aa12e2854d9b03f0b9fb5f1931a"
+    },
+    {
+      "name": "20260808000300_exigir_aceite_ao_publicar_obra.sql",
+      "sha256": "a1170dc96d5f0dd851107f4af13b533fee5ad244ce5e2a1619d3c11f88794cda"
+    },
+    {
+      "name": "20260809000100_exigir_aceite_conteudo_ugc.sql",
+      "sha256": "4a4c92a434ce271b677466a2955ecc2fede2b882fef21ea006e165786fead48e"
+    },
+    {
+      "name": "20260810000100_bloquear_notificacoes_conteudo_18.sql",
+      "sha256": "4ae87cc06421531c417d19a579986c817462863dfcd39d951aeb3d4078f86bbf"
+    },
+    {
+      "name": "20260810000200_bloquear_select_publico_conteudo_18.sql",
+      "sha256": "a8189651474b09c80a8896a0218837173443ba7aa3586045eb12135ea1c25381"
+    },
+    {
+      "name": "20260810000300_helper_admin_auditar_capas_18.sql",
+      "sha256": "d7b00305e68f9e70efd40fd1dceb721f526fdbfcdb93e0fb23b6abd71709ae42"
+    },
+    {
+      "name": "20260810000400_remover_helper_admin_auditar_capas_18.sql",
+      "sha256": "8a848de6138c47613cc8e920c1630ccb5b77e86dff6771d9ecfed6ec30e69063"
+    },
+    {
+      "name": "20260810000500_restringir_remocao_denuncia_ativa.sql",
+      "sha256": "c65564a7605c839bbc3868a0cca15f2f7d483d25d9e72822aaec2e24556b9c12"
+    },
+    {
+      "name": "20260810000600_restringir_delete_denuncias_resolvidas.sql",
+      "sha256": "298204dd727cad2e69fc7bded0d86c0b7516e3e896d605c3e9c46672cd96ef77"
+    },
+    {
+      "name": "20260810000700_restringir_consulta_bloqueio_terceiros.sql",
+      "sha256": "6a22e2e291bffabc7d32d32f3359b5862d460d6c164071706277f640eca20de8"
+    },
+    {
+      "name": "20260810000800_ocultar_identidade_moderador_notificacoes.sql",
+      "sha256": "73b41ba187024268612d5c4c9e44879debcbd19ce113b5a9a5b0289e69a6bfba"
+    },
+    {
+      "name": "20260810000900_proteger_metadados_analise_denuncias.sql",
+      "sha256": "8caa229fb3463c3731293f055e119bd3cc0d601252205cad798345980b075d08"
+    },
+    {
+      "name": "20260810001000_reforcar_bloqueios_comunidade.sql",
+      "sha256": "f033c1a2a9020178c81b852ec32c2a003e17a5d264fbda2343d4cbf70e2cb0ef"
+    },
+    {
+      "name": "20260810001100_reforcar_bloqueios_obras_capitulos.sql",
+      "sha256": "f1eede5e2ecf749e92c872890d593750a9f6261bd9cd42a7d31a4a81f6ca9f7c"
+    },
+    {
+      "name": "20260810001200_unificar_verificacao_admin.sql",
+      "sha256": "594378c0cb988f5121694a3ea996a864edbc10aedff8acd815f5dc0173a2b61a"
+    },
+    {
+      "name": "20260810001300_proteger_resultados_enquetes_comunidade.sql",
+      "sha256": "9cbf9ac6c89cf0469281f1ee1ec8ad3329091eb3b4edbe63186a942383344a03"
+    },
+    {
+      "name": "20260810001400_bloquear_notificacoes_entre_usuarios.sql",
+      "sha256": "bbb9c1e6148fe0cccef324d0c9107a9bb95d8179b732ced75727207c51803373"
+    },
+    {
+      "name": "20260810001500_proteger_fixacao_posts_comunidade.sql",
+      "sha256": "3552e4d55f5cd24cd28402c81b86e910301a993a7d23a98eed14fcd50e881ac6"
+    },
+    {
+      "name": "20260810001600_bloquear_avaliacoes_obras_usuarios_bloqueados.sql",
+      "sha256": "8c58e15ffcb20790cc94b1848a40b9ef05489465ca24df1420e31c8cf6d706b1"
+    },
+    {
+      "name": "20260810001700_proteger_fixacao_posts_no_insert.sql",
+      "sha256": "45e2c45829e78688dd868223def56870fd16217b695e2a666c35ec513a0f8811"
+    },
+    {
+      "name": "20260810001800_bloquear_avaliacoes_autores_usuarios_bloqueados.sql",
+      "sha256": "17c596e9602cdb5bef23b91855f78f2404069aaeae2c8493c747af85ff9dcd8d"
+    },
+    {
+      "name": "20260810001900_remover_avaliacoes_diario_ao_bloquear.sql",
+      "sha256": "a2e138b38f7968e7d98f839e02bc49531e6271cc962a5652f0656179dd15394e"
+    },
+    {
+      "name": "20260810002000_proteger_identidade_profiles.sql",
+      "sha256": "0fbb84c92d7f23cc59b95a3a4a8e684e6c10beeb8dcd8789cba3dff2d50084aa"
+    },
+    {
+      "name": "20260810002100_proteger_update_identidade_profiles.sql",
+      "sha256": "558d1cf99cde3eeb64d875b17964369e733087938d1e04b83c8eccc725e398b2"
+    },
+    {
+      "name": "20260810002200_proteger_campos_sensiveis_profiles.sql",
+      "sha256": "62e1ee93d0d857ffa5c2ee41ac06786f18b675c7ae6fdf6b428a6674fd9c161b"
+    },
+    {
+      "name": "20260821220055_corrigir_rls_capitulos_privacidade.sql",
+      "sha256": "84829267d16fe8ddf3b1b1eddf9308fb79923ff6431bde91b901594ad9a8fb0d"
+    },
+    {
+      "name": "20260821222837_corrigir_execute_helper_biblioteca.sql",
+      "sha256": "79065e1a6593790a3e6eb243def5726c02bc0180cb815896c92b5a49c7c3e15d"
+    },
+    {
+      "name": "20260825201408_corrigir_policies_interacoes_quarentenar_legado.sql",
+      "sha256": "ba08dff1c9c46c4d76c59f52b07eded2a716ce68cdba4b20ae504d21f724d9a6"
+    },
+    {
+      "name": "20260825204845_proteger_endpoint_exclusao_rpcs_visualizacao.sql",
+      "sha256": "d33dc6c66dbb1292cc6776d4253d0fdcf313ad17162a4f2f630cb62605184346"
+    },
+    {
+      "name": "20260825225811_criar_contrato_metricas_agregadas.sql",
+      "sha256": "b9b9e3ac7bc1be21f3324db97685bcebefbf7cc5586446be9220ec661da3c5f5"
+    },
+    {
+      "name": "20260826000638_restringir_security_definer_expostos.sql",
+      "sha256": "1f34eb5d2e86314f295a1064a4b1be7b0df9695e2dd49dc9e9ed37ad1b19ccda"
+    },
+    {
+      "name": "20260826162505_proteger_storage_contra_esgotamento_cota.sql",
+      "sha256": "926984040f3e1e6682664044a97a2e538c034eea300d9ec6728e65c1a3b88d46"
+    },
+    {
+      "name": "20260826173441_proteger_egress_arquivos_obras.sql",
+      "sha256": "e1672fc56df12a45f060169a70edccc7adf9420f7653f4b35205a1e6c7d2aa66"
+    },
+    {
+      "name": "20260901201213_corrigir_consulta_server_arquivo_obra.sql",
+      "sha256": "d62c3f659d7f2abafea9f8aed771bde8fe6188207dab296382f0470f12822fad"
+    },
+    {
+      "name": "20260901205707_otimizar_policies_rls_indices.sql",
+      "sha256": "737eac873ca063cdf1de85e1e91c8deae341323d93dc094ba88d5ab3b1c0875d"
+    },
+    {
+      "name": "20260902200942_revogar_privilegios_administrativos_api.sql",
+      "sha256": "5fab8f8de4b386a086010c4a1e8ec11792ffa7ee4bb6197235048cea0f59c8cc"
+    },
+    {
+      "name": "20260909003047_catalogo_publico_paginado.sql",
+      "sha256": "03157b7aa018166c9d05a4ac81f1de71ad3eee0d6489fbb507210cd0bff4f5dd"
+    },
+    {
+      "name": "20260909011109_proteger_comunidade_contra_spam.sql",
+      "sha256": "c5557f9c98f112fce9101c352ceba5366ba792dc2ded4384dfb20864fc143a72"
+    },
+    {
+      "name": "20260909022356_corrigir_status_rate_limit_comunidade.sql",
+      "sha256": "e3d965166116a85f89c9205333dc6c452febde67b58cc5f40bc0182fe693d05f"
+    },
+    {
+      "name": "20261104225029_restringir_listagem_storage_ao_proprietario.sql",
+      "sha256": "4c16f64e0d28c7f55b7e1286e7e60e4a279bb0518fead1e56aa2237af39365e1"
+    },
+    {
+      "name": "20261105203938_corrigir_aceite_termos_profile_ausente.sql",
+      "sha256": "34367f01e07d916bcf33432577c0153e50c1748f0c1a46a9ae9e8d92cc848a43"
+    },
+    {
+      "name": "20261106175534_corrigir_busca_autores_catalogo.sql",
+      "sha256": "fdca4bdf66aa411d65a3ee47876df457004549ce1249ab73800ab8bdb21187ff"
+    },
+    {
+      "name": "20261106212539_sincronizar_progresso_leitura_dispositivos.sql",
+      "sha256": "cd8decebc78e61d4e5d31a51449a99baa6b83935f7cbf617bb94e20b1cf10db2"
+    },
+    {
+      "name": "20261106222208_permitir_autor_gerenciar_comentarios.sql",
+      "sha256": "6d50682ca1cb7e144b7c4e87a8a40f05b09b365f82e16ea2aaa785c29ca85716"
+    },
+    {
+      "name": "20261107163026_adicionar_filtro_tag_catalogo.sql",
+      "sha256": "9540a6ace66b878e8d7f922f2e7ac69d0a0f751e58bb77f6d125fe46d1ae5cf5"
+    },
+    {
+      "name": "20261107171221_adicionar_nota_minima_catalogo.sql",
+      "sha256": "72381d1fdbb502996a8a8ba51c3541260b9aabd38efe5c5ae6a4b4a6c06826b5"
+    },
+    {
+      "name": "20261107180400_adicionar_exclusao_tag_catalogo.sql",
+      "sha256": "84ae756911b3440a298021709402f5108d1f9d2887208efd705e92dd0b2e3d50"
+    },
+    {
+      "name": "20261107190827_adicionar_exclusao_genero_catalogo.sql",
+      "sha256": "63ee207f5fab43f104a38b3d39a78461e4700d82a370f56333ccd9166d294f62"
+    },
+    {
+      "name": "20261107223400_infraestrutura_capitulos_ilustrados.sql",
+      "sha256": "f66cb11bef91fce810b2010184b87ca114a16ba000f1e567da567c7829c92f30"
+    },
+    {
+      "name": "20261107235846_reservar_capacidade_capitulos_ilustrados.sql",
+      "sha256": "0e638da7ca160cba1cd08992fdfa7cb76917a8e7d0fcff6a4ddd6b92e732ba07"
+    },
+    {
+      "name": "20261108004015_autorizar_prevalidacao_paginas_ilustradas.sql",
+      "sha256": "eecbfd6b7fd871b8c6b450c96759df9bf1e597815535e7a6e8af01c568d0d9cd"
+    },
+    {
+      "name": "20261108012821_registrar_tentativas_upload_ilustrado.sql",
+      "sha256": "893dd25ff144c907cfdc69398f8ce9f75524d1cc2a78cad92ea03268690c547a"
+    },
+    {
+      "name": "20261108085709_recibos_privados_paginas_ilustradas.sql",
+      "sha256": "1e357736f26a0422dcac0eb517db8b290754401eab6f8e087f6f92564a458656"
+    },
+    {
+      "name": "20261108132533_infraestrutura_agendamento_capitulos.sql",
+      "sha256": "e54671890b58fef7e8ff81d4e9218959d025d1ecb2819b5a9c717f12a6eddda0"
+    },
+    {
+      "name": "20261108142104_executor_privado_agendamento_capitulos.sql",
+      "sha256": "9010ecb82d76a2e18dab59677d01d0b74e012b95c91cd1225fe36861c94f0d4b"
+    },
+    {
+      "name": "20261108164909_diario_publicacao_capitulos_agendados.sql",
+      "sha256": "50207ab7aeedc986235c36f5c53fb036f10d0de3b3011c6eca45cc869b1cf7b8"
+    },
+    {
+      "name": "20261108182554_outbox_cache_capitulos_agendados.sql",
+      "sha256": "0f60e940e7983f24b0aaf160de8d3ab43aae6a43147bcd6ec1786311b4843810"
+    },
+    {
+      "name": "20261108195558_revisao_transacional_projecao_publica.sql",
+      "sha256": "52a1c3f623b251afdc643a7c6eaa3dae181bba8b8617d298a3fb84b762ffccf0"
+    },
+    {
+      "name": "20261108205505_barreira_revisao_cache_publico.sql",
+      "sha256": "b95265bee25a9d93f86c4cbb46be23338af3589dab19f8540e4b8033a869322e"
+    },
+    {
+      "name": "20261109040303_snapshot_leve_publico_obra.sql",
+      "sha256": "f04dfbbb7cfe946edddacac75f4bad9773d1bbad75a4bf83f99a23cc0fd359b5"
+    },
+    {
+      "name": "20261109171652_runner_privado_agendamento_capitulos.sql",
+      "sha256": "b4b3e826e661ac6f438890db8a9824f29c2cacad332f1d9da32c38770f6a407f"
+    },
+    {
+      "name": "20261109183045_entrada_sql_restrita_runner_capitulos.sql",
+      "sha256": "ede5095c16dfd937b6ab34b6d512d2afeaa268bffca06d08d66fc147ed0534f8"
+    },
+    {
+      "name": "20261109194305_observabilidade_privada_runner_capitulos.sql",
+      "sha256": "538938dc894294c9a0f9b04d12e9cc173a8ade4900a6490ff338297575efbf10"
+    },
+    {
+      "name": "20261109215507_protecao_capacidade_outbox_capitulos.sql",
+      "sha256": "6ac903df185cd8397fc166a851702ad00c81202b1e9361dd9fd96edcf220d3f0"
+    },
+    {
+      "name": "20261110014753_snapshot_monitor_externo_agendamento.sql",
+      "sha256": "c591587705ef5882c6410cbf27ebbcbbf3ddd5e46bea3f3ed993ac3d889b451e"
+    },
+    {
+      "name": "20261110041125_orcamento_transacional_notificacoes_agendadas.sql",
+      "sha256": "e46261a3760c52d7e04429d79ab02870dced2bada68388e76d33922102565cc2"
+    },
+    {
+      "name": "20261110062820_monitorar_capacidade_agendamento.sql",
+      "sha256": "591f7b490ad42f9fb11d7594d7242f3600d93754e67eb456547d15085d8b405f"
+    },
+    {
+      "name": "20261110121818_limitar_reescritas_solicitacao_cache_capitulos.sql",
+      "sha256": "58f20200976e4644b910eb1aae9eb73ddf0fda2a2b3a9466260bdd7ac0c6961a"
+    },
+    {
+      "name": "20261110135028_orcamento_transacional_reivindicacoes_outbox.sql",
+      "sha256": "d096369b569e9ac45efc10ca302fa66b2d3de14075719275cbfa94dd41fcc0ce"
+    },
+    {
+      "name": "20261110152413_recuperacao_privada_reivindicacoes_outbox.sql",
+      "sha256": "b83a1311db92e6315b63a766f8e609dad94c28127af919209602bfcab69c8f45"
+    },
+    {
+      "name": "20261110163339_integrar_consumidor_operacoes_cache.sql",
+      "sha256": "92a5cd5457851833eab1c68b4e04d7d7146903c3616dd81f0a9a8817e76db192"
+    },
+    {
+      "name": "20261110174613_observar_operacoes_cache_privadas.sql",
+      "sha256": "56bd61b1d73dfdd3929865d373ba4a97dcfaf74d17cac1526060384d6c8a8d9d"
+    },
+    {
+      "name": "20261111155517_identidade_login_monitor_agendamento.sql",
+      "sha256": "7a0fc8373d40729b7b30379483869ea4515c4c05a6a045102f00712f40a60945"
+    },
+    {
+      "name": "20261112013209_evitar_reescrita_saldo_notificacoes_vazio.sql",
+      "sha256": "afc996c376dd33d75361f80873fbeadbe09a755931eca7f14a8d9700ce845236"
+    },
+    {
+      "name": "20261113002736_adicionar_status_editorial_obras.sql",
+      "sha256": "597832bb8bc09cc843daa474192ac55dd8a6bad88cddd9b2c11a4e4deef63979"
+    },
+    {
+      "name": "20261113013249_proteger_versao_status_editorial.sql",
+      "sha256": "7e3f5a2a93a32de8566563b9d9f84756b321cbac8d86c919a8a3780869ba01e4"
+    },
+    {
+      "name": "20261113053819_contar_palavras_catalogo.sql",
+      "sha256": "2e123ec5d463edd43d555e8a8a8d9590f52cc407beb09109bb61b1df6ab97e2c"
+    },
+    {
+      "name": "20261113190105_contrato_transacional_capas_privadas.sql",
+      "sha256": "c4a34c2332bc63551ff97d1c21ad8ab1e91f34de91693b9d7f576e88a034c629"
+    },
+    {
+      "name": "20261113213000_contabilizar_capas_privadas_sem_ativacao.sql",
+      "sha256": "01ee90e0033a4b53d5328f62ceef3d14b67450ce96b46ee96d2fbf0eacd43abe"
+    },
+    {
+      "name": "20261114034604_diario_edicao_evento_seguro.sql",
+      "sha256": "db2dae80a33e714e750d8a6ff26aded0f4c0d2b47c3d5481413dc7aa18a6a0b1"
+    },
+    {
+      "name": "20261114215557_otimizar_paginacao_anon_comentarios_comunidade.sql",
+      "sha256": "9da21d99680f542f29e668e49c187f88ecdd4440a2894266e18d11f8880bad90"
+    }
+  ],
+  "auxiliary_sha256": "60e4e265dc42f4bbe009806f24806deadb40d4e8a44f803f5d04480d927fae90"
+}
