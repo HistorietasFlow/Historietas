@@ -1,5 +1,23 @@
 # Problemas conhecidos e soluções
 
+## Favoritos: referencias a obras nao divulgaveis
+
+O diagnostico de Historias em Comum (CI `43935598538`) comprovou que a
+leitura direta de favoritos por terceiro podia retornar IDs de obras nao
+publicadas/18+, pois a policy verificava somente a privacidade da Biblioteca.
+A migration `20261116191723` restringe apenas o SELECT de `favoritos`: terceiros
+precisam da autorizacao existente da Biblioteca e de obra publicada com
+classificacao Livre/10+/12+/14+/16+. A excecao do proprietario permanece,
+inclusive para favoritos privados, draft e 18+; nao confundir acesso pessoal
+legitimo com autorizacao para divulgar interesses em uma nova funcionalidade.
+O helper compartilhado, outras colecoes, grants e escritas nao mudam.
+
+Regressoes pgTAP dedicadas cobrem terceiro, anon, autor da obra como terceiro,
+proprietario, bloqueios bidirecionais e revogacoes. Execucao local pendente por
+RAM insuficiente (554 MiB livres); a CI existente executa `supabase test db`.
+Nao considerar a migration homologada nem aplicada pela existencia deste registro.
+RPC/interface de Historias em Comum e timeout do diagnostico ficam fora do escopo.
+
 ## QA do Leitor: cópia oculta do streaming não é o leitor ativo
 
 A CI `43269859618` (#2275) registrou strict mode em `chapter-canonical` na
