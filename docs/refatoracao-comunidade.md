@@ -1,5 +1,16 @@
 # Refatoração da Comunidade
 
+## Capas privadas — preparação de integração
+
+- Módulos isolados e desativados preparam referências imutáveis, portas de
+  upload, proteção contra fallback público e reconciliação de quotas privadas.
+  Sem alterações nos fluxos ativos. Contratos de entrega e validação real
+  permanecem pendentes; ver [registro](memory/CAPAS_PRIVADAS_INTEGRACAO.md).
+
+## Ler Capítulo — Fase 6: estado de feedback e overlays do leitor
+
+- Os estados locais de denúncia, mensagem de ação e ajustes do leitor foram reunidos em hook dedicado, preservando autenticação, mensagens, denúncia, callbacks e consumidores existentes.
+
 ## Stories de avaliações — etapa 4: homologação integrada
 
 - Dados, imagem e interface revisados em conjunto: 31 unitários e 15 integrações
@@ -28,9 +39,13 @@
   e flags para ocultar o handle e o símbolo “&” juntos. Sem SQL ou ativação.
 - Contrato e limites: [Memory Bank](memory/STORIES_AVALIACOES_ETAPA_1.md).
 
-## Ler Capítulo — Fase 6: estado de feedback e overlays do leitor
+## Stories de avaliações — etapa 3
 
-- Os estados locais de denúncia, mensagem de ação e ajustes do leitor foram reunidos em hook dedicado, preservando autenticação, mensagens, denúncia, callbacks e consumidores existentes.
+Interface de compartilhamento na página da obra: confirmação server-side antes
+do botão, geração segura da etapa 2, prévia e download PNG, Web Share por arquivo
+e fallback. Diálogo acessível PT/EN/ES, descarte em troca de identidade e cancelamento.
+Sem alteração do fluxo de avaliações, design do Story, migrations ou etapa 4.
+Contrato e limites em `docs/memory/STORIES_AVALIACOES_ETAPA_3.md`.
 
 ## Ler Capítulo — Fase 5: estado dos comentários do capítulo
 
@@ -3140,10 +3155,35 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - A composição visual dos filtros avançados de `/explorar` passou a ser carregada em um chunk sob demanda, preservando na página os estados, regras de negócio, body lock e callbacks existentes.
 
-## Stories de avaliações — etapa 3
+## Capas privadas — base HTTP desativada
 
-Interface de compartilhamento na página da obra: confirmação server-side antes
-do botão, geração segura da etapa 2, prévia e download PNG, Web Share por arquivo
-e fallback. Diálogo acessível PT/EN/ES, descarte em troca de identidade e cancelamento.
-Sem alteração do fluxo de avaliações, design do Story, migrations ou etapa 4.
-Contrato e limites em `docs/memory/STORIES_AVALIACOES_ETAPA_3.md`.
+- Route Handler com autenticação SSR por requisição e callbacks internos para
+  autorização, leitura limitada e revalidação antes de responder. Gate fixo false
+  e adaptador transacional ausente; nenhuma RPC/schema/bucket presumido da PR 1.
+- GET/HEAD/erros sem cache; recusa de fontes locais dinâmicas no Proxy antes do
+  cache de `/_next/image`, além de `localPatterns`. UI/legado preservados.
+- Evidências, limites e dependências: `docs/memory/ENTREGA_PRIVADA_CAPAS_BASE.md`.
+
+## Diário de edição de capítulo — contrato independente
+
+Preparada infraestrutura de `editou_capitulo` com gate desligado, RPC por versão,
+recibo/tombstone transacional e leitura condicionada ao conteúdo atual. Preservados
+os tipos anteriores e suas policies. Sem integração automática, alteração da #2307,
+aplicação remota ou ativação. Contratos e rollback em
+[Diário de edição](diario-edicao-evento-seguro.md).
+
+## Editar capítulo — Diário por RPC segura
+
+Integração isolada sobre #2307 para o contrato #2316: sem INSERT direto, token do
+UPDATE confirmado, recuperação por intenção e compatibilidade antes da migration.
+Sem alteração das branches de origem, migration ou ativação. Contrato e implantação
+em [Integração do Diário](../app/editar-capitulo/INTEGRACAO_DIARIO_RPC.md).
+
+## Homologação conjunta do editor e Diário — 15/11/2026
+
+Integração isolada sobre `main deeb839b`, #2316 → #2307 → #2321, sem duplicar a
+ancestralidade da #2307. Gate persistente desligado; sem alterações adicionais
+da aplicação/SQL ou das branches originais. Aprovados 244 unitários, 52 pgTAP e
+cinco cenários focados reais de Data API/Auth/Playwright, desktop/mobile, concorrência
+1 e zero retries. Evidências, correções do harness e limites em
+[Homologação integrada](integracao-editor-diario-20261115.md). Sem merge ou produção.
