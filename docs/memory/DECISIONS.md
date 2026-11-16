@@ -1,5 +1,25 @@
 # Decisões importantes
 
+## Histórias em Comum — contrato de consulta (fase 2, ainda não homologado)
+
+- A primeira versão calcula apenas a interseção entre os favoritos de duas contas:
+  a pessoa autenticada e o perfil visitado. Não aceita dois IDs arbitrários.
+- Somente favoritos individuais `publico`, Biblioteca `publico`,
+  `mostrar_favoritos=true` e perfis não privados **dos dois lados**.
+  `parcial`, seguidor/seguindo, somente-eu e perfil privado ficam fora
+  desta primeira versão; nenhuma configuração pessoal é alterada.
+- Um único SELECT `SECURITY INVOKER` aplica RLS, bloqueio bidirecional
+  e filtro de obra publicada/não 18+. A exceção legítima da RLS para o
+  proprietário NÃO autoriza divulgar seus hábitos na funcionalidade.
+- Retorna obra, título, autor, slug e capa em páginas de até 20, por
+  cursor de UUID; não devolve totais nem dados do favorito ou identidade alheia.
+- Nova RPC em `public.listar_historias_em_comum(uuid,uuid,integer)` restrita
+  a authenticated. Nenhuma interface, notificação ou recomendação foi incluída.
+- A correção da policy de favoritos da #2343 é requisito prévio. O contrato
+  e a performance precisam de homologação no Supabase local/CI antes de merge.
+  Migration remota e deploy permanecem operações separadas, não implícitas.
+
+
 ## Refatoração
 
 - Rascunhos de capítulos no painel: certificar somente metadados remotos da
