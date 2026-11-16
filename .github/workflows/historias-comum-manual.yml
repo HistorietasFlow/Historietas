@@ -3,18 +3,18 @@ name: Historias em Comum - isolated evidence
 on:
   push:
     branches:
-      - qa/historias-comum-etapa1-diagnostico
+      - qa/historias-comum-etapa1-diagnostico-v2
 
 permissions:
   contents: read
 
 concurrency:
-  group: historias-comum-etapa1-diagnostico
+  group: historias-comum-etapa1-diagnostico-v2
   cancel-in-progress: false
 
 jobs:
   focused:
-    if: ${{ github.repository == 'HistorietasFlow/Historietas' && github.event_name == 'push' && github.ref == 'refs/heads/qa/historias-comum-etapa1-diagnostico' && github.event.created == true && github.run_attempt == 1 }}
+    if: ${{ github.repository == 'HistorietasFlow/Historietas' && github.event_name == 'push' && github.ref == 'refs/heads/qa/historias-comum-etapa1-diagnostico-v2' && github.event.created == true && github.run_attempt == 1 }}
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:

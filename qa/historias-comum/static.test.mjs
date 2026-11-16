@@ -135,8 +135,8 @@ test('failed fixture still cleans tracked account and does not run permission ma
 test('workflow diagnostic creation push only, immutable base, exact artifact allowlist',()=>{
   const yml=readFileSync(new URL('../../.github/workflows/historias-comum-manual.yml',import.meta.url),'utf8');
   assert.match(yml,/^  push:/m); assert.doesNotMatch(yml,/workflow_dispatch:|pull_request:|schedule:/);
-  assert.match(yml,/branches:\s*\n\s*- qa\/historias-comum-etapa1-diagnostico\s*\n/);
-  for (const guard of ["github.repository == 'HistorietasFlow/Historietas'", "github.event_name == 'push'", "github.ref == 'refs/heads/qa/historias-comum-etapa1-diagnostico'", 'github.event.created == true', 'github.run_attempt == 1']) assert.ok(yml.includes(guard));
+  assert.match(yml,/branches:\s*\n\s*- qa\/historias-comum-etapa1-diagnostico-v2\s*\n/);
+  for (const guard of ["github.repository == 'HistorietasFlow/Historietas'", "github.event_name == 'push'", "github.ref == 'refs/heads/qa/historias-comum-etapa1-diagnostico-v2'", 'github.event.created == true', 'github.run_attempt == 1']) assert.ok(yml.includes(guard));
   assert.match(yml,/ref: 5b8d439f5bd50d14ab53e0fdddfe8f84d30a5f86/);
   assert.match(yml,/contents: read/); assert.doesNotMatch(yml,/secrets\.|--linked|--project-ref|db push|migration repair|npm ci|supabase test db|\.env/);
   assert.ok(!yml.includes('**'));

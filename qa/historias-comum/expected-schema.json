@@ -3,364 +3,364 @@
   "migrations": [
     {
       "name": "20260806000300_schema_public_baseline.sql",
-      "sha256": "f90f6671de250b3216cd16aee9682e929f4bb77a94597d900c05fbc2ca678154"
+      "sha256": "319c1824f2677a3aceb6215dddf5042e7585b1ec22704e81c030e8323058c497"
     },
     {
       "name": "20260806000400_storage_baseline.sql",
-      "sha256": "1e1ebd44dff8ec396d3d9344648399adf3d84e743f14b4261ff9c2e982aa199e"
+      "sha256": "10521b85ad6e9ee12aee0457f54c15ef3d297d11add0d5a845580eee98714b7c"
     },
     {
       "name": "20260806000500_corrigir_lint_funcoes_notificacoes.sql",
-      "sha256": "1231d87d0ccdeba13646dda2e6028291cae055cb52887aafc97d5c5ac7a4bf84"
+      "sha256": "c462442a4b0880bebd8e26b3e0e130faeb42bd117da3ca99265b9cb23e9a8a0d"
     },
     {
       "name": "20260806000600_corrigir_lint_metadata_notificacoes.sql",
-      "sha256": "df88a97d0780b55753224d635d8f27d03c6fee0b9b0745c512d861459ad7d9e4"
+      "sha256": "b15328c8359baae428e5ec5f0301d2ca8be0fe093f2a4973169957236378c66b"
     },
     {
       "name": "20260806000700_fortalecer_moderacao_denuncias.sql",
-      "sha256": "08edbebbcfbe7ecccea495d0351fd3c353348f57b12dcc38327b5895db5444dd"
+      "sha256": "31dd621dc82ae64f9e5a34a65ec7f00feee63c1e4f3dfacebe285c5a7c51ac09"
     },
     {
       "name": "20260807000100_corrigir_policy_storage_arquivos.sql",
-      "sha256": "2ed8af9617d9a26bcb8e756588b9d39cefb5cfcfb5c0acc323b36636917d8b46"
+      "sha256": "b0386a7309dcec3ac45283551b68f515ddbe2a5e1d5e6148836e5510dbad5f84"
     },
     {
       "name": "20260807000200_limitar_bucket_capas_obras.sql",
-      "sha256": "d609a3b306b757d15c683a4143bebe2fad5db118e3ea5f65bd6fc03d5ad5b5c8"
+      "sha256": "4c30543b08d287aeb7d12298bef3e323c65c0b170241e1265ec37c968a8624b3"
     },
     {
       "name": "20260807000300_limitar_bucket_avatars.sql",
-      "sha256": "58f092e5219e2874ad5830e3e892231ac7a10c21de805c9685a86322ef812d30"
+      "sha256": "16c6f50706c35fc66161379a2ea44f0e5f989e9a1fefd131d7b255f51234ff58"
     },
     {
       "name": "20260808000100_sincronizar_nome_perfil.sql",
-      "sha256": "96fb334065006bba9cae3f8510a95dec3f01b2d0702ccd919fad9508ce9b1ab7"
+      "sha256": "0aa43c3eed50491bff3111c4d792fdafe5035d3197003fd9a530c02aec1bd8f3"
     },
     {
       "name": "20260808000200_sincronizar_avatar_perfil.sql",
-      "sha256": "e22a70c08874c13605952b5a8850fb4ced711aa12e2854d9b03f0b9fb5f1931a"
+      "sha256": "5cb2609e51a6c6328cca595155aa07f7364adfb8bf98bc844754107d3fe2f96e"
     },
     {
       "name": "20260808000300_exigir_aceite_ao_publicar_obra.sql",
-      "sha256": "a1170dc96d5f0dd851107f4af13b533fee5ad244ce5e2a1619d3c11f88794cda"
+      "sha256": "b2d45ad71f32802e1b4ec4e7c9c7f48c6a6e4455ab908bbb2f8b36803875e0ae"
     },
     {
       "name": "20260809000100_exigir_aceite_conteudo_ugc.sql",
-      "sha256": "4a4c92a434ce271b677466a2955ecc2fede2b882fef21ea006e165786fead48e"
+      "sha256": "8803642f3c41894d3e47ec2a1028b951e82846bad309fc7e84d369b877eee7ea"
     },
     {
       "name": "20260810000100_bloquear_notificacoes_conteudo_18.sql",
-      "sha256": "4ae87cc06421531c417d19a579986c817462863dfcd39d951aeb3d4078f86bbf"
+      "sha256": "949a8f384e2990c280bf6d36d2b195013dc5a0086671bdaa927a92cb1ab46ee8"
     },
     {
       "name": "20260810000200_bloquear_select_publico_conteudo_18.sql",
-      "sha256": "a8189651474b09c80a8896a0218837173443ba7aa3586045eb12135ea1c25381"
+      "sha256": "3de6bc399fe79e88c5bcea37b693089b7a4ebf9ea776b7feb93a884c23cb7b6a"
     },
     {
       "name": "20260810000300_helper_admin_auditar_capas_18.sql",
-      "sha256": "d7b00305e68f9e70efd40fd1dceb721f526fdbfcdb93e0fb23b6abd71709ae42"
+      "sha256": "e8f1175c581a405ca1e167cf213744c0e3b067d068e53c03e9efba43da6d7960"
     },
     {
       "name": "20260810000400_remover_helper_admin_auditar_capas_18.sql",
-      "sha256": "8a848de6138c47613cc8e920c1630ccb5b77e86dff6771d9ecfed6ec30e69063"
+      "sha256": "117bddafa24094a646eca340dd5e45770fb1599fe8ab73b2db961ebefb8dc0ad"
     },
     {
       "name": "20260810000500_restringir_remocao_denuncia_ativa.sql",
-      "sha256": "c65564a7605c839bbc3868a0cca15f2f7d483d25d9e72822aaec2e24556b9c12"
+      "sha256": "5ee53be4dd29d10ac3c585dac30d371cdaba90ea2aeda048f8523723a545f2d1"
     },
     {
       "name": "20260810000600_restringir_delete_denuncias_resolvidas.sql",
-      "sha256": "298204dd727cad2e69fc7bded0d86c0b7516e3e896d605c3e9c46672cd96ef77"
+      "sha256": "efdb6f0fc2258d22c88bef6fd54512442dee8d71d6b45b9d4aee8389802a0379"
     },
     {
       "name": "20260810000700_restringir_consulta_bloqueio_terceiros.sql",
-      "sha256": "6a22e2e291bffabc7d32d32f3359b5862d460d6c164071706277f640eca20de8"
+      "sha256": "d59dc2abbdfe7836bd0f8bc901221a559ce3723de46f6db384c836c6d1558906"
     },
     {
       "name": "20260810000800_ocultar_identidade_moderador_notificacoes.sql",
-      "sha256": "73b41ba187024268612d5c4c9e44879debcbd19ce113b5a9a5b0289e69a6bfba"
+      "sha256": "78e5c0c3852d7e3479f32b02a284635015cf62c6559dc06dfe6cb2262e207c10"
     },
     {
       "name": "20260810000900_proteger_metadados_analise_denuncias.sql",
-      "sha256": "8caa229fb3463c3731293f055e119bd3cc0d601252205cad798345980b075d08"
+      "sha256": "0459e9c99ad6a24ae7aed3aaa8cd4f0ab629d9781640c7eb73a7369e97742740"
     },
     {
       "name": "20260810001000_reforcar_bloqueios_comunidade.sql",
-      "sha256": "f033c1a2a9020178c81b852ec32c2a003e17a5d264fbda2343d4cbf70e2cb0ef"
+      "sha256": "59321480f6a91b89a3f081614cf89bc6ef693fd2a175d1ee185a9d98a8053be7"
     },
     {
       "name": "20260810001100_reforcar_bloqueios_obras_capitulos.sql",
-      "sha256": "f1eede5e2ecf749e92c872890d593750a9f6261bd9cd42a7d31a4a81f6ca9f7c"
+      "sha256": "309924aafed06b158bb008bb473e7701c2d31cad9b395450ead4f57ad93d79f0"
     },
     {
       "name": "20260810001200_unificar_verificacao_admin.sql",
-      "sha256": "594378c0cb988f5121694a3ea996a864edbc10aedff8acd815f5dc0173a2b61a"
+      "sha256": "8b5c12f81c73662a22406a6a339b1caeb07f2ad0b1acb77d58d980cdc57a4a2e"
     },
     {
       "name": "20260810001300_proteger_resultados_enquetes_comunidade.sql",
-      "sha256": "9cbf9ac6c89cf0469281f1ee1ec8ad3329091eb3b4edbe63186a942383344a03"
+      "sha256": "53e49b9d81e510196c827c383538f1cf19094ba9ee5f29e72040b3233aadfad5"
     },
     {
       "name": "20260810001400_bloquear_notificacoes_entre_usuarios.sql",
-      "sha256": "bbb9c1e6148fe0cccef324d0c9107a9bb95d8179b732ced75727207c51803373"
+      "sha256": "85c3f0fa460d51459d80ee5742bfd327bea3ced2c52f39693ac41455fa298543"
     },
     {
       "name": "20260810001500_proteger_fixacao_posts_comunidade.sql",
-      "sha256": "3552e4d55f5cd24cd28402c81b86e910301a993a7d23a98eed14fcd50e881ac6"
+      "sha256": "5df4f77e3a039b9e30245746f7132da5debe2acdefae139230598d6b507f2957"
     },
     {
       "name": "20260810001600_bloquear_avaliacoes_obras_usuarios_bloqueados.sql",
-      "sha256": "8c58e15ffcb20790cc94b1848a40b9ef05489465ca24df1420e31c8cf6d706b1"
+      "sha256": "b4c13169183b15edaddd622a7bca149dcc52926a6a474d28f4bc67a1ffc3388b"
     },
     {
       "name": "20260810001700_proteger_fixacao_posts_no_insert.sql",
-      "sha256": "45e2c45829e78688dd868223def56870fd16217b695e2a666c35ec513a0f8811"
+      "sha256": "b1c106ecfdfe681c4bbd20822c693986a3f4e82afaf55a9078f008f320b84798"
     },
     {
       "name": "20260810001800_bloquear_avaliacoes_autores_usuarios_bloqueados.sql",
-      "sha256": "17c596e9602cdb5bef23b91855f78f2404069aaeae2c8493c747af85ff9dcd8d"
+      "sha256": "73acf8d9dd35cbad8b0167e32d3b9484e1b26384a6e05beec8547e85fed7d6e0"
     },
     {
       "name": "20260810001900_remover_avaliacoes_diario_ao_bloquear.sql",
-      "sha256": "a2e138b38f7968e7d98f839e02bc49531e6271cc962a5652f0656179dd15394e"
+      "sha256": "c688725ae166f494c5348622fb20a08a3562fb7ca7d1c707e30a5fc6c876315f"
     },
     {
       "name": "20260810002000_proteger_identidade_profiles.sql",
-      "sha256": "0fbb84c92d7f23cc59b95a3a4a8e684e6c10beeb8dcd8789cba3dff2d50084aa"
+      "sha256": "43c22ff4c7cd83b0a802bb450c6ba46521de0883ec49d09d48aa51a57b6c4ee7"
     },
     {
       "name": "20260810002100_proteger_update_identidade_profiles.sql",
-      "sha256": "558d1cf99cde3eeb64d875b17964369e733087938d1e04b83c8eccc725e398b2"
+      "sha256": "bcf33333e2ecc3d582020e464132aa1c0b2ce47e32633c80288d6a1307e9649b"
     },
     {
       "name": "20260810002200_proteger_campos_sensiveis_profiles.sql",
-      "sha256": "62e1ee93d0d857ffa5c2ee41ac06786f18b675c7ae6fdf6b428a6674fd9c161b"
+      "sha256": "2daab80ea6674ca4170364e0ea25cd5569b4e2b30cc579d08f025aa5c365d958"
     },
     {
       "name": "20260821220055_corrigir_rls_capitulos_privacidade.sql",
-      "sha256": "84829267d16fe8ddf3b1b1eddf9308fb79923ff6431bde91b901594ad9a8fb0d"
+      "sha256": "fef5f4cfdf137741c483cf2d6b251d90985c7ca56bb88a78bd2fbe7977655cac"
     },
     {
       "name": "20260821222837_corrigir_execute_helper_biblioteca.sql",
-      "sha256": "79065e1a6593790a3e6eb243def5726c02bc0180cb815896c92b5a49c7c3e15d"
+      "sha256": "d708e6d292be8bd425ef204f47e9875795c412acf138212a88cbd0614c1b1d79"
     },
     {
       "name": "20260825201408_corrigir_policies_interacoes_quarentenar_legado.sql",
-      "sha256": "ba08dff1c9c46c4d76c59f52b07eded2a716ce68cdba4b20ae504d21f724d9a6"
+      "sha256": "d7c91bd1a8201cfa816179fe0da04ccb02a3b9a40174c2ea1361129657b013ec"
     },
     {
       "name": "20260825204845_proteger_endpoint_exclusao_rpcs_visualizacao.sql",
-      "sha256": "d33dc6c66dbb1292cc6776d4253d0fdcf313ad17162a4f2f630cb62605184346"
+      "sha256": "eeb635ff2e198fccf8784c9f10f9fdbd687a76f3fe250c9325ee072be2c315f0"
     },
     {
       "name": "20260825225811_criar_contrato_metricas_agregadas.sql",
-      "sha256": "b9b9e3ac7bc1be21f3324db97685bcebefbf7cc5586446be9220ec661da3c5f5"
+      "sha256": "2756c40cb4f047070425df072efc570712d23cda452b4f2a1d59436be29c96f0"
     },
     {
       "name": "20260826000638_restringir_security_definer_expostos.sql",
-      "sha256": "1f34eb5d2e86314f295a1064a4b1be7b0df9695e2dd49dc9e9ed37ad1b19ccda"
+      "sha256": "034015bd1ee936e77c555d3e7da19a9419cae98989d33acd32a854a327599665"
     },
     {
       "name": "20260826162505_proteger_storage_contra_esgotamento_cota.sql",
-      "sha256": "926984040f3e1e6682664044a97a2e538c034eea300d9ec6728e65c1a3b88d46"
+      "sha256": "ab95ab69554e8fdbd05b79fd46c18145f72599756c0a22e2844e03722c2fd22b"
     },
     {
       "name": "20260826173441_proteger_egress_arquivos_obras.sql",
-      "sha256": "e1672fc56df12a45f060169a70edccc7adf9420f7653f4b35205a1e6c7d2aa66"
+      "sha256": "428e3e40a6cedbe02c974c7ca429c7b3ee205b9d8f31a8f4176fef912de0c379"
     },
     {
       "name": "20260901201213_corrigir_consulta_server_arquivo_obra.sql",
-      "sha256": "d62c3f659d7f2abafea9f8aed771bde8fe6188207dab296382f0470f12822fad"
+      "sha256": "838ec431dc7b30a78615f50981b8de6b2d57e46f20e183054b41c4313b374664"
     },
     {
       "name": "20260901205707_otimizar_policies_rls_indices.sql",
-      "sha256": "737eac873ca063cdf1de85e1e91c8deae341323d93dc094ba88d5ab3b1c0875d"
+      "sha256": "455049a878439b5c9ab1f1488880b5a866f6e9b38c4eec680e3d2e7f0f38c013"
     },
     {
       "name": "20260902200942_revogar_privilegios_administrativos_api.sql",
-      "sha256": "5fab8f8de4b386a086010c4a1e8ec11792ffa7ee4bb6197235048cea0f59c8cc"
+      "sha256": "31d3f9a48753e729b7b345dd3edd061e6c2c18b8f1c7b6ddae34f7a7476a6dca"
     },
     {
       "name": "20260909003047_catalogo_publico_paginado.sql",
-      "sha256": "03157b7aa018166c9d05a4ac81f1de71ad3eee0d6489fbb507210cd0bff4f5dd"
+      "sha256": "cead197e46d19054d00498c62bbe1d765e20f2971c9c7a532ca596bbd7b82237"
     },
     {
       "name": "20260909011109_proteger_comunidade_contra_spam.sql",
-      "sha256": "c5557f9c98f112fce9101c352ceba5366ba792dc2ded4384dfb20864fc143a72"
+      "sha256": "2ddda9d00519436450bb6f01412696aa474b70d31dd1c057e948c0de9f7f671f"
     },
     {
       "name": "20260909022356_corrigir_status_rate_limit_comunidade.sql",
-      "sha256": "e3d965166116a85f89c9205333dc6c452febde67b58cc5f40bc0182fe693d05f"
+      "sha256": "acafd9ee93532d141d25ef5282550ba2dece916c14647af685a74415935aa595"
     },
     {
       "name": "20261104225029_restringir_listagem_storage_ao_proprietario.sql",
-      "sha256": "4c16f64e0d28c7f55b7e1286e7e60e4a279bb0518fead1e56aa2237af39365e1"
+      "sha256": "9fd2e48409439ebfbef0541c6bdb103cd93275d7dcdbcfe99ff58e10732fc2ea"
     },
     {
       "name": "20261105203938_corrigir_aceite_termos_profile_ausente.sql",
-      "sha256": "34367f01e07d916bcf33432577c0153e50c1748f0c1a46a9ae9e8d92cc848a43"
+      "sha256": "429aa1be8181c0e0372054f38d9c4aaf2471310e10fa80880f9aca8167d660c8"
     },
     {
       "name": "20261106175534_corrigir_busca_autores_catalogo.sql",
-      "sha256": "fdca4bdf66aa411d65a3ee47876df457004549ce1249ab73800ab8bdb21187ff"
+      "sha256": "5ae107b223b0def4eab3bdf8b64898ddecd83820c9e6e00b4e20d25e5338fb39"
     },
     {
       "name": "20261106212539_sincronizar_progresso_leitura_dispositivos.sql",
-      "sha256": "cd8decebc78e61d4e5d31a51449a99baa6b83935f7cbf617bb94e20b1cf10db2"
+      "sha256": "fee4fd9c871b9331425c47bb35eee20978cc13e9d8a9e66c2a2909fa3fe9cad8"
     },
     {
       "name": "20261106222208_permitir_autor_gerenciar_comentarios.sql",
-      "sha256": "6d50682ca1cb7e144b7c4e87a8a40f05b09b365f82e16ea2aaa785c29ca85716"
+      "sha256": "56dce039ee90dfb0e3d6f3ea210ac560e1981f0bbc0b5ebd94700dd377bd37ed"
     },
     {
       "name": "20261107163026_adicionar_filtro_tag_catalogo.sql",
-      "sha256": "9540a6ace66b878e8d7f922f2e7ac69d0a0f751e58bb77f6d125fe46d1ae5cf5"
+      "sha256": "73f8450187b0ec6ab15e51946609d010ba9ce601a6945d33dc8be52e26ec6691"
     },
     {
       "name": "20261107171221_adicionar_nota_minima_catalogo.sql",
-      "sha256": "72381d1fdbb502996a8a8ba51c3541260b9aabd38efe5c5ae6a4b4a6c06826b5"
+      "sha256": "31f8ec93181cd9ac1dd71e5a1add1cf5e562322329d81a06130d8d9b5c18601e"
     },
     {
       "name": "20261107180400_adicionar_exclusao_tag_catalogo.sql",
-      "sha256": "84ae756911b3440a298021709402f5108d1f9d2887208efd705e92dd0b2e3d50"
+      "sha256": "67b53e93444af54aa398b3c9fcdd33dde9e33d4f9b911402db6c9db03d391de7"
     },
     {
       "name": "20261107190827_adicionar_exclusao_genero_catalogo.sql",
-      "sha256": "63ee207f5fab43f104a38b3d39a78461e4700d82a370f56333ccd9166d294f62"
+      "sha256": "1627aa5401dbbde65d22d44f14dabdea9fe0245cd3bf0ff5890d609c7b192557"
     },
     {
       "name": "20261107223400_infraestrutura_capitulos_ilustrados.sql",
-      "sha256": "f66cb11bef91fce810b2010184b87ca114a16ba000f1e567da567c7829c92f30"
+      "sha256": "ca9d2b3c40139ad655d5d93fbc3b689aa993352d67d026b182b1e1e193391aa7"
     },
     {
       "name": "20261107235846_reservar_capacidade_capitulos_ilustrados.sql",
-      "sha256": "0e638da7ca160cba1cd08992fdfa7cb76917a8e7d0fcff6a4ddd6b92e732ba07"
+      "sha256": "197114666649f34fcca8102b2b74b6086096d89ca9311a10962e414fbd353872"
     },
     {
       "name": "20261108004015_autorizar_prevalidacao_paginas_ilustradas.sql",
-      "sha256": "eecbfd6b7fd871b8c6b450c96759df9bf1e597815535e7a6e8af01c568d0d9cd"
+      "sha256": "af4f3558f2b92c582187d0a0e06478c155bfed97e1913d8f965161e37093cf20"
     },
     {
       "name": "20261108012821_registrar_tentativas_upload_ilustrado.sql",
-      "sha256": "893dd25ff144c907cfdc69398f8ce9f75524d1cc2a78cad92ea03268690c547a"
+      "sha256": "31298688b656b707a932d07e30e52ce58cc8dfee547825d0881a4250fd44394e"
     },
     {
       "name": "20261108085709_recibos_privados_paginas_ilustradas.sql",
-      "sha256": "1e357736f26a0422dcac0eb517db8b290754401eab6f8e087f6f92564a458656"
+      "sha256": "7fcd6e13cc0a96732d445ff1855987bc3217447b6fa4c93583951cb1534df7dd"
     },
     {
       "name": "20261108132533_infraestrutura_agendamento_capitulos.sql",
-      "sha256": "e54671890b58fef7e8ff81d4e9218959d025d1ecb2819b5a9c717f12a6eddda0"
+      "sha256": "841fa96e1113c3768cab01be988ea2c9c5dda2ab1bb11bbe8719c2b47c233464"
     },
     {
       "name": "20261108142104_executor_privado_agendamento_capitulos.sql",
-      "sha256": "9010ecb82d76a2e18dab59677d01d0b74e012b95c91cd1225fe36861c94f0d4b"
+      "sha256": "01787483a32c7479fa5ccd7f794013eeb7930c77ad8118c5d3e06db6b6813e00"
     },
     {
       "name": "20261108164909_diario_publicacao_capitulos_agendados.sql",
-      "sha256": "50207ab7aeedc986235c36f5c53fb036f10d0de3b3011c6eca45cc869b1cf7b8"
+      "sha256": "c5a0dfab6421dd5ddacfebe14b0a27978aaee52d7d0e30ee746f22c820ee4db7"
     },
     {
       "name": "20261108182554_outbox_cache_capitulos_agendados.sql",
-      "sha256": "0f60e940e7983f24b0aaf160de8d3ab43aae6a43147bcd6ec1786311b4843810"
+      "sha256": "5e7ca6eb10504aadfcf51b59d2908c5207b6c03863665d6c318dd35bdf2f8343"
     },
     {
       "name": "20261108195558_revisao_transacional_projecao_publica.sql",
-      "sha256": "52a1c3f623b251afdc643a7c6eaa3dae181bba8b8617d298a3fb84b762ffccf0"
+      "sha256": "1b9e3ce23dd581fa38b58431c042c63e8e93c3b15a632ba6f776f9ce5de04972"
     },
     {
       "name": "20261108205505_barreira_revisao_cache_publico.sql",
-      "sha256": "b95265bee25a9d93f86c4cbb46be23338af3589dab19f8540e4b8033a869322e"
+      "sha256": "ce7cf5ea3547bf1948c464899d085cb1502c9c60519f8187f7ce5ae6293eba9e"
     },
     {
       "name": "20261109040303_snapshot_leve_publico_obra.sql",
-      "sha256": "f04dfbbb7cfe946edddacac75f4bad9773d1bbad75a4bf83f99a23cc0fd359b5"
+      "sha256": "53d3b1695dc2383f65ae2b7af6dddc7ac24740ebe0b3717b0f8ddcaf0aaaa34a"
     },
     {
       "name": "20261109171652_runner_privado_agendamento_capitulos.sql",
-      "sha256": "b4b3e826e661ac6f438890db8a9824f29c2cacad332f1d9da32c38770f6a407f"
+      "sha256": "d289baf6673895c9da5075e975855879bb9d13b2789b69454223a3d65aa5d562"
     },
     {
       "name": "20261109183045_entrada_sql_restrita_runner_capitulos.sql",
-      "sha256": "ede5095c16dfd937b6ab34b6d512d2afeaa268bffca06d08d66fc147ed0534f8"
+      "sha256": "6dabdc6cac131150f8ac7d0992de6153a8122889ff777ba529ce7876f68bbce4"
     },
     {
       "name": "20261109194305_observabilidade_privada_runner_capitulos.sql",
-      "sha256": "538938dc894294c9a0f9b04d12e9cc173a8ade4900a6490ff338297575efbf10"
+      "sha256": "7685824ab0de2c804cc0dc8d925ab507c2dab248c820aec1ae3f2746da4d6fd6"
     },
     {
       "name": "20261109215507_protecao_capacidade_outbox_capitulos.sql",
-      "sha256": "6ac903df185cd8397fc166a851702ad00c81202b1e9361dd9fd96edcf220d3f0"
+      "sha256": "491b5e3f41967bbb303ac6a98c1014b595a8fff2f824bd59b1f91235feb7d6a2"
     },
     {
       "name": "20261110014753_snapshot_monitor_externo_agendamento.sql",
-      "sha256": "c591587705ef5882c6410cbf27ebbcbbf3ddd5e46bea3f3ed993ac3d889b451e"
+      "sha256": "b5d701bf50bf3a65d49b17de5d5191b4983bdc0d21a62faf73e3ddc2e550d32e"
     },
     {
       "name": "20261110041125_orcamento_transacional_notificacoes_agendadas.sql",
-      "sha256": "e46261a3760c52d7e04429d79ab02870dced2bada68388e76d33922102565cc2"
+      "sha256": "cecaed3b685b4aa06b1cc552fa9b3ee7f5d33f936b030672e2a21113ae3f0454"
     },
     {
       "name": "20261110062820_monitorar_capacidade_agendamento.sql",
-      "sha256": "591f7b490ad42f9fb11d7594d7242f3600d93754e67eb456547d15085d8b405f"
+      "sha256": "763f396768c8923c99f83b944494da3ad0ffd37d1bf04ba4484768da0dfb608c"
     },
     {
       "name": "20261110121818_limitar_reescritas_solicitacao_cache_capitulos.sql",
-      "sha256": "58f20200976e4644b910eb1aae9eb73ddf0fda2a2b3a9466260bdd7ac0c6961a"
+      "sha256": "37e9dc65c7212fec1844ed719c2ef9ee284c2053e11724723ac63acd7293b436"
     },
     {
       "name": "20261110135028_orcamento_transacional_reivindicacoes_outbox.sql",
-      "sha256": "d096369b569e9ac45efc10ca302fa66b2d3de14075719275cbfa94dd41fcc0ce"
+      "sha256": "48cf783e92196fecd1a4cd6dac67c77c27fe601fe3e07f676da9930e3a9a85c5"
     },
     {
       "name": "20261110152413_recuperacao_privada_reivindicacoes_outbox.sql",
-      "sha256": "b83a1311db92e6315b63a766f8e609dad94c28127af919209602bfcab69c8f45"
+      "sha256": "3547c314900d68b9050fce8d5c7bc8ae5b7f301406109a934a8148765d447511"
     },
     {
       "name": "20261110163339_integrar_consumidor_operacoes_cache.sql",
-      "sha256": "92a5cd5457851833eab1c68b4e04d7d7146903c3616dd81f0a9a8817e76db192"
+      "sha256": "b9f09485f4538468c585218dfd5fdacaa3912a926248a487e0d35e66d6e619ec"
     },
     {
       "name": "20261110174613_observar_operacoes_cache_privadas.sql",
-      "sha256": "56bd61b1d73dfdd3929865d373ba4a97dcfaf74d17cac1526060384d6c8a8d9d"
+      "sha256": "62e19d6a58ce2f9910287bcba50e99564d29fe3075907a3e73333f20406e5202"
     },
     {
       "name": "20261111155517_identidade_login_monitor_agendamento.sql",
-      "sha256": "7a0fc8373d40729b7b30379483869ea4515c4c05a6a045102f00712f40a60945"
+      "sha256": "378add500746f1d2ebca709d92cd49586255e4985ca6c76cab8e46138d0f809b"
     },
     {
       "name": "20261112013209_evitar_reescrita_saldo_notificacoes_vazio.sql",
-      "sha256": "afc996c376dd33d75361f80873fbeadbe09a755931eca7f14a8d9700ce845236"
+      "sha256": "e7a2035e847c004f112ed86f4a7bc184971c49c122b0e9d33c2eaae3a7419931"
     },
     {
       "name": "20261113002736_adicionar_status_editorial_obras.sql",
-      "sha256": "597832bb8bc09cc843daa474192ac55dd8a6bad88cddd9b2c11a4e4deef63979"
+      "sha256": "23500626d7d6b223da0b1de1659d80f0ead71d873a07a182fd30b9bedd3de35d"
     },
     {
       "name": "20261113013249_proteger_versao_status_editorial.sql",
-      "sha256": "7e3f5a2a93a32de8566563b9d9f84756b321cbac8d86c919a8a3780869ba01e4"
+      "sha256": "f42aa87332508c65cb9b93762281f407b80cb136cc18dad9248d23373f3fa98d"
     },
     {
       "name": "20261113053819_contar_palavras_catalogo.sql",
-      "sha256": "2e123ec5d463edd43d555e8a8a8d9590f52cc407beb09109bb61b1df6ab97e2c"
+      "sha256": "46e91fc92449f926343423c86c9d7a6c3e772230951f884b0732fc9e81cf2d0b"
     },
     {
       "name": "20261113190105_contrato_transacional_capas_privadas.sql",
-      "sha256": "c4a34c2332bc63551ff97d1c21ad8ab1e91f34de91693b9d7f576e88a034c629"
+      "sha256": "d39e6ba46adc2ac0d8408ff9083eda0726efa146e2ab22bfd500ff1c67fced85"
     },
     {
       "name": "20261113213000_contabilizar_capas_privadas_sem_ativacao.sql",
-      "sha256": "01ee90e0033a4b53d5328f62ceef3d14b67450ce96b46ee96d2fbf0eacd43abe"
+      "sha256": "9bd3746619044ebc3ee69607a4d078cd9ed07dcbc3138335ed182eadb1780bd5"
     },
     {
       "name": "20261114034604_diario_edicao_evento_seguro.sql",
-      "sha256": "db2dae80a33e714e750d8a6ff26aded0f4c0d2b47c3d5481413dc7aa18a6a0b1"
+      "sha256": "91973e717e908ebf5145ca3d5e0ca66e1f6319197b3f9df3d845ba8c897592d1"
     },
     {
       "name": "20261114215557_otimizar_paginacao_anon_comentarios_comunidade.sql",
-      "sha256": "9da21d99680f542f29e668e49c187f88ecdd4440a2894266e18d11f8880bad90"
+      "sha256": "dc067da909e0e675dea0f03bdb06eac1de2a46b8c11300375d85b7378330c9fc"
     }
   ],
-  "auxiliary_sha256": "60e4e265dc42f4bbe009806f24806deadb40d4e8a44f803f5d04480d927fae90"
+  "auxiliary_sha256": "e59e6da5b622f66d0831ff5acd660c0e7b215267c7736e0a4b6aea96ff916fcd"
 }

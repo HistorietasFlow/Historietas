@@ -1,11 +1,12 @@
 # Historias em Comum — suite isolada de evidencia
 
-Primeira execucao diagnostica em GitHub Actions, autorizada exclusivamente pelo push de criacao da branch qa/historias-comum-etapa1-diagnostico. NAO e funcionalidade de produto, RPC, alteracao de RLS ou autorizacao de producao.
+Execucao diagnostica v2 em GitHub Actions, autorizada exclusivamente pelo push de criacao da branch qa/historias-comum-etapa1-diagnostico-v2. NAO e funcionalidade de produto, RPC, alteracao de RLS ou autorizacao de producao.
 
 ## Base e origem verificadas
 
 - Base imutavel: main `5b8d439f5bd50d14ab53e0fdddfe8f84d30a5f86`.
 - `expected-schema.json`: nomes e SHA256 dos 90 SQLs dessa main e do auxiliar ACL existente na CI. `verifySource()` exige correspondencia completa antes de iniciar o stack.
+- Correcao v2: os 91 hashes foram regenerados dos Buffers retornados por git show desse SHA, sem conversao de quebras de linha. Os hashes anteriores correspondiam a CRLF; os blobs originais e o checkout Linux usam LF. A verificacao em runtime permanece estrita sobre bytes, sem normalizacao ou excecoes.
 - Bootstrap reutilizado da CI desse SHA: CLI 2.116.0, `supabase init`, copia do auxiliar `qa/integration/supabase/20260826000637_normalizar_acl_baseline_local.sql`, `supabase start`. Nenhum SQL existente e editado.
 - O runtime novo tera 90 migrations da main + 1 auxiliar LOCAL da CI (91 registros), todos conferidos. Isso NAO e o historico antigo de 88 e nao o substitui. Nenhum dos 88 SQLs do ZIP historico e usado aqui.
 - Diferencas deliberadas em relacao ao job completo da CI: uma unica tentativa, sem seed ampla, pooler de monitor, dashboard, analytics ou interface de email. Nao executa build, npm install/ci, testes gerais ou Playwright. O bootstrap nao e apresentado como ja executado nesta preparacao.
