@@ -89,7 +89,15 @@ for(const [device,viewport] of [["desktop",{width:1440,height:900}],["mobile",{w
     await expect(chip(page)).toHaveCount(0);expect(new URL(page.url()).searchParams.get("statusEditorial")).toBe("concluida");
     await expect(page.getByRole("group",{name:"Filtros selecionados"}).getByRole("button",{name:/Estado da história/})).toBeFocused();
     const d2=await panel(page);await apply(page,d2,"0","0");await page.keyboard.press("Escape");
+    // A consulta de Autores tem debounce; confirmar sua resposta antes de medir a limpeza.
+    const autoresResposta=page.waitForResponse(r=>{
+      if(!catalog(r)) return false;
+      const p=r.request().postDataJSON();
+      return p?.p_ordenacao==="relevancia"&&p.p_formato==="HQ"&&p.p_tag==="aventura"&&
+        !Object.hasOwn(p,"p_palavras_minimas")&&!Object.hasOwn(p,"p_status_editorial");
+    });
     await page.getByRole("button",{name:"Autores",exact:true}).click();
+    expect((await autoresResposta).ok()).toBe(true);
     await expect(chip(page)).toHaveCount(0); expect(new URL(page.url()).searchParams.has("palavrasMinimas")).toBe(false);
     const authors=await panel(page);await expect(authors.getByRole("textbox",{name:"Mínimo de palavras",exact:true})).toHaveCount(0);
     const beforeClear=f.calls.length;
