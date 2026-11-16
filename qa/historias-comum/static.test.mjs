@@ -62,6 +62,31 @@ test('real-session transport uses public apikey, actor token and no retries/redi
   assert.equal((await api.request({token:'real-issued-token'},'rest/v1/obras')).range,'*/0');
   assert.equal(calls,1);
 });
+test('Prefer is scoped to reads, table writes and explicit preferences upsert',async()=>{
+  const seen=[];
+  const api=new Api('http://localhost:54321','public-key','service-key',async(url,options)=>{
+    seen.push(options.headers.Prefer);return new Response(null,{status:204});
+  });
+  await api.request(null,'auth/v1/user');
+  await api.request(null,'rest/v1/obras');
+  await api.request(null,'rest/v1/favoritos',{method:'HEAD'});
+  for(const method of ['POST','PATCH','DELETE']) await api.request(null,'rest/v1/profiles',{method});
+  await api.request(null,'rest/v1/rpc/aceitar_termos_publicacao',{method:'POST'});
+  await api.request(null,'rest/v1/preferencias_privacidade?on_conflict=user_id',{method:'POST',upsert:true});
+  assert.deepEqual(seen,[undefined,'count=exact','count=exact','return=minimal','return=minimal','return=minimal',undefined,'return=minimal,resolution=merge-duplicates']);
+  await assert.rejects(api.request(null,'rest/v1/profiles',{method:'POST',upsert:true}));
+  assert.equal(seen.length,8);
+});
+
+test('fixture diagnostic stage is allowlisted and preserves HTTP without private data',()=>{
+  const e=new SafeError('response_error',403); e.fixture_stage='profile_insert';
+  assert.deepEqual(safeFailure(e),{reason:'response_error',http:403,fixture_stage:'profile_insert'});
+  e.fixture_stage='token cookie password user@example.invalid';
+  assert.deepEqual(safeFailure(e),{reason:'response_error',http:403});
+  e.pgtap_available_before=0;
+  assert.equal(safeFailure(e).pgtap_available_before,0);
+});
+
 test('untrusted HTTP errors never become diagnostics',async()=>{
   const secret='password cookie access_token user@example.invalid';
   const api=new Api('http://localhost:54321','public-key','service-credential',async()=>new Response(JSON.stringify({message:secret}),{status:500}));
@@ -99,6 +124,8 @@ test('only pending SQL shipped; old 43 checks never included',()=>{
   assert.equal((sql.match(/explain \(analyze,buffers,format json\)/g)??[]).length,4);
   assert.match(sql,/min\(id::text\)/); assert.doesNotMatch(sql,/min\(id\)::text|OBSERVED: naive/);
   assert.match(sql,/rollback;/); assert.doesNotMatch(sql,/create (?:policy|function|table)|alter table|disable.*rls/i);
+  assert.ok(sql.indexOf('begin;')<sql.indexOf('create extension if not exists pgtap with schema extensions;'));
+  assert.ok(sql.indexOf('create extension if not exists pgtap with schema extensions;')<sql.indexOf('select no_plan();'));
 });
 test('init configuration disables unrelated services and seeds without touching schema',()=>{
   const original='project_id = "default"\n'+['db.seed','studio','analytics','inbucket','db.pooler'].map(s=>`[${s}]\nenabled = true\n`).join('');
@@ -127,7 +154,7 @@ test('failed fixture still cleans tracked account and does not run permission ma
       throw new SafeError('response_error',500);
     },
   };
-  const check=async(id,fn)=>{checks.push(id);try {await fn();return true;}catch{return false;}};
+  const check=async(id,fn)=>{checks.push(id);try {await fn();return true;}catch(error){if(id==='fixture.real_auth') assert.equal(safeFailure(error).fixture_stage,'auth_login');return false;}};
   await runDataApi(api,check);
   assert.deepEqual(checks,['fixture.real_auth','cleanup.sessions','cleanup.accounts']);
   assert.deepEqual(deletes,[A]);
@@ -135,8 +162,8 @@ test('failed fixture still cleans tracked account and does not run permission ma
 test('workflow diagnostic creation push only, immutable base, exact artifact allowlist',()=>{
   const yml=readFileSync(new URL('../../.github/workflows/historias-comum-manual.yml',import.meta.url),'utf8');
   assert.match(yml,/^  push:/m); assert.doesNotMatch(yml,/workflow_dispatch:|pull_request:|schedule:/);
-  assert.match(yml,/branches:\s*\n\s*- qa\/historias-comum-etapa1-diagnostico-v2\s*\n/);
-  for (const guard of ["github.repository == 'HistorietasFlow/Historietas'", "github.event_name == 'push'", "github.ref == 'refs/heads/qa/historias-comum-etapa1-diagnostico-v2'", 'github.event.created == true', 'github.run_attempt == 1']) assert.ok(yml.includes(guard));
+  assert.match(yml,/branches:\s*\n\s*- qa\/historias-comum-etapa1-diagnostico-v3\s*\n/);
+  for (const guard of ["github.repository == 'HistorietasFlow/Historietas'", "github.event_name == 'push'", "github.ref == 'refs/heads/qa/historias-comum-etapa1-diagnostico-v3'", 'github.event.created == true', 'github.run_attempt == 1']) assert.ok(yml.includes(guard));
   assert.match(yml,/ref: 5b8d439f5bd50d14ab53e0fdddfe8f84d30a5f86/);
   assert.match(yml,/contents: read/); assert.doesNotMatch(yml,/secrets\.|--linked|--project-ref|db push|migration repair|npm ci|supabase test db|\.env/);
   assert.ok(!yml.includes('**'));

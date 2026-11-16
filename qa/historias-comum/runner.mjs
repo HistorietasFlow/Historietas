@@ -50,6 +50,8 @@ export function safeFailure(error) {
   if(error instanceof SafeError&&['source_checkout','cli_version','cli_init','cli_start','cli_status','cli_stop','schema_sql'].includes(error.phase)) result.phase=error.phase;
   if(error instanceof SafeError&&['57014','42501','23505','23503','42883','42P01','42703','42601','08006','P0001'].includes(error.pg_code)) result.pg_code=error.pg_code;
   if(error instanceof SafeError&&['setup_or_metadata','page1_authenticated','deep_keyset_authenticated','exact_count_authenticated','page1_anon'].includes(error.sql_stage)) result.sql_stage=error.sql_stage;
+  if(error instanceof SafeError&&['auth_create','auth_login','auth_confirm','profile_insert','terms_accept','preferences_upsert','work_insert','favorites_insert'].includes(error.fixture_stage)) result.fixture_stage=error.fixture_stage;
+  if(error instanceof SafeError&&[0,1].includes(error.pgtap_available_before)) result.pgtap_available_before=error.pgtap_available_before;
   return result;
 }
 export async function main(source) {
@@ -65,7 +67,7 @@ export async function main(source) {
     let result;
     try {
       const value=await fn(); result={id,status:'PASS'};
-      for (const key of ['http','rows','total','accounts','works','resources','assertions','plans']) {
+      for (const key of ['http','rows','total','accounts','works','resources','assertions','plans','pgtap_available_before']) {
         if (Number.isSafeInteger(value?.[key])&&value[key]>=0) result[key]=value[key];
       }
     } catch(error) { result={id,status:'FAIL',...safeFailure(error)}; }
@@ -82,6 +84,8 @@ export async function main(source) {
       const error=new SafeError('environment_error');
       error.phase=command==='docker'?'schema_sql':command==='git'?'source_checkout':({'--version':'cli_version',init:'cli_init',start:'cli_start',status:'cli_status',stop:'cli_stop'}[args[0]]);
       if(command==='docker') {
+        const pgtap=r.stdout?.match(/^PGTAP no_plan_before=([01])$/m);
+        if(pgtap) error.pgtap_available_before=Number(pgtap[1]);
         error.pg_code=r.stderr?.match(/(?:ERROR|FATAL):\s+([0-9A-Z]{5}):/)?.[1];
         const markers=[...(r.stdout??'').matchAll(/^PLAN (page1 authenticated|deep keyset authenticated|exact count authenticated|page1 anon)$/gm)];
         error.sql_stage=markers.at(-1)?.[1].replaceAll(' ','_')??'setup_or_metadata';
@@ -150,7 +154,7 @@ export async function main(source) {
           requireThat((input.match(/select is\(/g)??[]).length===2&&(input.match(/explain \(analyze,buffers,format json\)/g)??[]).length===4,'sql_assertion');
           const parsed=parsePendingOutput(sql(input)); plans.push(...parsed.plans);
           writeFileSync(join(reports,'plans.json'),JSON.stringify({plans},null,2));
-          return {assertions:parsed.assertions,plans:parsed.plans.length};
+          return {assertions:parsed.assertions,plans:parsed.plans.length,pgtap_available_before:parsed.pgtap_available_before};
         });
         await check('sql.rollback',async()=>{
           const count=Number(sql("select (select count(*) from auth.users where id::text like 'ce100000-0000-4000-8000-%')+(select count(*) from public.obras where id::text like 'ce200000-0000-4000-8000-%');").trim());

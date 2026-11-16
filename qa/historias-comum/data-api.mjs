@@ -1,5 +1,5 @@
 import { randomUUID, randomBytes } from 'node:crypto';
-import { requireThat, intersectionQuery, exactResponse } from './core.mjs';
+import { SafeError, requireThat, intersectionQuery, exactResponse } from './core.mjs';
 
 export const API_IDS = Object.freeze([
   'fixture.real_auth', ...['a','b','third','anon'].map(v=>`public.${v}`),'public.reverse_pair',
@@ -18,32 +18,41 @@ export async function runDataApi(api, check) {
   const accounts = [], sessions = [], books = [];
   const tag = `qa-common-${randomUUID()}-`;
   let ready = false;
+  let fixtureStage = 'auth_create';
   const rpc = (actor,name,args) => api.ok(actor,`rest/v1/rpc/${name}`,{method:'POST',body:args});
   const login = async account => {
+    fixtureStage = 'auth_login';
     const session = await api.ok(null,'auth/v1/token?grant_type=password',{method:'POST',body:{email:account.email,password:account.password}});
     requireThat(typeof session.access_token === 'string' && session.user?.id === account.id,'auth_mismatch');
     const actor = { token:session.access_token, id:account.id };
     sessions.push(actor);
+    fixtureStage = 'auth_confirm';
     const confirmed = await api.request(actor,'auth/v1/user');
+    if (confirmed.status !== 200) throw new SafeError('response_error',confirmed.status);
     requireThat(confirmed.status === 200 && confirmed.data?.id === account.id,'auth_mismatch');
     return actor;
   };
-  const preference = (account, patch) => api.ok(account.actor,'rest/v1/preferencias_privacidade?on_conflict=user_id',{method:'POST',body:{user_id:account.id,...patch}});
+  const preference = (account, patch) => api.ok(account.actor,'rest/v1/preferencias_privacidade?on_conflict=user_id',{method:'POST',upsert:true,body:{user_id:account.id,...patch}});
   const favorite = async (account,work,visibility) => {
     await api.ok(account.actor,`rest/v1/favoritos?user_id=eq.${account.id}&obra_id=eq.${work.id}`,{method:'DELETE'});
     if (visibility !== null) await api.ok(account.actor,'rest/v1/favoritos',{method:'POST',body:{user_id:account.id,obra_id:work.id,visibilidade:visibility}});
   };
   try {
     ready = await check('fixture.real_auth',async () => {
+      try {
       for (const label of ['A','B','C','D']) {
+        fixtureStage = 'auth_create';
         const account = {label,email:`${tag}${label.toLowerCase()}@historietas.test`,password:randomBytes(32).toString('base64url')};
         const created = await api.ok(null,'auth/v1/admin/users',{method:'POST',fixtureAdmin:true,body:{email:account.email,password:account.password,email_confirm:true}});
         account.id = created.id ?? created.user?.id;
         requireThat(/^[0-9a-f-]{36}$/.test(account.id),'fixture_error');
         accounts.push(account); // tracked before any further operation can fail
         account.actor = await login(account);
+        fixtureStage = 'profile_insert';
         await api.ok(account.actor,'rest/v1/profiles',{method:'POST',body:{id:account.id,user_id:account.id,nome:`QA comum ${label}`,tipo:['A','D'].includes(label)?'autor':'leitor'}});
+        fixtureStage = 'terms_accept';
         await rpc(account.actor,'aceitar_termos_publicacao',{p_termos_versao:'2026-08-05',p_diretrizes_versao:'2026-08-05',p_politica_versao:'2026-08-05'});
+        fixtureStage = 'preferences_upsert';
         await preference(account,{visibilidade_biblioteca:'publico',mostrar_favoritos:true,perfil_privado:false});
       }
       const [A,B,,D] = accounts;
@@ -57,6 +66,7 @@ export async function runDataApi(api, check) {
         {kind:'own_draft',draft:true,own:true}, {kind:'own_adult',adult:true,own:true},
       ];
       for (const def of definitions) {
+        fixtureStage = 'work_insert';
         const owner = def.own ? A : D;
         const work = { ...def,id:randomUUID(),owner };
         books.push(work);
@@ -65,8 +75,13 @@ export async function runDataApi(api, check) {
       // Includes legacy references to hidden works: fixture-only service writes.
       // No permission assertion or visibility read uses this credential.
       const rows = books.flatMap(work=>[A,B].map(account=>({user_id:account.id,obra_id:work.id,visibilidade:account===A?(work.visibilityA??'publico'):(work.visibilityB??'publico')})));
+      fixtureStage = 'favorites_insert';
       await api.ok(null,'rest/v1/favoritos',{method:'POST',fixtureAdmin:true,body:rows});
       return {accounts:4,works:books.length};
+      } catch (error) {
+        if (error instanceof SafeError) error.fixture_stage = fixtureStage;
+        throw error;
+      }
     });
     if (!ready) return;
     const [A,B,C] = accounts;

@@ -53,14 +53,19 @@ export class Api {
     requireThat(Boolean(key&&service)&&key!==service,'admin_scope');
     this.url = loopback(url); this.key = key; this.service = service; this.fetcher = fetcher;
   }
-  async request(actor, path, { method = 'GET', body, fixtureAdmin = false } = {}) {
+  async request(actor, path, { method = 'GET', body, fixtureAdmin = false, upsert = false } = {}) {
     requireThat(!path.startsWith('/') && !path.includes('://') && !path.includes('..'), 'unsafe_destination');
     const isAdminPath = /^auth\/v1\/admin\/users(?:\/[0-9a-f-]{36})?$/.test(path);
     const favoriteSetup = path === 'rest/v1/favoritos' && method === 'POST';
     requireThat(!fixtureAdmin || ((isAdminPath && ['POST','DELETE'].includes(method)) || favoriteSetup), 'admin_scope');
     requireThat(fixtureAdmin || actor?.token !== this.service, 'admin_scope');
     const token = fixtureAdmin ? this.service : actor?.token;
-    const headers = { apikey: fixtureAdmin ? this.service : this.key, 'Content-Type':'application/json', Prefer:'count=exact,return=representation,resolution=merge-duplicates' };
+    requireThat(!upsert || (method === 'POST' && path === 'rest/v1/preferencias_privacidade?on_conflict=user_id'), 'invalid_query');
+    const headers = { apikey: fixtureAdmin ? this.service : this.key, 'Content-Type':'application/json' };
+    if (path.startsWith('rest/v1/')) {
+      if (['GET','HEAD'].includes(method)) headers.Prefer = 'count=exact';
+      else if (!path.startsWith('rest/v1/rpc/')) headers.Prefer = upsert ? 'return=minimal,resolution=merge-duplicates' : 'return=minimal';
+    }
     if (token) headers.Authorization = `Bearer ${token}`;
     let response;
     try {
@@ -107,5 +112,6 @@ export function parsePendingOutput(stdout) {
     requireThat(parsed.length === 1 && parsed[0].Plan && Number.isFinite(parsed[0]['Execution Time']), 'sql_plan');
     plans.push({ id:label.replaceAll(' ','_'), plan:sanitizePlan(parsed) });
   }
-  return { assertions:2, plans };
+  const pgtap=stdout.match(/^PGTAP no_plan_before=([01])$/m);
+  return { assertions:2, plans, ...(pgtap ? {pgtap_available_before:Number(pgtap[1])} : {}) };
 }

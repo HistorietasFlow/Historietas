@@ -5,6 +5,8 @@
 \pset tuples_only on
 begin;
 set local search_path = public, extensions;
+select 'PGTAP no_plan_before=' || (to_regprocedure('no_plan()') is not null)::int;
+create extension if not exists pgtap with schema extensions;
 select no_plan();
 insert into auth.users(id) values ('ce100000-0000-4000-8000-000000000001'),('ce100000-0000-4000-8000-000000000002'),('ce100000-0000-4000-8000-000000000003'),('ce100000-0000-4000-8000-000000000004');
 insert into public.profiles(id,user_id,nome,tipo)

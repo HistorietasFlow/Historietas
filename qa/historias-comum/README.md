@@ -1,6 +1,14 @@
 # Historias em Comum — suite isolada de evidencia
 
-Execucao diagnostica v2 em GitHub Actions, autorizada exclusivamente pelo push de criacao da branch qa/historias-comum-etapa1-diagnostico-v2. NAO e funcionalidade de produto, RPC, alteracao de RLS ou autorizacao de producao.
+Execucao diagnostica v3 em GitHub Actions, autorizada exclusivamente pelo push de criacao da branch qa/historias-comum-etapa1-diagnostico-v3. NAO e funcionalidade de produto, RPC, alteracao de RLS ou autorizacao de producao.
+
+## Correcao do harness v3
+
+A execucao 43933853022 aprovou bootstrap/schema (91 registros), mas retornou HTTP 403 na fixture depois de uma conta/sessao e SQLSTATE 42883 no setup; 44 verificacoes ficaram bloqueadas. O resumo anterior nao identifica a operacao HTTP nem a funcao SQL exata, portanto nao comprova sozinho a origem dessas falhas.
+
+Prefer agora e especifico por operacao: count=exact em GET/HEAD PostgREST, return=minimal em escritas de tabela, resolution=merge-duplicates somente no UPSERT explicito de preferencias. Auth e RPC nao recebem Prefer. O INSERT de perfil deixa de solicitar UPDATE via UPSERT; nenhum grant ou policy foi alterado.
+
+Falhas da fixture registram somente fixture_stage em allowlist (Auth create/login/confirm, perfil, aceite, preferencias, obras, favoritos), HTTP e motivo sanitizado. O probe registra pgtap_available_before (0/1) consultando to_regprocedure('no_plan()'), habilita pgTAP com CREATE EXTENSION IF NOT EXISTS dentro de BEGIN/ROLLBACK e mantem as duas assercoes e quatro EXPLAINs. Essa disponibilidade tambem e preservada se uma etapa SQL posterior falhar. A confirmacao real depende da execucao v3.
 
 ## Base e origem verificadas
 
