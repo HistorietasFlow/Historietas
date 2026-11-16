@@ -54,9 +54,9 @@ set local role authenticated;
 
 select is((select count(*) from public.listar_historias_em_comum('cd100000-0000-4000-8000-000000000002'::uuid)),2::bigint,'apenas dois favoritos publicos em obras elegiveis');
 
-select is((select min(obra_id)::text from public.listar_historias_em_comum('cd100000-0000-4000-8000-000000000002'))::text,'cd200000-0000-4000-8000-000000000001','primeira obra elegivel');
+select is((select min(obra_id::text) from public.listar_historias_em_comum('cd100000-0000-4000-8000-000000000002'))::text,'cd200000-0000-4000-8000-000000000001','primeira obra elegivel');
 
-select is((select max(obra_id)::text from public.listar_historias_em_comum('cd100000-0000-4000-8000-000000000002'))::text,'cd200000-0000-4000-8000-000000000007','segunda obra elegivel');
+select is((select max(obra_id::text) from public.listar_historias_em_comum('cd100000-0000-4000-8000-000000000002'))::text,'cd200000-0000-4000-8000-000000000007','segunda obra elegivel');
 
 select is((select titulo from public.listar_historias_em_comum('cd100000-0000-4000-8000-000000000002') where obra_id='cd200000-0000-4000-8000-000000000001')::text,'QA comum 1','titulo publico devolvido');
 
