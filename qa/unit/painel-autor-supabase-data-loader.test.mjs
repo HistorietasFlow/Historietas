@@ -31,7 +31,7 @@ test("loader agregado preserva autenticação, perfil, carregamento e fallbacks"
     "carregarMetricasConteudos({",
     "carregarComentariosCapitulosUsuarioPainel(userId, capituloIds)",
     "prepararEstadoMetricasPainel(metricas)",
-    "obraAtual.id === obraBanco.id || slugLocal === slugBanco",
+    "(!obraAtual.id || !obraBanco.id) && slugLocal === slugBanco",
     "converterObraSupabaseParaLocalPainel({",
     "totalCurtidasPainel: metrica?.audiencia.curtidoresUnicos || 0",
     "totalComentariosPainel: metrica?.audiencia.comentaristasUnicos || 0",
@@ -88,7 +88,7 @@ test("hook inicial delega ao loader e a página delega a exclusão", () => {
   assert.doesNotMatch(hook, /async function carregarPainelAutorSupabase\(/);
   assert.match(
     hook,
-    /const dadosSupabase = await carregarPainelAutorSupabase\([\s\S]*?obrasUsuarioLogado,[\s\S]*?obrasFavoritasUsuario,[\s\S]*?obrasConcluidasUsuario[\s\S]*?\);/,
+    /const dadosSupabase = await carregarPainelAutorSupabase\([\s\S]*?obrasUsuarioLogado,[\s\S]*?obrasFavoritasUsuario,[\s\S]*?obrasConcluidasUsuario,[\s\S]*?rascunhosRemotos = dados;[\s\S]*?\);/,
   );
   assert.match(hook, /async function carregarDadosPainelAutor\(\)/);
   assert.match(pagina, /usePainelAutorDeleteWork\(/);

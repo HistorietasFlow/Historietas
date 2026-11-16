@@ -3,6 +3,8 @@ import { supabase } from "../../../lib/supabase/client";
 export type ObraSupabaseRow = {
   id: string;
   user_id: string;
+  status_editorial?: "em_andamento" | "concluida" | "pausada" | null;
+  status_editorial_versao?: string | null;
   titulo: string | null;
   autor: string | null;
   genero: string | null;
@@ -33,7 +35,7 @@ export async function carregarObraSupabaseEdicaoObra(
   const { data: obraSupabase, error: erroObraSupabase } = await supabase
     .from("obras")
     .select(
-      "id,user_id,titulo,autor,genero,formato,classificacao_indicativa,avisos_conteudo,sinopse,tags,capa_url,capa_nome,arquivo_url,arquivo_nome,arquivo_tipo,arquivo_tamanho,arquivo_categoria,publicado,visualizacoes,slug,link,criada_em,atualizado_em",
+      "id,user_id,status_editorial,status_editorial_versao,titulo,autor,genero,formato,classificacao_indicativa,avisos_conteudo,sinopse,tags,capa_url,capa_nome,arquivo_url,arquivo_nome,arquivo_tipo,arquivo_tamanho,arquivo_categoria,publicado,visualizacoes,slug,link,criada_em,atualizado_em",
     )
     .eq("id", obraId)
     .eq("user_id", userId)

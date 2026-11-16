@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
+import "./listas-identity-concurrency.test.mjs";
 import typescript from "typescript";
 
 const source = readFileSync(

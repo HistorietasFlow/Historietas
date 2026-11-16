@@ -5,6 +5,7 @@ import test from "node:test";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import typescript from "typescript";
+import "./explorar-active-catalog-filters.test.mjs";
 
 const ler = (caminho) =>
   readFileSync(new URL(caminho, import.meta.url), "utf8").replace(/\r\n/g, "\n");

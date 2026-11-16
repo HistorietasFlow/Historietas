@@ -11,9 +11,8 @@ import type {
   ResumoLocal,
   UsuarioConfiguracoes,
 } from "./configuracoes-account-models";
-import { salvarPreferencias } from "./configuracoes-account-preferences";
+import { carregarPreferencias, salvarPreferencias } from "./configuracoes-account-preferences";
 import { traduzirErroUsernameConfiguracoes } from "./configuracoes-error-messages";
-import { salvarPreferenciasPrivacidade } from "./configuracoes-privacy-preferences";
 import type { PreferenciasPrivacidadeHistorietas } from "./configuracoes-privacy-preferences";
 import { salvarPerfilConfiguracoesSupabase } from "./configuracoes-profile-supabase-saver";
 import type { RedirecionarLoginConfiguracoes } from "./configuracoes-navigation-types";
@@ -27,7 +26,6 @@ export async function salvarConfiguracoesPerfil({
   salvando,
   usuarioIdLogado,
   preferencias,
-  privacidade,
   usuario,
   language,
   redirecionarLogin,
@@ -39,7 +37,9 @@ export async function salvarConfiguracoesPerfil({
   setPreferencias,
   setUsuario,
   setResumo,
+  execucaoEstaAtual = () => true,
 }: {
+  execucaoEstaAtual?: () => boolean;
   salvando: boolean;
   usuarioIdLogado: string;
   preferencias: PreferenciasConta;
@@ -56,7 +56,7 @@ export async function salvarConfiguracoesPerfil({
   setUsuario: Dispatch<SetStateAction<UsuarioConfiguracoes | null>>;
   setResumo: Dispatch<SetStateAction<ResumoLocal>>;
 }) {
-  if (salvando) {
+  if (salvando || !execucaoEstaAtual()) {
     return;
   }
 
@@ -95,6 +95,7 @@ export async function salvarConfiguracoesPerfil({
   try {
     const { data: dadosUsuarioAtual, error: erroUsuarioAtual } =
       await supabase.auth.getUser();
+    if (!execucaoEstaAtual()) return;
     const usuarioAtualId = dadosUsuarioAtual.user?.id || "";
 
     if (
@@ -115,6 +116,7 @@ export async function salvarConfiguracoesPerfil({
       username: usernameLimpo,
     });
 
+    if (!execucaoEstaAtual()) return;
     if (!resultadoPerfil.ok) {
       const mensagem = traduzirErroUsernameConfiguracoes(
         resultadoPerfil.erro,
@@ -136,6 +138,7 @@ export async function salvarConfiguracoesPerfil({
       },
     });
 
+    if (!execucaoEstaAtual()) return;
     if (erroMetadata) {
       falhasSincronizacao.push("metadados");
       console.warn(
@@ -144,23 +147,23 @@ export async function salvarConfiguracoesPerfil({
       );
     }
 
-    salvarPreferencias(preferenciasNormalizadas, userIdSeguro);
-    const resultadoPrivacidade = await salvarPreferenciasPrivacidade(
-      privacidade,
-      userIdSeguro,
-    );
-
-    if (!resultadoPrivacidade.ok) {
-      falhasSincronizacao.push("privacidade");
-      console.warn(
-        "As preferências de privacidade ficaram salvas neste aparelho, mas não sincronizaram:",
-        resultadoPrivacidade.erro,
-      );
+    // A privacidade é salva por sua própria ação. Reenviar o snapshot desta
+    // submissão poderia desfazer uma escolha feita enquanto o perfil salvava.
+    const preferenciasParaCache = {
+      ...preferenciasNormalizadas,
+      receberAvisos: carregarPreferencias(userIdSeguro).receberAvisos,
+    };
+    if (!salvarPreferencias(preferenciasParaCache, userIdSeguro)) {
+      falhasSincronizacao.push("preferencias_locais");
     }
-
-    setPreferencias(preferenciasNormalizadas);
+    setPreferencias((atuais) => !execucaoEstaAtual() ? atuais : ({
+      ...atuais,
+      nomeExibicao: atuais.nomeExibicao === preferencias.nomeExibicao ? preferenciasNormalizadas.nomeExibicao : atuais.nomeExibicao,
+      username: atuais.username === preferencias.username ? usernameLimpo : atuais.username,
+      emailContato: atuais.emailContato === preferencias.emailContato ? preferenciasNormalizadas.emailContato : atuais.emailContato,
+    }));
     setUsuario((usuarioAtual) =>
-      usuarioAtual
+      usuarioAtual && usuarioAtual.id === userIdSeguro && execucaoEstaAtual()
         ? {
             ...usuarioAtual,
             nome:
@@ -171,28 +174,31 @@ export async function salvarConfiguracoesPerfil({
           }
         : usuarioAtual,
     );
-    setResumo(await carregarResumoContaSupabase(userIdSeguro));
+    const resumoAtualizado = await carregarResumoContaSupabase(userIdSeguro);
+    if (!execucaoEstaAtual()) return;
+    setResumo(resumoAtualizado);
 
     if (falhasSincronizacao.length > 0) {
       mostrarMensagemAcao(
         "aviso",
         traduzirTexto(
-          "As alterações foram salvas neste aparelho, mas parte delas não sincronizou com sua conta.",
-          "The changes were saved on this device, but some of them did not sync with your account.",
-          "Los cambios se guardaron en este dispositivo, pero algunos no se sincronizaron con tu cuenta.",
+          "O perfil foi salvo, mas não foi possível confirmar todas as preferências. Tente novamente.",
+          "The profile was saved, but not all preferences could be confirmed. Try again.",
+          "El perfil se guardó, pero no se pudieron confirmar todas las preferencias. Inténtalo de nuevo.",
         ),
       );
     } else {
       mostrarMensagemAcao(
         "sucesso",
         traduzirTexto(
-          "Alterações salvas com sucesso.",
-          "Changes saved successfully.",
-          "Cambios guardados correctamente.",
+          "Perfil salvo com sucesso.",
+          "Profile saved successfully.",
+          "Perfil guardado correctamente.",
         ),
       );
     }
   } catch (error) {
+    if (!execucaoEstaAtual()) return;
     console.warn("Não consegui salvar as configurações da conta:", error);
 
     const mensagem = traduzirTexto(
@@ -204,6 +210,6 @@ export async function salvarConfiguracoesPerfil({
     setErroUsername(mensagem);
     mostrarMensagemAcao("erro", mensagem);
   } finally {
-    setSalvando(false);
+    if (execucaoEstaAtual()) setSalvando(false);
   }
 }

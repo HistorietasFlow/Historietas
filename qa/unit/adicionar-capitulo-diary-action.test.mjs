@@ -11,7 +11,7 @@ const source = readFileSync(
   "utf8",
 );
 const pageSource = readFileSync(
-  new URL("../../app/adicionar-capitulo/page.tsx", import.meta.url),
+  new URL("../../app/adicionar-capitulo/hooks/useAdicionarCapituloCreateAction.ts", import.meta.url),
   "utf8",
 );
 let indiceModulo = 0;
@@ -86,6 +86,7 @@ test("Diário de Adicionar Capítulo mantém o payload completo e não usa fallb
     ["href", obra, capitulo, 3],
     ["from", "diario_atividades"],
     ["insert", "diario_atividades", {
+      id: "capitulo-1",
       user_id: "usuario-1",
       tipo: "publicou_capitulo",
       obra_id: "obra-1",
@@ -106,13 +107,14 @@ test("Diário de Adicionar Capítulo mantém o payload completo e não usa fallb
 });
 
 test("Diário de Adicionar Capítulo usa fallback sem metadata ou atualização", async () => {
-  const modulo = await carregarModulo([{ error: { message: "metadata indisponível" } }]);
+  const modulo = await carregarModulo([{ error: { code: "42703", message: "metadata indisponível" } }]);
 
   await modulo.registrarDiarioNovoCapitulo(parametros);
 
   const insercoes = modulo.chamadas.filter(([tipo]) => tipo === "insert");
   assert.equal(insercoes.length, 2);
   assert.deepEqual(insercoes[1], ["insert", "diario_atividades", {
+    id: "capitulo-1",
     user_id: "usuario-1",
     tipo: "publicou_capitulo",
     obra_id: "obra-1",
@@ -151,7 +153,7 @@ test("Diário de Adicionar Capítulo absorve exceção real e mantém o aviso", 
 test("Adicionar Capítulo delega o registro do Diário ao action", () => {
   assert.match(
     pageSource,
-    /import \{ registrarDiarioNovoCapitulo \} from "\.\/actions\/registrar-diario-novo-capitulo";/,
+    /import \{ registrarDiarioNovoCapitulo \} from "\.\.\/actions\/registrar-diario-novo-capitulo";/,
   );
   assert.doesNotMatch(pageSource, /async function registrarDiarioNovoCapitulo\(/);
   assert.match(pageSource, /void registrarDiarioNovoCapitulo\(/);

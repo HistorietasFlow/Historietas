@@ -30,7 +30,7 @@ test("o formulário técnico preserva controles, limites, callbacks e envio", ()
   assert.match(componente, /O navegador e o tamanho da tela serão enviados automaticamente/);
   assert.match(componente, /type="submit"/);
   assert.match(componente, /className="ajuda-submit-ticket-button"/);
-  assert.match(componente, /disabled=\{enviando \|\| usuarioAutenticado === false\}/);
+  assert.match(componente, /disabled=\{enviando \|\| envioIncerto \|\| !sessaoConfirmada \|\| usuarioAutenticado !== true\}/);
   assert.match(componente, /pt: "Enviando\.\.\."/);
   assert.match(componente, /pt: "Enviar problema técnico"/);
   assert.doesNotMatch(componente, /supabase|useEffect|useState|normalizarCategoriaProblemaTecnico/);

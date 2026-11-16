@@ -56,7 +56,7 @@ function preparar() {
     chamadas, gravacoes, banco, falhas,
     selecao: { obraIds: [], paginas: [] },
     metricas: { carregado: false, obras: new Map(), capitulos: new Map() },
-    nomes: new Map(),
+    nomes: new Map(), eventos: [], perfisGate: null, capitulosGate: null,
   };
   Object.assign(deps, {
     criarSlugBase: (valor) => valor.toLowerCase().replaceAll(" ", "-"),
@@ -76,12 +76,14 @@ function preparar() {
           };
         }
         builder.then = (resolve, reject) => {
+          configuracao.eventos.push(tabela);
           const erro = falhas[tabela];
           if (erro) return Promise.resolve({ data: null, error: erro }).then(resolve, reject);
           let resultado = banco[tabela];
           const intervalo = consulta.operacoes.find(([metodo]) => metodo === "range");
           if (intervalo) resultado = resultado.slice(intervalo[1], intervalo[2] + 1);
-          return Promise.resolve({ data: resultado, error: null }).then(resolve, reject);
+          return Promise.resolve(tabela === "capitulos" ? configuracao.capitulosGate : null)
+            .then(() => ({ data: resultado, error: null })).then(resolve, reject);
         };
         return builder;
       },
@@ -117,12 +119,17 @@ function preparar() {
       }
     },
     async carregarMetricasConteudos(argumentos) {
+      configuracao.eventos.push("metricas");
       configuracao.argumentosMetricas = argumentos;
+      await configuracao.metricasGate;
       if (falhas.metricas) throw falhas.metricas;
       return configuracao.metricas;
     },
     async carregarNomesProfilesExplorar(ids) {
+      configuracao.eventos.push("perfis");
       configuracao.idsAutores = ids;
+      await configuracao.perfisGate;
+      if (falhas.perfis) throw falhas.perfis;
       return configuracao.nomes;
     },
     aplicarNomesProfilesEmObrasExplorar(obras, nomes) {
@@ -152,14 +159,22 @@ function preparar() {
   return configuracao;
 }
 
-test("os quatro corpos dos loaders permanecem literalmente idênticos à base", () => {
+test("falha com palavras mantém cache sem amostra ampla, consultas adicionais ou persistência",async()=>{
+  const c=preparar(); c.falhas.catalogo=new Error("indisponível");const cache=[obra("cache")];
+  const result=await modulo.carregarObrasPublicadasSupabase(cache,"A",[{palavrasMinimas:0,palavrasMaximas:10}]);
+  assert.deepEqual(result,{obras:cache,pagina:null,falhaTemporaria:true});
+  assert.deepEqual(c.chamadas,[]);assert.deepEqual(c.gravacoes,[]);assert.deepEqual(c.eventos,[]);
+});
+
+test("os três loaders fora do paralelismo permanecem literalmente idênticos à base", () => {
   const corpo = codigo
-    .slice(codigo.indexOf("export async function carregarIdsColecaoUsuarioExplorar("))
+    .slice(codigo.indexOf("export async function carregarIdsColecaoUsuarioExplorar("),
+      codigo.indexOf("export async function carregarObrasPublicadasSupabase("))
     .trim()
     .replace(/^export async function /gm, "async function ");
   assert.equal(
     createHash("sha256").update(corpo).digest("hex"),
-    "93826ddd12f8db7be982924a0dd0513716cba3ea81bd649a3252551c85dda3be",
+    "d621e44e40c3b3eac10167ae80a065ea12d8c0db1d739e3dbd538cc5ddd0a295",
   );
 });
 
@@ -417,4 +432,84 @@ test("fronteira mantém queries, fallback e consumidores sem hooks ou autentica�
   assert.match(codigo, /\.in\("id", \[\.\.\.obraIdsCatalogo\]\)/);
   assert.match(codigo, /carregarTodasPaginasPorLotesSupabase/);
   assert.doesNotMatch(codigo, /\b(?:useEffect|useState|localStorage)\b|supabase\.auth/);
+});
+
+test("Explorar inicia perfis e capítulos juntos, mantendo ordem e aguardando ambos", async () => {
+  for (const lento of ["perfis", "capitulos"]) {
+    const c = preparar(); let liberar;
+    c[`${lento}Gate`] = new Promise(resolve => { liberar = resolve; });
+    c.selecao = { obraIds: ["o1"], paginas: [] };
+    c.banco.obras = [{ id: "o1", user_id: "a1" }];
+    c.banco.capitulos = [{ id: "c1", obra_id: "o1" }];
+    c.nomes.set("a1", "Autor público");
+    let terminou = false;
+    const carga = modulo.carregarObrasPublicadasSupabase([], "usuario").then(r => { terminou = true; return r; });
+    await new Promise(resolve => setImmediate(resolve));
+    assert.ok(c.eventos.includes("perfis")); assert.ok(c.eventos.includes("capitulos"));
+    assert.equal(terminou, false); assert.equal(c.eventos.includes("metricas"), false);
+    liberar(); const resultado = await carga;
+    assert.equal(resultado.obras[0].autor, "Autor público");
+    assert.equal(resultado.obras[0].capitulos[0].id, "c1");
+    assert.equal(resultado.falhaTemporaria, false);
+    assert.deepEqual(c.gravacoes[1].slice(1), ["historietas-obras", "usuario", resultado.obras]);
+  }
+});
+
+test("Explorar sem obras remotas preserva perfis locais sem buscar capítulos", async () => {
+  const c = preparar(); c.selecao = { obraIds: ["ausente"], paginas: [] };
+  const resultado = await modulo.carregarObrasPublicadasSupabase([obra("local")]);
+  assert.equal(resultado.obras.length, 1);
+  assert.deepEqual(c.eventos, ["obras", "perfis", "metricas"]);
+  assert.equal(c.chamadas.filter(q => q.tabela === "capitulos").length, 0);
+});
+
+test("Explorar preserva falha, identidade do storage e retry depois de rejeição", async () => {
+  const c = preparar(); c.selecao = { obraIds: ["o1"], paginas: [] };
+  c.banco.obras = [{ id: "o1", user_id: "a1" }];
+  c.banco.capitulos = [{ id: "c1", obra_id: "o1" }];
+  c.falhas.perfis = new Error("perfil");
+  const warn = console.warn; console.warn = () => {};
+  try {
+    const resultado = await modulo.carregarObrasPublicadasSupabase([], "A");
+    assert.equal(resultado.falhaTemporaria, true); assert.deepEqual(c.gravacoes, []);
+    delete c.falhas.perfis;
+    assert.equal((await modulo.carregarObrasPublicadasSupabase([], "B")).falhaTemporaria, false);
+    assert.equal(c.gravacoes[1][2], "B");
+  } finally { console.warn = warn; }
+});
+
+test("página pessoal vazia preserva obras acumuladas, cursor terminal e ausência de gravações", async () => {
+  const c = preparar(); const obras = [obra("p1")];
+  c.paginasCatalogo = [{ obraIds: [], proximoCursor: null, temMais: false }];
+  const resultado = await modulo.carregarObrasPublicadasSupabase(obras, "A",
+    [{ cursor: { valor: 1, data: "2026-01-01", id: "p1" } }],
+    { tipo: "favoritas", obraIds: ["p1"] }, true);
+  assert.deepEqual(resultado.obras, obras);
+  assert.deepEqual(resultado.pagina, { obraIds: [], proximoCursor: null, temMais: false });
+  assert.equal(resultado.falhaTemporaria, false);
+  assert.deepEqual(c.gravacoes, []);
+  const inicial = await modulo.carregarObrasPublicadasSupabase(obras, "A", [{}],
+    { tipo: "favoritas", obraIds: [] });
+  assert.deepEqual(inicial.obras, []);
+});
+
+test("respostas fora de ordem não gravam cache obsoleto após perfis, capítulos ou métricas pendentes", async () => {
+  for (const lento of ["perfis", "capitulos", "metricas"]) {
+    const c = preparar(); let liberar;
+    c[`${lento}Gate`] = new Promise(resolve => { liberar = resolve; });
+    c.selecao = { obraIds: ["o1"], paginas: [] };
+    c.banco.obras = [{ id: "o1", user_id: "a1" }];
+    c.banco.capitulos = [{ id: "c1", obra_id: "o1" }];
+    let atual = true;
+    const antiga = modulo.carregarObrasPublicadasSupabase([], "A", [{}], null, false, () => atual);
+    await new Promise(resolve => setImmediate(resolve));
+    atual = false;
+    c[`${lento}Gate`] = null;
+    const nova = await modulo.carregarObrasPublicadasSupabase([], "B", [{}], null, false, () => true);
+    assert.equal(nova.falhaTemporaria, false);
+    const gravacoesNovas = [...c.gravacoes];
+    liberar(); await antiga;
+    assert.deepEqual(c.gravacoes, gravacoesNovas);
+    assert.deepEqual(c.gravacoes.map(item => item[2]), ["B", "B"]);
+  }
 });

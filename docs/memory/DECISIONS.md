@@ -2,6 +2,13 @@
 
 ## Refatoração
 
+- Rascunhos de capítulos no painel: certificar somente metadados remotos da
+  paginação concluída, antes da mescla local. Confirmação transitória por
+  contexto de identidade, nunca persistida nas obras/cache. Falha, parcial ou
+  registro legado sem publicado/propriedade explícitos omitem a indicação da
+  obra, sem apagar fallback. Contar somente false; primeiro na ordem existente,
+  sem inferir último editado, número ou ausência de agendamento. Atalho apenas
+  navega ao editor existente, sem prefetch; manter `Editar capítulo` inalterado.
 - Refatorações devem ser incrementais e pequenas.
 - Um PR pode reunir 2–3 extrações pequenas e diretamente relacionadas quando o risco continuar baixo.
 - Funções grandes, delicadas ou pouco relacionadas devem ficar em PRs separados.
@@ -9,6 +16,19 @@
 - Merge sempre exige autorização explícita do usuário.
 
 ## Supabase
+
+- Monitor SQL: separar autenticacao (LOGIN sem senha na migration) do grupo
+  NOLOGIN do snapshot. Sem heranca/admin, somente SET explicito; nenhum grant
+  de tabela. Falhar diante de ACL efetiva incompatível, sem revogar PUBLIC
+  globalmente. Usar Supavisor Session/verify-full, validar session_user e
+  current_user alem do snapshot. Prova local nao certifica pooler gerenciado;
+  provisionar credencial/gates somente em etapa autorizada. Ver
+  `docs/operacao/monitor-sql-login.md`.
+- Ao introduzir o LOGIN, qualificar catalogos usados no caminho do snapshot:
+  search_path vazio nao impede sombreamento de relacoes por TEMP. Preservar
+  assinatura/owner/ACL; nao revogar PUBLIC globalmente. Senha alterada/removida
+  nao comprova invalidacao do cache/sessoes do pooler; fixture reinicia apenas
+  o descartavel, sem tornar esse procedimento autorizacao para o gerenciado.
 
 - Ciclo operacional apos #2260: monitor independente deve observar somente
   agregados commitados de intencao/recibo/saldo e alertar incerteza, sem inferir
@@ -281,6 +301,11 @@
 - A localização de comentários em obras reutiliza a central de Notificações e o comments sheet existente; não deve criar um segundo inbox nem duplicar consultas de comentários.
 - O parâmetro público `comentarios=1` abre apenas o sheet da rota canônica `/obra/[slug]`. Links de capítulo, Comunidade e outros destinos não recebem esse estado.
 - Respostas, moderação e permissões permanecem nos fluxos existentes e sob RLS; o deep link não concede novas capacidades.
+- A indicação de conversa sem resposta do autor reutiliza os descendentes já
+  carregados do comentário raiz, somente após confirmação remota para a obra e
+  versão da identidade atuais. Não inferir a ausência por contador, nome público,
+  expansão visual ou cache local. Não é inbox global nem cobertura de capítulos;
+  não adicionar consultas ou quebrar a paginação para preencher essa lacuna.
 
 ## Proteção contra spoilers
 
@@ -318,6 +343,15 @@
 
 - Código, migrations, configurações e estado real do GitHub são fontes de verdade; o Memory Bank e assistentes de memória (incluindo Dot) são auxiliares, nunca backups infalíveis.
 - Ao concluir alteração duradoura, atualizar **no mesmo PR** os documentos pertinentes do Memory Bank; não é necessário modificar todos a cada PR. Confirmar lacunas antes de documentar.
-- Priorizar teste local (Docker/Supabase/Playwright) e redução de consumo da Vercel; merge de PR na `main` pode disparar deploy automático, enquanto a simples criação de PR não cria preview.
-- Antes de recomendar merge: revisar diff, mergeabilidade e CI/Gitleaks. Não fazer consultas repetidas enquanto os checks estiverem rodando. Seguir a regra do `AGENTS.md` de autorização explícita para merge e produção.
-- O assistente de planejamento deve responder de forma curta, sinalizar o próximo passo e não executar mudanças somente por receber um resumo.
+- Validação econômica aprovada, consolidada em 12/11/2026: a política única de execução local proporcional ao risco, cobertura completa na CI, tratamento de falhas e consulta única dos checks está em [AGENTS.md](../../AGENTS.md#validação-proporcional-ao-risco) e na seção Processo seguro. Substitui a exigência de repetir localmente todos os gates em cada fase; não reduz a cobertura obrigatória nem altera workflows. Não duplicar essa política em outros documentos.
+- Antes de recomendar merge: revisar diff, mergeabilidade e estado conhecido de CI/Gitleaks conforme o `AGENTS.md`, incluindo suas autorizações de merge e produção. Merge na `main` pode disparar deploy automático; não inferir autorização de ativação a partir de checks aprovados.
+- O assistente de planejamento deve seguir as orientações de comunicação do `AGENTS.md`, sinalizar o próximo passo e não executar mudanças somente por receber um resumo.
+
+### Diário de edição — contrato preparado, sem ativação
+
+`editou_capitulo` possui contrato independente da #2307, com gate privado falso,
+versão opaca gerada pelo banco e recibo transacional/tombstone. DML direto do novo
+tipo não é permitido; só RPC com sessão/autoria/termos atuais. Não persistir título,
+href ou metadata histórica: a leitura verifica publicação e classificação atuais,
+bloqueios e preferências. Nenhuma integração do helper legado ou ativação faz parte
+da preparação. Ver `docs/diario-edicao-evento-seguro.md` e critérios de homologação.

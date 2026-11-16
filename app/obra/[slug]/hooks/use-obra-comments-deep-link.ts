@@ -8,32 +8,35 @@ export function deveAbrirComentariosObraPorBusca(search: string) {
 
 type UseObraCommentsDeepLinkParams = {
   abrirComentariosObra: () => void;
+  pronto?: boolean;
+  chaveRota?: string;
 };
 
 export function useObraCommentsDeepLink({
   abrirComentariosObra,
+  pronto = true,
+  chaveRota = "",
 }: UseObraCommentsDeepLinkParams) {
   const abrirComentariosObraRef = useRef(abrirComentariosObra);
+  const rotaAbertaRef = useRef<string | null>(null);
 
   useEffect(() => {
     abrirComentariosObraRef.current = abrirComentariosObra;
   }, [abrirComentariosObra]);
 
   useEffect(() => {
-    let abriuUrlAtual = false;
-
     function sincronizarComentariosComUrl() {
       const deveAbrir = deveAbrirComentariosObraPorBusca(
         window.location.search,
       );
 
       if (!deveAbrir) {
-        abriuUrlAtual = false;
+        rotaAbertaRef.current = null;
         return;
       }
 
-      if (!abriuUrlAtual) {
-        abriuUrlAtual = true;
+      if (pronto && rotaAbertaRef.current !== chaveRota) {
+        rotaAbertaRef.current = chaveRota;
         abrirComentariosObraRef.current();
       }
     }
@@ -44,5 +47,5 @@ export function useObraCommentsDeepLink({
     return () => {
       window.removeEventListener("popstate", sincronizarComentariosComUrl);
     };
-  }, []);
+  }, [pronto, chaveRota]);
 }

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
+import { ChapterTextPreview } from "../../components/ChapterTextPreview";
 import { useAdicionarCapituloCreateAction } from "./hooks/useAdicionarCapituloCreateAction";
 import { useAdicionarCapituloDesktopMode } from "./hooks/useAdicionarCapituloDesktopMode";
 import { useAdicionarCapituloDerivedValues } from "./hooks/useAdicionarCapituloDerivedValues";
@@ -138,6 +139,7 @@ export default function AdicionarCapituloPage() {
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
   const { language } = useHistorietasLanguage();
   const criandoCapituloRef = useRef(false);
+  const edicaoRascunhoRef = useRef(0);
   const raizTraducaoRef = useRef<HTMLElement | null>(null);
 
   const {
@@ -167,8 +169,9 @@ export default function AdicionarCapituloPage() {
       erro,
       capituloCriado,
       notificacaoCriada,
-      setTitulo,
-      setTexto,
+      preservarCriacao: true,
+      setTitulo: (valor) => { ++edicaoRascunhoRef.current; setTitulo(valor); },
+      setTexto: (valor) => { ++edicaoRascunhoRef.current; setTexto(valor); },
       setErro,
       setCapituloCriado,
       setNotificacaoCriada,
@@ -176,7 +179,10 @@ export default function AdicionarCapituloPage() {
       setArquivoImportadoErro,
     });
 
-  const { criarCapitulo } = useAdicionarCapituloCreateAction({
+  const {
+    criarCapitulo, verificarCriacao, iniciarNovoCapitulo,
+    recuperacaoPendente, contaAlterada, avisoContaAlterada,
+  } = useAdicionarCapituloCreateAction({
     router,
     obraAtual,
     obraId,
@@ -187,6 +193,7 @@ export default function AdicionarCapituloPage() {
     numeroNovoCapitulo,
     processando,
     criandoCapituloRef,
+    edicaoRascunhoRef,
     salvarObras,
     setProcessando,
     setErro,
@@ -197,6 +204,8 @@ export default function AdicionarCapituloPage() {
     setArquivoImportadoNome,
     setArquivoImportadoErro,
   });
+
+  const criacaoBloqueada = processando || recuperacaoPendente || Boolean(capituloCriado);
 
   useAdicionarCapituloLanguageBridge({
     raizTraducaoRef,
@@ -216,7 +225,7 @@ export default function AdicionarCapituloPage() {
     );
   }
 
-  if (!obraAtual) {
+  if (!obraAtual || contaAlterada) {
     return (
       <main ref={raizTraducaoRef} style={pageThemeStyle}>
         <style>{`${historietasThemeCss}${adicionarCapituloPageCss}`}</style>
@@ -226,6 +235,7 @@ export default function AdicionarCapituloPage() {
 
         <section style={isDesktop ? desktopContainerStyle : containerStyle}>
           <p
+            role={contaAlterada ? "alert" : undefined}
             style={{
               margin: "10px 0 0",
               color: "#FFFFFF",
@@ -234,8 +244,9 @@ export default function AdicionarCapituloPage() {
               textAlign: "center",
             }}
           >
-            Obra não encontrada
+            {contaAlterada ? avisoContaAlterada : "Obra não encontrada"}
           </p>
+          {contaAlterada && <Link href="/painel-autor" style={secondaryButtonStyle}>Painel do Autor</Link>}
         </section>
       </main>
     );
@@ -266,10 +277,19 @@ export default function AdicionarCapituloPage() {
         </header>
 
         {erro && (
-          <section style={errorBoxStyle}>
-            <h2 style={errorTitleStyle}>Não foi possível criar</h2>
+          <section role="status" aria-live="polite" style={errorBoxStyle}>
+            <h2 style={errorTitleStyle}>{capituloCriado ? "Criação verificada" : "Não foi possível criar"}</h2>
 
             <p style={errorTextStyle}>{erro}</p>
+          </section>
+        )}
+
+        {recuperacaoPendente && !capituloCriado && (
+          <section role="status" aria-live="polite" style={errorBoxStyle}>
+            <p style={errorTextStyle}>Há uma tentativa registrada. Verifique a criação antes de enviar outro capítulo.</p>
+            <button type="button" onClick={verificarCriacao} disabled={processando} style={secondaryButtonStyle}>
+              Verificar criação
+            </button>
           </section>
         )}
 
@@ -296,6 +316,7 @@ export default function AdicionarCapituloPage() {
                 id="adicionar-capitulo-titulo"
                 value={titulo}
                 onChange={(event) => {
+                  ++edicaoRascunhoRef.current;
                   setTitulo(event.target.value);
                   limparFeedback();
                   setArquivoImportadoErro("");
@@ -358,6 +379,7 @@ export default function AdicionarCapituloPage() {
                 id="adicionar-capitulo-texto"
                 value={texto}
                 onChange={(event) => {
+                  ++edicaoRascunhoRef.current;
                   setTexto(event.target.value);
                   limparFeedback();
                   setArquivoImportadoErro("");
@@ -370,7 +392,7 @@ export default function AdicionarCapituloPage() {
               <button
                 type="submit"
                 style={{
-                  ...(processando
+                  ...(criacaoBloqueada
                     ? isDesktop
                       ? desktopDisabledButtonStyle
                       : disabledButtonStyle
@@ -382,7 +404,7 @@ export default function AdicionarCapituloPage() {
                   justifyContent: "center",
                   gap: "7px",
                 }}
-                disabled={processando}
+                disabled={criacaoBloqueada}
               >
                 {processando ? (
                   "Salvando..."
@@ -409,6 +431,12 @@ export default function AdicionarCapituloPage() {
                 )}
               </button>
 
+              {capituloCriado && (
+                <button type="button" onClick={iniciarNovoCapitulo} disabled={processando} style={secondaryButtonStyle}>
+                  Novo capítulo
+                </button>
+              )}
+
               <Link href={capituloCriadoHref || minhaObraHref} style={isDesktop ? desktopSecondaryButtonStyle : secondaryButtonStyle}>
                 {capituloCriado ? "Ler capítulo" : "Ver obra"}
               </Link>
@@ -432,9 +460,13 @@ export default function AdicionarCapituloPage() {
                 </h3>
               </div>
 
-              <p style={isDesktop ? desktopPreviewChapterTextStyle : previewChapterTextStyle}>
-                {textoPreview}
-              </p>
+              <ChapterTextPreview
+                key={obraId}
+                textStyle={isDesktop ? desktopPreviewChapterTextStyle : previewChapterTextStyle}
+                buttonStyle={isDesktop ? desktopSecondaryButtonStyle : secondaryButtonStyle}
+              >
+                <span data-historietas-i18n-ignore="true">{textoPreview}</span>
+              </ChapterTextPreview>
             </article>
           </aside>
         </section>

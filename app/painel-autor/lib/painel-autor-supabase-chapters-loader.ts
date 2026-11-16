@@ -15,7 +15,8 @@ type CapituloPainelAutorSupabaseRow = {
 
 export async function carregarCapitulosPainelAutorSupabase(
   userId: string,
-  obraIds: string[]
+  obraIds: string[],
+  onConfirmados?: (capitulos: CapituloPainelAutorSupabaseRow[]) => void,
 ) {
   let capitulosSupabaseBanco: CapituloPainelAutorSupabaseRow[] = [];
 
@@ -35,6 +36,7 @@ export async function carregarCapitulosPainelAutorSupabase(
             .order("id", { ascending: true })
             .range(inicio, fim),
       });
+    onConfirmados?.(capitulosSupabaseBanco);
   } catch (error) {
     console.warn(
       "Não consegui carregar capítulos no Painel do Autor:",

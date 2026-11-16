@@ -173,6 +173,23 @@ export function criarEstruturaComentariosObra(
   };
 }
 
+export function comentarioAguardaRespostaDoAutor(
+  comentario: Pick<ComentarioObraPublico, "userId" | "comentarioPaiId" | "local">,
+  respostas: ReadonlyArray<Pick<ComentarioObraPublico, "userId">>,
+  usuarioIdLogado: string,
+  obraAutorId: string,
+) {
+  return Boolean(
+    obraAutorId &&
+      usuarioIdLogado === obraAutorId &&
+      comentario.userId &&
+      comentario.userId !== obraAutorId &&
+      !comentario.comentarioPaiId &&
+      !comentario.local &&
+      !respostas.some((resposta) => resposta.userId === obraAutorId),
+  );
+}
+
 export type OrdenacaoComentariosObra = "relevantes" | "recentes";
 
 export type RespostaComentarioObra = {

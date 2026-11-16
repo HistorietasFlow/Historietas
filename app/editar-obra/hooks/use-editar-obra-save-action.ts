@@ -1,3 +1,5 @@
+import { useRef } from "react";
+import type { useEditarObraEditorial } from "./use-editar-obra-editorial";
 import type { Dispatch, FormEvent, SetStateAction } from "react";
 import type { AvisoConteudo18 } from "../../../lib/historietasAdultContent";
 import { carregarBackupArquivosObras } from "../lib/editar-obra-file-backup-storage";
@@ -24,6 +26,7 @@ type RouterEditarObra = {
 
 type UseEditarObraSaveActionProps = {
   router: RouterEditarObra;
+  editorial: ReturnType<typeof useEditarObraEditorial>;
   processando: boolean;
   titulo: string;
   autor: string;
@@ -65,6 +68,7 @@ type UseEditarObraSaveActionProps = {
 
 export function useEditarObraSaveAction({
   router,
+  editorial,
   processando,
   titulo,
   autor,
@@ -103,13 +107,21 @@ export function useEditarObraSaveAction({
   setArquivoObraArquivo,
   setArquivoObraRemovidoManualmente,
 }: UseEditarObraSaveActionProps) {
+  const envioEmAndamento = useRef(false);
+  const escritaConfirmada = useRef<{ vigente: () => boolean } | null>(null);
   async function salvarEdicao(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (processando) {
+    const capturaEditorial = editorial.capturar();
+    if (processando || envioEmAndamento.current || !capturaEditorial.podeSalvar) {
       return;
     }
 
+    if (escritaConfirmada.current?.vigente()) {
+      setErro("A alteração já foi confirmada no servidor. Recarregue a página antes de salvar novamente.");
+      setSalvou(false);
+      return;
+    }
     const erroValidacao = validarFormularioEdicaoObra({
       titulo,
       autor,
@@ -133,7 +145,9 @@ export function useEditarObraSaveAction({
       return;
     }
 
+    envioEmAndamento.current = true;
     setProcessando(true);
+    setSalvou(false);
     setErro("");
 
     const valoresSalvamento = prepararValoresSalvamentoEdicaoObra({
@@ -174,6 +188,8 @@ export function useEditarObraSaveAction({
       }
 
       const { userId, nomeProfileAtualizado } = identidadeSalvamento;
+      if (!capturaEditorial.vigente() || (capturaEditorial.confirmado &&
+        (capturaEditorial.confirmado.id !== obraId || capturaEditorial.confirmado.userId !== userId))) return;
       autorFinal = nomeProfileAtualizado || autorFinal;
       setNomeAutorProfile(nomeProfileAtualizado);
 
@@ -191,6 +207,7 @@ export function useEditarObraSaveAction({
         return;
       }
 
+      if (!capturaEditorial.vigente()) return;
       const { obraLocalAtual, obraRemotaAtual } = confirmacaoPropriedade;
       let capaFinal = "";
       let capaNomeFinal = "";
@@ -237,7 +254,8 @@ export function useEditarObraSaveAction({
         throw new Error(mensagemSupabase);
       }
 
-      await atualizarObraRemotaEdicaoObra({
+      if (!capturaEditorial.vigente()) return;
+      const resultadoRemoto = await atualizarObraRemotaEdicaoObra({
         obraId,
         userId,
         tituloFinal,
@@ -253,10 +271,21 @@ export function useEditarObraSaveAction({
         arquivoObraFinal,
         agora,
         arquivosNovosEnviados,
+        vigente: capturaEditorial.vigente,
+        editorial: capturaEditorial.confirmado && capturaEditorial.escolha !== capturaEditorial.confirmado.status
+          ? { confirmado: capturaEditorial.confirmado, escolha: capturaEditorial.escolha } : undefined,
       });
+      if (!capturaEditorial.vigente()) return;
+      capturaEditorial.concluir(resultadoRemoto);
+      if (resultadoRemoto.estado !== "confirmada" || !capturaEditorial.vigente()) {
+        setSalvou(false);
+        return;
+      }
 
+      escritaConfirmada.current = capturaEditorial;
       await removerArquivosStorageEdicaoObra(arquivosAntigosParaRemover);
 
+      if (!capturaEditorial.vigente()) return;
       const novasObrasDoUsuario = persistirObraLocalEBackupEdicaoObra({
         obras,
         obraId,
@@ -283,6 +312,7 @@ export function useEditarObraSaveAction({
         atualizadoEm: agora,
       });
 
+      if (!capturaEditorial.vigente()) return;
       setObras(novasObrasDoUsuario);
       setAutor(autorFinal);
       setCapa(capaFinal);
@@ -292,16 +322,20 @@ export function useEditarObraSaveAction({
       setArquivoObra(arquivoObraFinal);
       setArquivoObraArquivo(null);
       setArquivoObraRemovidoManualmente(false);
+      escritaConfirmada.current = null;
       setSalvou(true);
 
 
     } catch (erroDesconhecido) {
+      if (!capturaEditorial.vigente()) return;
       const mensagem =
         erroDesconhecido instanceof Error
           ? erroDesconhecido.message
           : "Não consegui salvar as alterações. Tente usar uma capa/arquivo menor ou atualizar a página e salvar novamente.";
 
-      setErro(mensagem);
+      setErro(escritaConfirmada.current?.vigente()
+        ? "A alteração foi confirmada no servidor, mas a persistência local falhou. Recarregue a página antes de salvar novamente."
+        : mensagem);
       setSalvou(false);
 
       window.scrollTo({
@@ -309,6 +343,7 @@ export function useEditarObraSaveAction({
         behavior: "smooth",
       });
     } finally {
+      envioEmAndamento.current = false;
       setProcessando(false);
     }
   }

@@ -81,11 +81,13 @@ async function carregarNotificacoesLidasSupabase(userId: string): Promise<string
 export async function carregarEstadoSupabaseNotificacoes(
   carregarNotificacoesDiretasSupabase: (
     userId: string
-  ) => Promise<NotificacaoLocal[]>
+  ) => Promise<NotificacaoLocal[]>,
+  usuarioAutenticadoId: string
 ): Promise<EstadoSupabaseNotificacoes | null> {
   try {
-    const { data } = await supabase.auth.getUser();
-    const userId = data.user?.id || "";
+    // A identidade vem do getUser validado no início da carga. Uma segunda
+    // consulta Auth poderia mudar de conta no meio da composição do resultado.
+    const userId = usuarioAutenticadoId.trim();
 
     if (!userId) {
       return null;
@@ -95,7 +97,7 @@ export async function carregarEstadoSupabaseNotificacoes(
       obrasSeguidasIds,
       notificacoesLidasIds,
       notificacoesDiretas,
-    ] = await Promise.all([
+    ] = await Promise.allSettled([
       carregarObrasSeguidasUsuario(userId),
       carregarNotificacoesLidasSupabase(userId),
       carregarNotificacoesDiretasSupabase(userId),
@@ -103,9 +105,15 @@ export async function carregarEstadoSupabaseNotificacoes(
 
     return {
       userId,
-      obrasSeguidasIds,
-      notificacoesLidasIds,
-      notificacoesDiretas,
+      obrasSeguidasIds: obrasSeguidasIds.status === "fulfilled"
+        ? obrasSeguidasIds.value
+        : [],
+      notificacoesLidasIds: notificacoesLidasIds.status === "fulfilled"
+        ? notificacoesLidasIds.value
+        : [],
+      notificacoesDiretas: notificacoesDiretas.status === "fulfilled"
+        ? notificacoesDiretas.value
+        : [],
     };
   } catch {
     return null;

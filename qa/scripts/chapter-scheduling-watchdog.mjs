@@ -3,7 +3,8 @@ import {deliverAlert} from './chapter-scheduling-monitor.mjs';
 
 const base='https://api.github.com/repos/HistorietasFlow/Historietas/actions';
 const workflow='agendamento-monitor.yml';
-const observationStep='Observar banco e entregar alerta';
+// Nao aceitar conclusoes de workflows antigos com outro contrato de saida.
+const observationStep='Comprovar observacao SQL e entrega (v2)';
 const workflowProblem=state=>state==='active' ? null
   : ['deleted','disabled_fork','disabled_inactivity','disabled_manually'].includes(state)
     ? ['VERIFICADOR_DESATIVADO'] : ['VERIFICACAO_NAO_COMPROVADA'];
@@ -88,6 +89,7 @@ export async function main(env=process.env,deps={}) {
     const entrega=await deliverAlert(result,{token:env.GITHUB_TOKEN,issue:Number(env.AGENDAMENTO_ALERT_ISSUE),channel:'watchdog',
       ...(deps.fetchImpl?{fetchImpl:deps.fetchImpl}:{})});
     console.log(JSON.stringify({codigos:result.codigos,entrega}));
+    if (!['delivered','unchanged'].includes(entrega)) return 2;
     return result.codigos.length ? 1 : 0;
   } catch {
     console.error('Watchdog sem entrega confirmada. Nenhuma ativacao ou retomada executada.');

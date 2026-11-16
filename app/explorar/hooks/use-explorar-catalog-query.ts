@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { validarIntervaloPalavras } from "../../../lib/catalogo-palavras";
 import type { Dispatch, RefObject, SetStateAction } from "react";
 import type { ConsultaCatalogo, CursorCatalogo } from "../../../lib/catalogo";
 import type { ObraLocal } from "../lib/explorar-work-normalizers";
@@ -10,9 +11,12 @@ import type { ErroCatalogoExplorar } from "./use-explorar-catalog-pagination-sta
 import {
   CONSULTAS_INICIAIS_CATALOGO_EXPLORAR,
   carregarObrasPublicadasSupabase,
+  STORAGE_KEY,
 } from "../lib/explorar-remote-loader";
 import type { FiltroColecaoCatalogoExplorar } from "../lib/explorar-remote-loader";
 import type { FiltroColecaoExplorar } from "../lib/explorar-derived-utils";
+import { normalizarObra } from "../lib/explorar-work-normalizers";
+import { lerStorageUsuarioExplorar, obterArquivoObraComBackup } from "../lib/explorar-local-storage";
 
 type OpcoesConsultaCatalogoExplorar = {
   modoConteudo: ModoConteudoExplorar;
@@ -23,7 +27,10 @@ type OpcoesConsultaCatalogoExplorar = {
   filtroTag?: string;
   tagExcluida?: string;
   generoExcluido?: string;
+  statusEditorial?: string;
   notaMinima?: number | null;
+  palavrasMinimas?: string;
+  palavrasMaximas?: string;
   usuarioIdExplorar?: string;
   filtroClassificacao: string;
   filtroCapitulos: string;
@@ -57,7 +64,10 @@ export function useExplorarCatalogQuery({
   filtroTag = "",
   tagExcluida = "",
   generoExcluido = "",
+  statusEditorial = "",
   notaMinima = null,
+  palavrasMinimas = "",
+  palavrasMaximas = "",
   usuarioIdExplorar = "",
   filtroClassificacao,
   filtroCapitulos,
@@ -93,14 +103,27 @@ export function useExplorarCatalogQuery({
     setErroCatalogoExplorar,
   });
   const consultaCatalogoRef = useRef(0);
+  const carregamentoEmAndamentoRef = useRef(false);
+  const paginaConfirmadaRef = useRef<{
+    consulta: ConsultaCatalogo;
+    colecao: FiltroColecaoCatalogoExplorar | null;
+    usuarioId: string;
+    cursor: CursorCatalogo | null;
+  } | null>(null);
+  const usuarioConsultaRef = useRef<string | null>(null);
   const consultaPersonalizadaAtivaRef = useRef(false);
   const versaoRetryCatalogoRef = useRef(versaoRetryCatalogo);
   const [consultaFiltrosConfirmada, setConsultaFiltrosConfirmada] = useState<{
     consulta: ConsultaCatalogo; usuarioId: string;
+    colecao: FiltroColecaoCatalogoExplorar | null; retry: number;
   } | null>(null);
   // Cache não comprova nota nem ausência de tag/gênero; confirme a consulta/identidade atuais.
-  const exigeConfirmacao = notaMinima !== null || (modoConteudo === "obras" && Boolean(tagExcluida || generoExcluido));
-  const identidadeConsultaFiltros = exigeConfirmacao ? usuarioIdExplorar : "";
+  const palavrasAtivas = modoConteudo === "obras" && (palavrasMinimas !== "" || palavrasMaximas !== "");
+  const intervalo = validarIntervaloPalavras({ minimo: palavrasMinimas, maximo: palavrasMaximas });
+  const intervaloInvalido = palavrasAtivas && !intervalo.valido;
+  const minimo = palavrasAtivas && intervalo.valido ? intervalo.palavrasMinimas : null;
+  const maximo = palavrasAtivas && intervalo.valido ? intervalo.palavrasMaximas : null;
+  const exigeConfirmacao = palavrasAtivas || notaMinima !== null || (modoConteudo === "obras" && Boolean(tagExcluida || generoExcluido || statusEditorial));
 
   const buscaCatalogo = busca.trim();
   const filtroColecaoCatalogo = useMemo<FiltroColecaoCatalogoExplorar | null>(
@@ -132,7 +155,9 @@ export function useExplorarCatalogQuery({
     ...(filtroTag ? { tag: filtroTag } : {}),
     ...(modoConteudo === "obras" && tagExcluida ? { tagExcluida } : {}),
     ...(modoConteudo === "obras" && generoExcluido ? { generoExcluido } : {}),
+    ...(modoConteudo === "obras" && statusEditorial ? { statusEditorial } : {}),
     ...(notaMinima !== null ? { notaMinima } : {}),
+    ...(palavrasAtivas ? { palavrasMinimas: minimo, palavrasMaximas: maximo } : {}),
     classificacao:
       filtroClassificacao === "todos" ? "" : filtroClassificacao,
     filtroCapitulos:
@@ -151,17 +176,22 @@ export function useExplorarCatalogQuery({
     filtroTag,
     tagExcluida,
     generoExcluido,
+    statusEditorial,
     modoConteudo,
     notaMinima,
     ordenacao,
+    palavrasAtivas,
+    minimo,
+    maximo,
   ]);
   const consultaCatalogoPersonalizada = Boolean(
     modoConteudo === "autores" ||
+      palavrasAtivas ||
       termoBusca ||
       categoriaSelecionada ||
       filtroFormato !== "todos" ||
       filtroTag ||
-      (modoConteudo === "obras" && (tagExcluida || generoExcluido)) ||
+      (modoConteudo === "obras" && (tagExcluida || generoExcluido || statusEditorial)) ||
       notaMinima !== null ||
       filtroClassificacao !== "todos" ||
       filtroCapitulos !== "todos" ||
@@ -181,72 +211,111 @@ export function useExplorarCatalogQuery({
       setErroCatalogoExplorar,
     } = dependenciasEstaveisRef.current;
 
-    if (!dadosExplorarCarregados) {
-      return;
+    const identidadeAlterada = usuarioConsultaRef.current !== null &&
+      usuarioConsultaRef.current !== usuarioIdExplorar;
+    if (identidadeAlterada) {
+      // Nunca mesclar nem persistir o cache da conta anterior na nova consulta.
+      let obrasDaIdentidade: ObraLocal[] = [];
+      try {
+        const texto = lerStorageUsuarioExplorar(STORAGE_KEY, usuarioIdExplorar);
+        const salvas: unknown = texto ? JSON.parse(texto) : [];
+        if (Array.isArray(salvas)) {
+          obrasDaIdentidade = salvas.map((obra, index) =>
+            normalizarObra(obra, index, usuarioIdExplorar, obterArquivoObraComBackup));
+        }
+      } catch {
+        // Cache inválido não autoriza reutilizar dados de outra conta.
+      }
+      obrasCacheLocalRef.current = obrasDaIdentidade;
+      setObrasLocais(obrasDaIdentidade);
     }
 
-    if (filtroColecaoCatalogo && !colecoesCarregadas) {
+    if (!dadosExplorarCarregados || (filtroColecaoCatalogo && !colecoesCarregadas)) {
+      paginaConfirmadaRef.current = null;
+      setProximoCursorCatalogo(null);
+      setCatalogoTemMais(false);
+      setCarregandoMaisCatalogo(false);
+      setObraIdsBuscaRemota(null);
       return;
     }
 
     const retrySolicitado =
       versaoRetryCatalogo !== versaoRetryCatalogoRef.current;
+    usuarioConsultaRef.current = usuarioIdExplorar;
 
     if (
       !consultaCatalogoPersonalizada &&
       !consultaPersonalizadaAtivaRef.current &&
-      !retrySolicitado
+      !retrySolicitado && !identidadeAlterada
     ) {
       return;
     }
 
     versaoRetryCatalogoRef.current = versaoRetryCatalogo;
     consultaPersonalizadaAtivaRef.current = consultaCatalogoPersonalizada;
+    paginaConfirmadaRef.current = null;
+    setConsultaFiltrosConfirmada(null);
     setErroCatalogoExplorar((erroAtual) =>
       erroAtual === "paginacao" ? "consulta" : erroAtual,
     );
     setObraIdsBuscaRemota(null);
     const numeroConsulta = consultaCatalogoRef.current + 1;
     consultaCatalogoRef.current = numeroConsulta;
+    setProximoCursorCatalogo(null);
+    setCatalogoTemMais(false);
+    if (intervaloInvalido) {
+      setCarregandoMaisCatalogo(false);
+      return;
+    }
     let cancelado = false;
+    const usuarioId = usuarioIdExplorar;
+    const consultaVigente = () => !cancelado &&
+      consultaCatalogoRef.current === numeroConsulta &&
+      usuarioIdExplorarRef.current === usuarioId;
+    // Bloqueia paginação também durante o debounce, antes do próximo render.
+    carregamentoEmAndamentoRef.current = true;
+    setCarregandoMaisCatalogo(true);
     const timer = window.setTimeout(async () => {
-      setCarregandoMaisCatalogo(true);
-
       try {
         const consultas = consultaCatalogoPersonalizada
           ? [consultaCatalogoAtual]
           : CONSULTAS_INICIAIS_CATALOGO_EXPLORAR;
         const resultado = await carregarObrasPublicadasSupabase(
           obrasCacheLocalRef.current,
-          usuarioIdExplorarRef.current,
+          usuarioId,
           consultas,
           filtroColecaoCatalogo,
+          false,
+          consultaVigente,
         );
 
-        if (!cancelado && consultaCatalogoRef.current === numeroConsulta) {
+        if (consultaVigente()) {
+          paginaConfirmadaRef.current = resultado.pagina && !resultado.falhaTemporaria
+            ? { consulta: consultaCatalogoAtual, colecao: filtroColecaoCatalogo,
+                usuarioId, cursor: resultado.pagina.proximoCursor } : null;
           setConsultaFiltrosConfirmada(exigeConfirmacao && resultado.pagina && !resultado.falhaTemporaria
-            ? { consulta: consultaCatalogoAtual, usuarioId: identidadeConsultaFiltros } : null);
+            ? { consulta: consultaCatalogoAtual, usuarioId: usuarioIdExplorar,
+                colecao: filtroColecaoCatalogo, retry: versaoRetryCatalogo } : null);
           setObrasLocais(resultado.obras);
           setObraIdsBuscaRemota(
             (termoBusca || exigeConfirmacao) && resultado.pagina && (!exigeConfirmacao || !resultado.falhaTemporaria)
               ? [...resultado.pagina.obraIds]
               : null,
           );
-          setProximoCursorCatalogo(
-            resultado.pagina?.proximoCursor || null,
-          );
-          setCatalogoTemMais(Boolean(resultado.pagina?.temMais));
+          setProximoCursorCatalogo(paginaConfirmadaRef.current?.cursor || null);
+          setCatalogoTemMais(Boolean(paginaConfirmadaRef.current && resultado.pagina?.temMais));
           setErroCatalogoExplorar(
             resultado.falhaTemporaria ? "consulta" : null,
           );
         }
       } catch {
-        if (!cancelado && consultaCatalogoRef.current === numeroConsulta) {
+        if (consultaVigente()) {
           setConsultaFiltrosConfirmada(null);
           setErroCatalogoExplorar("consulta");
         }
       } finally {
-        if (!cancelado && consultaCatalogoRef.current === numeroConsulta) {
+        if (consultaVigente()) {
+          carregamentoEmAndamentoRef.current = false;
           setCarregandoMaisCatalogo(false);
         }
       }
@@ -254,6 +323,10 @@ export function useExplorarCatalogQuery({
 
     return () => {
       cancelado = true;
+      // O cleanup invalida também uma página iniciada depois da consulta inicial.
+      consultaCatalogoRef.current += 1;
+      paginaConfirmadaRef.current = null;
+      carregamentoEmAndamentoRef.current = false;
       window.clearTimeout(timer);
     };
   }, [
@@ -264,8 +337,10 @@ export function useExplorarCatalogQuery({
     versaoRetryCatalogo,
     filtroColecaoCatalogo,
     colecoesCarregadas,
-    identidadeConsultaFiltros,
+    usuarioIdExplorar,
     exigeConfirmacao,
+    intervaloInvalido,
+    palavrasAtivas,
   ]);
 
   async function carregarMaisObrasCatalogo() {
@@ -279,9 +354,20 @@ export function useExplorarCatalogQuery({
       setErroCatalogoExplorar,
     } = dependenciasEstaveisRef.current;
 
+    const paginaConfirmada = paginaConfirmadaRef.current;
     if (
       !consultaCatalogoPersonalizada ||
+      intervaloInvalido ||
+      !dadosExplorarCarregados ||
+      (filtroColecaoCatalogo && !colecoesCarregadas) ||
+      !paginaConfirmada ||
+      paginaConfirmada.consulta !== consultaCatalogoAtual ||
+      paginaConfirmada.colecao !== filtroColecaoCatalogo ||
+      paginaConfirmada.usuarioId !== usuarioIdExplorar ||
+      usuarioIdExplorarRef.current !== usuarioIdExplorar ||
+      paginaConfirmada.cursor !== proximoCursorCatalogo ||
       !proximoCursorCatalogo ||
+      carregamentoEmAndamentoRef.current ||
       carregandoMaisCatalogo
     ) {
       return;
@@ -289,23 +375,30 @@ export function useExplorarCatalogQuery({
 
     const numeroConsulta = consultaCatalogoRef.current + 1;
     consultaCatalogoRef.current = numeroConsulta;
+    const usuarioId = usuarioIdExplorar;
+    const consultaVigente = () => consultaCatalogoRef.current === numeroConsulta &&
+      usuarioIdExplorarRef.current === usuarioId;
+    carregamentoEmAndamentoRef.current = true;
     setCarregandoMaisCatalogo(true);
 
     try {
       const resultado = await carregarObrasPublicadasSupabase(
         obrasLocais,
-        usuarioIdExplorarRef.current,
+        usuarioId,
         [{ ...consultaCatalogoAtual, cursor: proximoCursorCatalogo }],
         filtroColecaoCatalogo,
         Boolean(filtroColecaoCatalogo),
+        consultaVigente,
       );
 
-      if (consultaCatalogoRef.current === numeroConsulta) {
+      if (consultaVigente()) {
         if (resultado.falhaTemporaria) {
           setErroCatalogoExplorar("paginacao");
           return;
         }
 
+        paginaConfirmadaRef.current = { ...paginaConfirmada,
+          cursor: resultado.pagina?.proximoCursor || null };
         setObrasLocais(resultado.obras);
         const pagina = resultado.pagina;
         if ((termoBusca || exigeConfirmacao) && pagina) {
@@ -323,27 +416,27 @@ export function useExplorarCatalogQuery({
         setErroCatalogoExplorar(null);
       }
     } catch {
-      if (consultaCatalogoRef.current === numeroConsulta) {
+      if (consultaVigente()) {
         setErroCatalogoExplorar("paginacao");
       }
     } finally {
-      if (consultaCatalogoRef.current === numeroConsulta) {
+      if (consultaVigente()) {
+        carregamentoEmAndamentoRef.current = false;
         setCarregandoMaisCatalogo(false);
       }
     }
   }
 
+  const filtrosConfirmados = consultaFiltrosConfirmada?.consulta === consultaCatalogoAtual &&
+    consultaFiltrosConfirmada.usuarioId === usuarioIdExplorar &&
+    consultaFiltrosConfirmada.colecao === filtroColecaoCatalogo &&
+    consultaFiltrosConfirmada.retry === versaoRetryCatalogo &&
+    dadosExplorarCarregados && (!filtroColecaoCatalogo || colecoesCarregadas);
+
   return { consultaCatalogoPersonalizada, carregarMaisObrasCatalogo,
-    notaMinimaVerificada: notaMinima === null || (
-      consultaFiltrosConfirmada?.consulta === consultaCatalogoAtual &&
-      consultaFiltrosConfirmada.usuarioId === identidadeConsultaFiltros
-    ),
-    generoExcluidoVerificado: !generoExcluido || modoConteudo !== "obras" || Boolean(
-      consultaFiltrosConfirmada?.consulta === consultaCatalogoAtual &&
-      consultaFiltrosConfirmada.usuarioId === identidadeConsultaFiltros
-    ),
-    tagExcluidaVerificada: !tagExcluida || modoConteudo !== "obras" || (
-      consultaFiltrosConfirmada?.consulta === consultaCatalogoAtual &&
-      consultaFiltrosConfirmada.usuarioId === identidadeConsultaFiltros
-    ) };
+    palavrasVerificadas: !palavrasAtivas || (!intervaloInvalido && filtrosConfirmados),
+    statusEditorialVerificado: !statusEditorial || modoConteudo !== "obras" || filtrosConfirmados,
+    notaMinimaVerificada: notaMinima === null || filtrosConfirmados,
+    generoExcluidoVerificado: !generoExcluido || modoConteudo !== "obras" || filtrosConfirmados,
+    tagExcluidaVerificada: !tagExcluida || modoConteudo !== "obras" || filtrosConfirmados };
 }

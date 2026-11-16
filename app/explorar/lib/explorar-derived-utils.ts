@@ -184,16 +184,20 @@ export function filtrarObrasExplorar({
   termoBusca,
   obraIdsBuscaRemota,
   notaMinima = null,
+  palavrasAtivas = false,
   tagExcluida = "",
   generoExcluido = "",
+  statusEditorial = "",
 }: {
   obrasBaseFiltradas: ObraLocal[];
   categoriaSelecionada: string;
   termoBusca: string;
   obraIdsBuscaRemota?: readonly string[] | null;
   notaMinima?: number | null;
+  palavrasAtivas?: boolean;
   tagExcluida?: string;
   generoExcluido?: string;
+  statusEditorial?: string;
 }) {
     return obrasBaseFiltradas.filter((obra) => {
       const passaCategoria = categoriaSelecionada
@@ -224,6 +228,8 @@ export function filtrarObrasExplorar({
       const passaNota = notaMinima === null || Boolean(obraIdsBuscaRemota?.includes(obra.id));
       const passaExclusao = !normalizarTagCatalogo(tagExcluida) || Boolean(obraIdsBuscaRemota?.includes(obra.id));
       return passaCategoria && passaBusca && passaNota && passaExclusao &&
+        (!palavrasAtivas || Boolean(obraIdsBuscaRemota?.includes(obra.id))) &&
+        (!statusEditorial || Boolean(obraIdsBuscaRemota?.includes(obra.id))) &&
         (!generoExcluido || Boolean(obraIdsBuscaRemota?.includes(obra.id)));
     });
 }

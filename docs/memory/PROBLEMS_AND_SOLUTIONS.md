@@ -1,5 +1,130 @@
 # Problemas conhecidos e soluções
 
+## QA do Leitor: cópia oculta do streaming não é o leitor ativo
+
+A CI `43269859618` (#2275) registrou strict mode em `chapter-canonical` na
+primeira abertura: dois `span[data-historietas-i18n-ignore]` com o mesmo texto.
+O retry passou, mas isso não explicava a causa. Não houve artefato de DOM/trace
+da tentativa flaky entre os artefatos publicados dessa execução.
+
+Inspeção local na main `e96f677f`, com MutationObserver no Chromium e build de
+produção de código equivalente, capturou os dois spans: um visível em
+`main[data-historietas-ler-capitulo-root="true"] > section > article > p`,
+outro em árvore equivalente sob `div#S:1[hidden]`, com `display:none`.
+Após a confirmação pública HTTP 200 havia exatamente um Leitor visível.
+Isso comprova a fragilidade do seletor global diante do streaming, não dois
+leitores simultaneamente ativos nem defeito de conteúdo da aplicação.
+
+O cenário de histórico agora registra uma nova requisição de
+`/api/leitura-publica` antes de cada ação, filtra slug/número e acompanha a
+resposta daquele objeto Request (não uma resposta antiga). Confere HTTP 200,
+estado público e identidade, depois uma única raiz visível, sem aria-busy,
+URL, título e texto exatos em 1 → 2 → Voltar → Avançar. A cópia oculta
+controlada reproduz deterministicamente a ambiguidade; uma cópia visível
+controlada confirma que o seletor encontra ambas e não escolhe uma arbitrária.
+Os testes separados de SSR, metadata, 404, query conflitante e IDs internos
+permanecem intactos. Não generalizar esse filtro a verificações de HTML inicial.
+
+Validação local final: arquivo completo 7/7, workers=1/retries=0, desktop/mobile,
+contra next start (12,0s). A primeira rodada de implementação ficou 5/7:
+o novo seletor exato omitia a seta do nome real `Próximo capítulo →`; corrigido
+pelo snapshot, sem mudar timeout/retry. Lint focado e diff check aprovados.
+O Storage do descartável excedeu a saúde de inicialização; a rodada usou apenas
+Database/Auth/Data API, sem testar Storage/Realtime. Build/lockfiles/aplicação
+idênticos à main foram reutilizados; suíte ampla fica para a CI. Uma rodada
+verde não garante ausência absoluta de instabilidade. Nenhuma mudança funcional.
+
+### Consolidação local de Obra e Leitor — 13/11/2026
+
+Base `98be8c31`, branch `codex-local/obra-leitor-e2e-estabilidade`. Os dois
+arquivos originais (`obra-critical` e `chapter-canonical`) passaram **16/16**,
+workers=1/retries=0; não houve reprodução espontânea da falha anterior.
+MutationObserver no Chromium capturou, desktop/mobile, loading visível junto
+de raiz sob `div#S:1[hidden]`/`div#S:2[hidden]`; no Leitor desktop também houve
+texto idêntico em um span visível e outro oculto. Nos quatro carregamentos
+instrumentados o heading já estava visível antes da resposta da barreira.
+As confirmações públicas seguintes retornaram HTTP 200. Uma cópia oculta
+controlada reproduziu `strict mode violation` no seletor global `main`.
+Essas evidências comprovam a fragilidade da seleção/sincronização, não duas
+páginas simultaneamente ativas nem defeito permanente da aplicação.
+
+O helper de confirmação do histórico foi reutilizado em
+`qa/tests/public-reader-readiness.mjs`: acompanha uma Request nova do slug/
+número esperados, confere status/estado/IDs e exige URL, título/texto exatos
+na única raiz ativa, sem busy e com apenas um main visível. Hidratação e query
+conflitante também usam esse contrato. A Obra aguarda sua confirmação pública
+e estado interativo da identidade atual antes das ações; o CTA verifica o
+capítulo de destino, não apenas qualquer main. Cópias ocultas/visíveis
+controladas mantêm a regressão contra ambiguidade sem aceitar duplicação ativa.
+SSR inicial, metadata, 404, IDs internos, histórico, comentários, foco e ações
+sociais preservados; sem mudanças de aplicação, banco, autenticação ou timeouts.
+
+Validação final: **21/21** nos arquivos afetados e **7/7** em smoke/axe de
+Obra/Leitor, desktop/mobile, um worker, zero retries/skips. Lint focado e diff
+check aprovados. Next 16.4.5 build/start, Node 22.23.4, CLI 2.116.0 e fixtures
+existentes no novo Supabase descartável `obra-leitor-e2e` (API local 64421).
+O primeiro build recusou a junction externa de dependências pelo isolamento
+do Turbopack; copiar as dependências existentes com lockfiles idênticos para
+o worktree permitiu o build, sem alterar configuração/dependências versionadas.
+Fixtures foram recriadas entre baseline e rodada final: o teste de moderação
+consome o comentário 01. Não repetir a rodada sobre essa fixture consumida.
+
+Os containers antigos foram pausados temporariamente e restaurados, sem
+excluir dados/volumes; configuração, auxiliar ACL e relatórios ficaram locais.
+A suíte completa permanece na CI. Esta rodada não prova estabilidade absoluta
+nem encerra o HTTP 503/ocorrência autenticada anterior ainda inconclusivos.
+
+## TLS do monitor SQL: raiz privada Supabase nao confiada pelo sistema
+
+Em 11/11/2026, negociacao sem credenciais no Session Pooler falhou com
+SELF_SIGNED_CERT_IN_CHAIN (Node) e UntrustedRoot (Windows). A cadeia apresentada
+NAO foi usada como trust anchor. A CA foi obtida por HTTPS da URL publicada
+no codigo oficial do painel e comparada ao arquivo baixado pelo responsavel.
+Fonte/pin/validade em `qa/certificates/README.md`. Workflow fixa PGSSLROOTCERT
+nesse arquivo e verifica sua integridade antes do psql; preserva verify-full,
+hostname e falha fechada. Nao modificar o trust store global nem usar require.
+Rotacao exige nova revisao da fonte e do pin, sem download automatico.
+TLS no pooler real passou com a CA oficial; CA ausente/invalida e hostname
+incorreto falharam antes de autenticacao. Isso NAO certifica senha, identidade
+SQL, leitura do snapshot, entrega GitHub/Sentry ou a perna interna do pooler.
+
+## CI #2267: DNS do mirror Azure antes do Playwright
+
+As tentativas 1 e 2 de `43034526557` falharam no APT com
+`Temporary failure resolving 'azure.archive.ubuntu.com'` e codigo 100,
+antes de executar Playwright. Faltavam nove pacotes de fontes/X fonts; as
+bibliotecas do Chromium ja estavam instaladas, mas remover `--with-deps`
+omitiria dependencias e poderia mudar a renderizacao dos testes.
+
+Remover somente Azure da lista de mirrors oficiais tambem falhou: a execucao
+`43043680245` comprovou DNS indisponivel para `archive.ubuntu.com`. Essa
+tentativa foi retirada, sem manter alteracoes de APT ou de DNS do runner.
+
+Solucao: [Playwright Server em Docker](https://playwright.dev/docs/docker#remote-connection),
+com Chromium/fontes/bibliotecas ja incluidos na imagem oficial MCR Noble
+1.62.1, correspondente ao lockfile e fixada por digest SHA-256. Apenas o
+navegador usa o container; Node 22, app, fixtures, CLI/Docker e Supabase continuam
+no host. Compartilhar rede permite manter localhost e URLs dos testes; servidor
+ouve somente 127.0.0.1:3001. O container nao recebe secrets, socket Docker ou
+repositorio: somente node_modules QA read-only. Usuario pwuser, cap-drop=ALL e
+no-new-privileges, sem --privileged. Cleanup sempre remove somente seu container.
+
+Smoke obrigatorio antes do banco comprova launch, texto pt-BR, screenshot e
+transferencia de video remoto; testes usam a variavel publica documentada
+PW_TEST_CONNECT_WS_ENDPOINT. Configuracao dos testes, assercoes, retries,
+timeouts e scans permanecem iguais. A espera limitada e somente por startup,
+nao repete teste ou falha de navegador. Drift de versao/digest falha fechado.
+Lighthouse continua no Chrome preinstalado do host, sem mudar seu contrato.
+
+Validacao local: sete testes do contrato/startup e 67 regressoes de instalador/
+monitor/Sentry aprovados. Smoke real cliente/servidor no Windows aprovado,
+incluindo screenshot e video, com Chromium 151.0.7922.34; servidor encerrado.
+Docker Engine indisponivel nesta sessao Windows;
+a instalacao Linux e o E2E completo devem ser comprovados na CI do commit novo,
+sem reutilizar checks anteriores. Evidencias finais ficam na propria PR #2267.
+Ainda depende da disponibilidade do MCR; falha de download bloqueia, nao ha
+fallback para navegador arbitrario nem omissao de dependencias/gates.
+
 ## Storage: disputa de quota entre reserva e upload legado
 
 Na execução CI `42620166032` da #2245, o cenário de duas reservas passou,
@@ -411,6 +536,46 @@ de loading também é um `main`, e o rótulo da bottom nav pode estar oculto no
 desktop. Não usar esse rótulo nem o título exclusivo do desktop como prontidão.
 O estado vazio legítimo também é um feed carregado, não um skeleton.
 
+## E2E local: encerramento do servidor Playwright no Windows
+
+O `webServer` gerenciado pelo Playwright podia concluir os testes e manter a
+árvore do Next ativa no Windows. Nesse sistema, o runner local deve iniciar o
+CLI do Next diretamente, sem shell intermediário, executar o Playwright com
+`E2E_SERVER_EXTERNALLY_MANAGED=true` e encerrar exatamente a árvore do PID
+criado com `taskkill /pid <pid> /t /f`, aguardando a saída antes de retornar.
+
+A configuração recusa o lifecycle gerenciado diretamente no Windows e orienta
+o uso de `qa/scripts/run-playwright-local.mjs`. Não substituir esse controle por
+timeout maior, retry ou encerramento amplo por nome de processo. Ao validar uma
+falha E2E, confirme também que a porta local foi liberada; instabilidade do
+Supabase local continua sendo reportada separadamente, sem ser ocultada pelo
+cleanup do servidor.
+
+## CI: diagnósticos de testes Playwright flaky
+
+O resultado geral do Playwright pode ser verde quando uma tentativa falha e um
+retry passa. Portanto, `failure()` sozinho não identifica todos os casos que
+precisam de evidência. A CI classifica o relatório JSON após a suíte e solicita
+o upload quando encontra resultado `flaky`; falhas definitivas continuam sendo
+preservadas pela condição de falha do job.
+
+O artefato não deve incluir o relatório bruto, HTML, traces nem contexto de erro,
+pois esses formatos podem conter URLs, headers, cookies, tokens ou payloads. O
+resumo usa uma allowlist com índices numéricos de origem/teste, posição, projeto,
+status, duração, retry, categoria fixa de erro e contagens de erros/anexos.
+Títulos, caminhos, mensagens livres, screenshots e vídeos não acompanham o
+resumo: o conteúdo de uma mídia não pode ser considerado seguro apenas pelo MIME
+ou pelo teste que a produziu. Não resolver perda de diagnóstico aumentando
+retries ou timeouts.
+
+Quando um fluxo flaky exigir contexto adicional, o teste pode emitir um registro
+estruturado que o coletor sanitiza novamente antes de incluí-lo no `summary.json`.
+Esse registro aceita somente cenários, fases, rotas, endpoints e estados de uma
+allowlist fechada, além de códigos HTTP e contagens limitadas. Não registrar
+URLs, queries, headers, corpos, textos renderizados, credenciais, cookies,
+tokens, identidades ou conteúdo privado; dados desconhecidos devem ser
+descartados, nunca mascarados ou copiados como texto livre.
+
 Os downloads oficiais de k6 e Gitleaks tiveram HTTP 504/503, conexão interrompida
 e timeout antes de executar as ferramentas. O instalador compartilhado usa
 arquivos oficiais com versão, tamanho e SHA-256 fixos, cache separado por
@@ -421,3 +586,22 @@ O cache contém somente arquivos verificados, nunca credenciais ou binários
 extraídos. Instalar k6 antes da suíte evita gastar toda a execução quando o
 download está indisponível. Scans/baselines continuam obrigatórios; falha na
 instalação nunca significa aprovação de k6, ZAP ou Gitleaks.
+
+## Paginação anônima de comentários e custo da RLS
+
+A policy compartilhada de `comunidade_comentarios` chamava
+`comunidade_pode_ver_comentario(id)` para `anon` e `authenticated`. Para cada
+linha candidata, essa função relia o próprio comentário por chave primária antes
+de consultar a visibilidade do post. Em uma página com 2.501 candidatos, esse
+caminho ficou sem margem para o `statement_timeout` original de três segundos.
+
+Para `anon`, `auth.uid()` é nulo e a parte da regra que verifica bloqueio com o
+autor do comentário é necessariamente verdadeira. A policy anônima pode,
+portanto, consultar diretamente `comunidade_pode_ver_post(post_id)`. A policy de
+`authenticated` continua usando a função completa, preservando autoria,
+moderação, relações de seguimento e bloqueios nos dois sentidos.
+
+Não substituir a regra autenticada pela variante anônima, não tornar a função
+privada uma RPC e não elevar timeouts. A regressão deve cobrir, no mínimo,
+comentário público e privado para `anon`, bloqueio entre contas autenticadas e o
+acesso do autor ao próprio post privado.

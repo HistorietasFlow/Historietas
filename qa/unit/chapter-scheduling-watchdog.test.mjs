@@ -12,7 +12,7 @@ const env={GITHUB_TOKEN:'SEGREDO',AGENDAMENTO_ALERT_ISSUE:'123',
 const fixture=()=>({state:'active',run:{id:7,run_attempt:2,head_branch:'main',event:'workflow_dispatch',
   status:'completed',conclusion:'success',created_at:'2026-11-10T11:58:00Z',updated_at:'2026-11-10T11:59:01Z'},
   jobs:[{name:'verificar',run_id:7,run_attempt:2,status:'completed',conclusion:'success',
-    steps:[{name:'Observar banco e entregar alerta',status:'completed',conclusion:'success',
+    steps:[{name:'Comprovar observacao SQL e entrega (v2)',status:'completed',conclusion:'success',
       started_at:'2026-11-10T11:58:30Z',completed_at:'2026-11-10T11:59:00Z'}]}]});
 const classify=f=>classifyVerification(f,watchdogPolicy(env,now),now).codigos;
 function api(f=fixture(),failure) {
@@ -51,6 +51,7 @@ test('conclusao SQL recente e unica comprova verificacao; inicio ou teste de e-m
   assert.deepEqual(classify(fixture()),[]);
   for (const mutate of [f=>f.run.status='in_progress',f=>f.run.head_branch='outra',
     f=>f.run.event='pull_request',f=>f.jobs[0].steps[0].name='Testar somente transporte',
+    f=>f.jobs[0].steps[0].name='Observar banco e entregar alerta',
     f=>f.jobs[0].steps[0].conclusion='skipped',f=>f.jobs.push(f.jobs[0]),
     f=>f.jobs[0].run_attempt=1,f=>f.jobs[0].run_id=9,
     f=>f.jobs[0].steps[0].completed_at='2026-11-10T13:00:00Z']) {
@@ -71,6 +72,30 @@ test('atraso usa fim da etapa, nao update recente ou nova tentativa queued',()=>
   assert.deepEqual(classify(f),['VERIFICACAO_ATRASADA']);
   f.jobs[0].steps[0].conclusion='failure';
   assert.deepEqual(classify(f),['VERIFICACAO_ATRASADA','VERIFICACAO_FALHOU']);
+});
+
+test('janela proposta de 30 min usa conclusao SQL: limite inclusivo e obsolescencia no milissegundo seguinte',()=>{
+  // Candidato de homologacao, nao default nem aprovacao operacional.
+  const policy=watchdogPolicy({...env,AGENDAMENTO_MONITOR_MAX_INTERVALO_MS:'1800000'},now);
+  const f=fixture(),end=Date.parse(f.jobs[0].steps[0].completed_at);
+  assert.deepEqual(classifyVerification(f,policy,end+1800000).codigos,[]);
+  assert.deepEqual(classifyVerification(f,policy,end+1800001).codigos,['VERIFICACAO_ATRASADA']);
+  // Atualizacao recente do run nao renova a conclusao SQL antiga.
+  f.run.updated_at=new Date(end+1800001).toISOString();
+  assert.deepEqual(classifyVerification(f,policy,end+1800001).codigos,['VERIFICACAO_ATRASADA']);
+});
+
+test('cadencia proposta tolera um ciclo SQL perdido, mas nao dois nem falha concluida recente',()=>{
+  const policy=watchdogPolicy({...env,AGENDAMENTO_MONITOR_MAX_INTERVALO_MS:'1800000'},now);
+  const f=fixture();
+  f.run.created_at='2026-11-10T11:24:00Z';
+  f.run.updated_at='2026-11-10T11:25:02Z';
+  Object.assign(f.jobs[0].steps[0],{started_at:'2026-11-10T11:25:00Z',completed_at:'2026-11-10T11:25:01Z'});
+  assert.deepEqual(classifyVerification(f,policy,Date.parse('2026-11-10T11:45:00Z')).codigos,[]);
+  assert.deepEqual(classifyVerification(f,policy,now).codigos,['VERIFICACAO_ATRASADA']);
+  f.jobs[0].steps[0].conclusion='failure';
+  f.jobs[0].conclusion=f.run.conclusion='failure';
+  assert.deepEqual(classifyVerification(f,policy,Date.parse('2026-11-10T11:30:00Z')).codigos,['VERIFICACAO_FALHOU']);
 });
 test('API usa workflow/branch/attempt fixos, GETs limitados e rejeita redirect sem vazar erros',async()=>{
   const a=api();assert.deepEqual((await checkVerification(env,{now,fetchImpl:a.fetchImpl})).codigos,[]);
@@ -128,6 +153,16 @@ test('fluxos concorrentes isolam alertas e recuperacao, preservando o legado',as
   assert.equal(await deliverAlert({...r,codigos:[]},{...params,channel:'watchdog'}),'delivered');
   assert.equal(await deliverAlert(r,params),'unchanged');
 });
+
+test('watchdog nao comprova entrega quando observacao concorrente mais nova torna a sua obsoleta',async()=>{
+  const a=api();
+  a.comments.push({user:{login:'github-actions[bot]'},body:
+    '<!-- historietas-agendamento-watchdog:v1 -->\n'+JSON.stringify({versao:1,
+      observadoEm:new Date(now+1000).toISOString(),codigos:['VERIFICACAO_FALHOU']})});
+  assert.equal(await main(env,{now,fetchImpl:a.fetchImpl}),2);
+  assert.equal(a.comments.length,1);
+  assert.equal(a.calls.filter(c=>c.options.method==='POST').length,0);
+});
 test('transporte HTTP local real: resposta POST perdida preserva comentario e retry nao duplica',async()=>{
   const comments=[];let posts=0,lose=true;
   const server=createServer(async(req,res)=>{
@@ -156,16 +191,32 @@ test('transporte HTTP local real: resposta POST perdida preserva comentario e re
     assert.doesNotMatch(JSON.stringify(comments),/token-sintetico-local|Authorization/);
   } finally { server.closeAllConnections();await new Promise(resolve=>server.close(resolve)); }
 });
-test('workflows sem schedule, com gates distintos e main; watchdog nunca recebe SQL/secrets do banco',()=>{
+test('schedules coordenados, com gates distintos e main; watchdog nunca recebe SQL/secrets do banco',()=>{
   const read=p=>readFileSync(new URL(p,import.meta.url),'utf8');
   const monitor=read('../../.github/workflows/agendamento-monitor.yml'),watchdog=read('../../.github/workflows/agendamento-watchdog.yml');
   for (const w of [monitor,watchdog]) {
-    assert.doesNotMatch(w,/^\s+schedule:/m);assert.match(w,/workflow_dispatch:/);
+    assert.equal((w.match(/^\s+schedule:/gm)??[]).length,1);assert.match(w,/workflow_dispatch:/);
     assert.match(w,/github.ref == 'refs\/heads\/main'/);assert.match(w,/cancel-in-progress: false/);
   }
+  assert.match(monitor,/^\s+- cron: '10\/15 \* \* \* \*'$/m);
+  assert.deepEqual(Array.from({length:60},(_,min)=>min).filter(min=>min>=10&&(min-10)%15===0),[10,25,40,55]);
+  assert.match(watchdog,/^\s+- cron: '\*\/15 \* \* \* \*'$/m);
   assert.match(monitor,/AGENDAMENTO_MONITOR_AUTORIZADO/);assert.match(watchdog,/AGENDAMENTO_WATCHDOG_AUTORIZADO/);
-  assert.match(watchdog,/actions: read/);assert.doesNotMatch(watchdog,/PGHOST|PGPASSWORD|service_role|secrets\./);
+  assert.match(watchdog,/actions: read/);assert.doesNotMatch(watchdog,/PGHOST|PGPASSWORD|service_role/);
+  assert.deepEqual([...watchdog.matchAll(/secrets\.([A-Z_]+)/g)].map(match=>match[1]).sort(),
+    ['AGENDAMENTO_SENTRY_CHECKIN_URL']);
   assert.match(monitor,/if: inputs.teste_entrega/);assert.match(monitor,/if: \$\{\{ !inputs.teste_entrega \}\}/);
+  assert.match(monitor,/name: Comprovar observacao SQL e entrega \(v2\)/);
+  assert.match(monitor,/AGENDAMENTO_MONITOR_COMPROVAR_EXECUCAO: 'true'/);
+  assert.doesNotMatch(monitor,/continue-on-error|\|\| true/);
   const template=read('../../docs/operacao/agendamento-periodico.patch.example');
-  assert.match(template,/__CADENCIA_MONITOR_UTC_APROVADA__/);assert.match(template,/__CADENCIA_WATCHDOG_UTC_APROVADA__/);
+  assert.match(template,/# INERTE:/);
+  const monitorPatch=template.split('diff --git a/.github/workflows/agendamento-monitor.yml')[1]
+    .split('diff --git a/.github/workflows/agendamento-watchdog.yml')[0];
+  assert.equal((monitorPatch.match(/^\+    - cron:/gm)??[]).length,1);
+  assert.match(monitorPatch,/^\+    - cron: '10,25,40,55 \* \* \* \*'$/m);
+  const watchdogPatch=template.split('diff --git a/.github/workflows/agendamento-watchdog.yml')[1];
+  assert.equal((watchdogPatch.match(/^\+    - cron:/gm)??[]).length,1);
+  assert.match(watchdogPatch,/^\+    - cron: '\*\/15 \* \* \* \*'$/m);
+  assert.doesNotMatch(watchdogPatch,/__CADENCIA_|agendamento-monitor\.yml/);
 });

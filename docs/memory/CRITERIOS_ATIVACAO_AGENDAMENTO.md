@@ -79,6 +79,11 @@ o arquivo foi removido, os valores nao integram este diff nem os anexos de QA.
 | RE-1 | Evidencias cabem no horizonte sem apagar obrigacoes | Orcamento de bytes/linhas e procedimento de parada/exportacao; recibos/IDs/leases/tombstones preservados; nenhum ACK inventado | Pendente |
 | PH-1 | Margem fisica real suficiente para trabalho em voo e parada | Fonte homologada, frescor/erro de medicao, limites de crescimento de TODOS os escritores/WAL/temporarios e reserva de recuperacao | Pendente; NAO APTA |
 
+Atualizacao PH-1 em `AGENDAMENTO_CAPACIDADE_PH1.md`: evitada reescrita de saldo
+de notificacoes quando nao existe debito, sem alterar locks/limites. A reducao
+local de versoes/WAL nao homologa espaco livre nem o envelope global; a linha
+PH-1 acima permanece pendente. Nenhum controle de monitoramento e alterado.
+
 CR-2 trata de configuracao previa e abortos observados, nao de um prazo fisico
 rigido para conexao, fila, IO ou resposta HTTP. O ensaio local de statement
 timeout terminou em cerca de 10,001 s; idle-in-transaction nao limita uma query

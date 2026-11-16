@@ -44,7 +44,11 @@ O workflow novo e **somente manual** e exige
 `AGENDAMENTO_WATCHDOG_AUTORIZADO=true`, sem configurar essa variavel.
 Monitor mantem seu gate separado. Nenhum `schedule` ativo foi adicionado.
 O patch **inerte** `docs/operacao/agendamento-periodico.patch.example` prepara
-as duas agendas, mas deixa ambos os crons como placeholders a aprovar.
+as duas agendas. Em 11/11, a cadencia do watchdog foi aprovada para preparacao:
+`*/15 * * * *` UTC. Apos a prova SQL real #43089501994, o patch passa a propor
+SQL `10,25,40,55 * * * *`, janela 30 min e ensaio 72 h; ainda exigem aprovacao.
+O plano completo esta em `docs/operacao/sentry-watchdog-homologacao.md`.
+A aprovacao da cadencia NAO autoriza aplicar o patch nem ativar gates.
 Nao copiar para `.github/workflows` nem aplicar antes de revisao/autorizacao.
 Eventos schedule usariam leitura real (`inputs.teste_entrega` ausente/false);
 workflow_dispatch continua com teste de transporte=true por padrao.
@@ -59,28 +63,72 @@ Configuracoes obrigatorias SEM defaults novos:
 | AGENDAMENTO_ALERT_ISSUE | Issue aberta com marcador de aprovacao existente; sem novo destino implicito |
 
 Antes da primeira prova real, o watchdog informa nao comprovada/ausente, nunca
-recuperacao falsa. Alertas de negocio fazem o monitor sair com erro mesmo se
-o transporte funcionar; VERIFICACAO_FALHOU inclui esse caso, nao prova crash.
+recuperacao falsa. O modo legado continua saindo com erro para alertas de saude;
+a etapa v2 separa execucao/entrega desses alertas, conforme a continuacao abaixo.
 O watchdog nao procura uma execucao antiga verde para ocultar a ultima falha.
 Uma execucao manual posterior pode exigir nova verificacao real antes de ficar
 saudavel: preferimos incerteza explicita a tratar teste de e-mail como sucesso.
+
+### Integracao Sentry Cron Monitor preparada (sem ativacao)
+
+O mesmo workflow do watchdog agora chama
+`chapter-scheduling-sentry-checkin.mjs`: **somente** `schedule` da `main` no
+workflow e repositorio esperados emite `in_progress`, seguido de `ok` se a
+verificacao real
+e a entrega GitHub terminarem com codigo 0; resultados 1/2 ou excecoes emitem
+`error`. `workflow_dispatch`, teste de e-mail e execucao simulada nao renovam o
+Sentry. Falha no envio inicial/final deixa o job com erro; falha na abertura nao
+impede a tentativa de alerta GitHub. Resposta perdida nao recebe retry cego.
+Se o GitHub nao iniciar o workflow, nao ha check-in e o proprio Sentry deve
+classificar a execucao como ausente; se parar apos o inicio, como timeout.
+
+Continuam **inativos** o `schedule`, o Cron SQL, o runner e a publicacao
+automatica. Em 11/11/2026, o responsavel informou ter criado monitor/alerta no
+Sentry e cadastrado o secret `AGENDAMENTO_SENTRY_CHECKIN_URL` no GitHub.
+Configuracao/secret nao foram lidos nesta revisao; nenhum check-in real enviado.
+Antes de ativar, conferir janela de atraso, custo/limite do plano e destino de
+e-mail, incluindo `missed`, `failed` e `timed_out`, com teste controlado de falta
+de execucao e recebimento. A existencia do secret nao habilita os gates.
+O monitor deve ser preconfigurado, sem auto-criacao por payload.
+
+Cadencia de 15 minutos aprovada para preparacao, nao aplicada. Demais valores
+a conferir/aprovar: Sentry no mesmo cron UTC, margem de check-in 10 minutos, runtime maximo 3
+minutos (workflow limita o job a 2), limiares de falha/recuperacao 1. GitHub
+Actions pode atrasar/descartar schedules; a margem reduz falsos alertas, mas
+nao constitui SLA. A cadencia pressupoe aproximadamente 2.880 execucoes do
+watchdog em 30 dias, alem das do monitor SQL; confirmar minutos GitHub e quota
+Sentry antes de aprovar. O plano Developer listado publicamente pelo Sentry
+inclui um Cron Monitor, mas a disponibilidade do slot nesta conta nao foi
+verificada e excedentes podem gerar custo: nao criar sem essa verificacao.
+
+Configurar como **GitHub Actions secret** `AGENDAMENTO_SENTRY_CHECKIN_URL`: URL
+de ingestao HTTP/Relay do Cron Monitor, copiada do Sentry para o projeto e
+regiao corretos, com slug real no lugar do placeholder. O caminho e
+`/api/<projeto>/cron(s)/<slug>/<chave_publica>/`; a chave embutida na URL
+deve ser tratada como segredo. A API legada de organizacoes e o secret DSN
+separado nao sao usados. O inicio e o fim enviam o mesmo `check_in_id`
+gerado localmente via HTTPS, com `status=in_progress` e depois `ok` ou `error`.
+O script restringe host/caminho, rejeita redirects, limita cada request
+a 8 segundos e nunca registra URL, resposta ou credencial. O workflow manual
+nao envia check-ins mesmo que os secrets ja existam. Falha conjunta GitHub +
+Sentry ou alerta Sentry nao entregue ao responsavel continua sendo risco a
+homologar; o GitHub nao e tratado como testemunha de si mesmo.
 
 ### Limite externo que o codigo nao pode remover
 
 Workflow separado detecta falha **do outro workflow**, nao queda conjunta do
 GitHub/Actions/canal. O observador privado SQL compartilha a falha do banco.
-Para detectar ausencia do proprio watchdog, falta uma testemunha em dominio
-de falha independente e um canal observavel quando GitHub falhar. O binario
-one-shot ja pode ser chamado nesse host, mas host/canal/periodicidade/credencial
-nao foram certificados nem provisionados. Saida 2 local nao e alerta entregue.
-Nao adicionar um terceiro workflow no mesmo Actions como falsa independencia.
+O Sentry preparado oferece uma testemunha externa da ausencia do watchdog,
+mas agenda, configuracao do monitor/alerta e recebimento ainda nao foram
+certificados. Monitor/alerta/secret foram provisionados segundo o responsavel.
+Saida 2 local nao e alerta entregue. Nao adicionar um
+terceiro workflow no mesmo Actions como falsa independencia.
 
 GitHub documenta schedule best-effort: pode atrasar/descartar execucoes e ser
 desativado por inatividade. Se for exigido prazo maximo rigido, esta alternativa
 nao satisfaz sozinha. Se aceitar best-effort, registrar atraso aceito, responsavel,
-janela de observacao e teste de uma verificacao deliberadamente omitida. Reusar
-Sentry so se plano/quota de heartbeat e canal forem comprovados; nao presumir
-recurso gratuito/instalar outro servico. Transporte GitHub/Gmail pontual 6D2 ja
+janela de observacao e teste de uma verificacao deliberadamente omitida. Nao
+presumir recurso gratuito/instalar outro servico. Transporte GitHub/Gmail pontual 6D2 ja
 validado e reaproveitado, sem nova escrita remota nesta fase.
 
 Custos futuros devem ser calculados, nao ativados: com cadencia `P` minutos,
@@ -88,6 +136,51 @@ Custos futuros devem ser calculados, nao ativados: com cadencia `P` minutos,
 minutos cobrados dependem de duracao/arredondamento/plano. Watchdog usa ate tres
 GETs de observacao mais transporte limitado existente. Na preparacao atual:
 zero novas execucoes periodicas/servicos/dependencias/custos recorrentes criados.
+
+### Dependencia identificada e corrigida na continuacao da #2267
+
+O snapshot SQL usa papel dedicado NOLOGIN, TLS e leitura restrita; conexao
+gerenciada e gates requerem provisionamento/autorizacao separados. O monitor
+retornava falha para alertas de saude: mesmo snapshot valido inclui
+`WAL_ORCAMENTO_NAO_DEFINIDO` e `DISCO_MEDICAO_INDISPONIVEL`; runner false inclui
+`RUNNER_DESATIVADO`. O usuario autorizou separar execucao/entrega de saude.
+Etapa `Comprovar observacao SQL e entrega (v2)` usa opcao explicita do monitor:
+somente SQL concluido, snapshot valido e entrega confirmada permitem codigo 0.
+Allowlist de diagnosticos operacionais permite runner desligado/capacidade sem
+suprimir os alertas. SQL/JSON/contrato/tempo invalidos, telemetria incompleta,
+codigos desconhecidos ou teste de transporte nunca comprovam a execucao.
+Modo legado mantem seus exit codes. Nenhuma mudanca SQL, permissao ou gate.
+
+Watchdog aceita somente a etapa versionada e a tentativa recente/exata;
+execucoes antigas nao servem de prova. Entrega `obsolete` agora falha no monitor
+v2 e watchdog. Resposta perdida exige nova leitura/reconciliacao, sem POST cego.
+`ok` Sentry prova execucao/entrega, nao saude, capacidade fisica ou recebimento
+humano. Homologacao externa continua pendente, sem agendas/check-ins reais.
+
+Preparacao e checklist de falha/ausencia/recuperacao em
+[`sentry-watchdog-homologacao.md`](../operacao/sentry-watchdog-homologacao.md).
+Testes integrados desde a leitura SQL simulada ate wrapper/watchdog distinguem
+saude ruim de falha de verificacao e mantem os alertas de saude. Dispatch manual
+nunca envia check-in. Workflow permanece somente manual; nenhum secret/gate alterado.
+
+Validacao anterior da preparacao: 48/48 testes focados (monitor, watchdog e Sentry),
+Lint, Typecheck, Build, test:static (inclui auditoria 199/199), test:pagination,
+test:session e audit de producao (zero vulnerabilidades) aprovados. YAML dos
+dois workflows e git apply --check do hunk do watchdog validados sem aplica-lo;
+diff --check limpo. Node 22.23.4, npm ci --ignore-scripts com lockfile intacto.
+Build sem credenciais Sentry/URL Supabase de producao. Nao repetidos pgTAP,
+Data API mutante ou Playwright: somente docs/template inerte/testes mudaram.
+Nenhum teste de entrega remota ou check-in real; CI do novo commit e homologacao
+operacional permanecem verificacoes distintas dos testes locais.
+
+Continuacao de correcao na mesma PR: **55/55 testes focados** aprovados, incluindo
+cadeia monitor SQL/entrega -> etapa v2 -> watchdog -> Sentry com transportes
+simulados, timeout/JSON invalido, resposta perdida, recuperacao, entrega obsoleta
+concorrente, isolamento manual e rejeicao de etapas antigas. Lint completo e
+focado, YAML, Typecheck, Build, test:static, test:pagination, test:session e audit
+de producao aprovados. Resultados de CI do commit final ficam na PR; nao reutilizar
+CI verde do commit anterior como prova desta correcao. Sem nova validacao remota
+do banco/Sentry, pgTAP ou Playwright local; SQL, RLS e aplicacao inalterados.
 
 ## 2. Orcamento: decisao preenchivel, nao novos numeros arbitrarios
 

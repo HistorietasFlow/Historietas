@@ -1,4 +1,4 @@
-import type { FormEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import type { HistorietasLanguage } from "../../../lib/i18n";
 import { registrarAceiteTermosPublicacao } from "../../../lib/aceiteTermos";
 import { criarContaLogin } from "../actions/criar-conta-login";
@@ -8,7 +8,6 @@ import { solicitarRecuperacaoSenhaLogin } from "../actions/solicitar-recuperacao
 import { formatarErroAuth } from "../lib/login-auth-error-formatter";
 import { prepararFormularioLogin } from "../lib/login-form-preparation";
 import { validarFormularioLogin } from "../lib/login-form-validation";
-import { aguardarLogin } from "../lib/login-timing-utils";
 import type { LoginTranslationKey } from "../lib/login-translations";
 
 type UseLoginSubmitActionParams = {
@@ -62,12 +61,47 @@ export function useLoginSubmitAction({
   setErro,
   setAviso,
 }: UseLoginSubmitActionParams) {
+  const fluxo = useRef({ ativo: false, versao: 0, enviando: false, redirecionado: false, perfilPendente: "" });
+  const [continuacaoPendente, setContinuacaoPendente] = useState(false);
+
+  useEffect(() => {
+    const atual = fluxo.current;
+    atual.ativo = true;
+    return () => { atual.ativo = false; atual.versao += 1; };
+  }, []);
+
+  const capturarNavegacao = useCallback(() => {
+    const versao = fluxo.current.versao;
+    return () => fluxo.current.ativo && fluxo.current.versao === versao &&
+      !fluxo.current.enviando && !fluxo.current.redirecionado && !fluxo.current.perfilPendente;
+  }, []);
+
+  const finalizarLogin = useCallback((userId: string) => {
+    if (!fluxo.current.ativo || fluxo.current.redirecionado) return;
+    fluxo.current.redirecionado = true;
+    fluxo.current.perfilPendente = "";
+    setContinuacaoPendente(false);
+    finalizarAutenticacaoLogin({ userId, router });
+  }, [router]);
+
+  const prepararContinuacao = useCallback((userId: string) => {
+    if (!fluxo.current.ativo || fluxo.current.redirecionado) return;
+    fluxo.current.perfilPendente = userId;
+    setContinuacaoPendente(true);
+  }, []);
+
+  function continuarLogin() {
+    const userId = fluxo.current.perfilPendente;
+    if (userId) finalizarLogin(userId);
+  }
+
   async function enviarFormulario(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (carregando) {
       return;
     }
+    if (!fluxo.current.ativo || fluxo.current.enviando || fluxo.current.redirecionado) return;
 
     setErro("");
     setAviso("");
@@ -88,12 +122,18 @@ export function useLoginSubmitAction({
       return;
     }
 
+    const versao = ++fluxo.current.versao;
+    const vigente = () => fluxo.current.ativo && fluxo.current.versao === versao;
+    fluxo.current.perfilPendente = "";
+    setContinuacaoPendente(false);
+    fluxo.current.enviando = true;
     setCarregando(true);
 
     try {
       if (recuperandoSenha) {
         const resultadoRecuperacao =
           await solicitarRecuperacaoSenhaLogin(emailFinal);
+        if (!vigente()) return;
 
         if (!resultadoRecuperacao.ok) {
           setErro(t("genericFailure"));
@@ -110,6 +150,7 @@ export function useLoginSubmitAction({
           senha,
           nomeFinal,
         });
+        if (!vigente()) return;
 
         if (error) {
           setErro(formatarErroAuth(error, language));
@@ -128,13 +169,16 @@ export function useLoginSubmitAction({
             data.user.email || emailFinal,
             data.user.user_metadata,
           );
+          if (!vigente()) return;
 
           if (!resultadoPerfil.ok) {
             setErro(t("profileSyncWarning"));
-            await aguardarLogin(1600);
+            prepararContinuacao(data.user.id);
+            return;
           } else {
             const resultadoAceite =
               await registrarAceiteTermosPublicacao();
+            if (!vigente()) return;
 
             if (!resultadoAceite.aceito) {
               setErro(
@@ -145,7 +189,7 @@ export function useLoginSubmitAction({
             }
           }
 
-          finalizarAutenticacaoLogin({ userId: data.user.id, router });
+          finalizarLogin(data.user.id);
           return;
         }
 
@@ -161,6 +205,7 @@ export function useLoginSubmitAction({
         emailFinal,
         senha,
       });
+      if (!vigente()) return;
 
       if (error) {
         setErro(formatarErroAuth(error, language));
@@ -178,19 +223,24 @@ export function useLoginSubmitAction({
         data.user.email || emailFinal,
         data.user.user_metadata,
       );
+      if (!vigente()) return;
 
       if (!resultadoPerfil.ok) {
         setErro(t("profileSyncWarning"));
-        await aguardarLogin(1600);
+        prepararContinuacao(data.user.id);
+        return;
       }
 
-      finalizarAutenticacaoLogin({ userId: data.user.id, router });
+      finalizarLogin(data.user.id);
     } catch (error) {
-      setErro(formatarErroAuth(error, language));
+      if (vigente()) setErro(formatarErroAuth(error, language));
     } finally {
-      setCarregando(false);
+      if (vigente()) {
+        fluxo.current.enviando = false;
+        setCarregando(false);
+      }
     }
   }
 
-  return { enviarFormulario };
+  return { enviarFormulario, capturarNavegacao, finalizarLogin, prepararContinuacao, continuacaoPendente, continuarLogin };
 }

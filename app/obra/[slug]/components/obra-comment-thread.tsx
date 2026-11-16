@@ -1,6 +1,6 @@
 "use client";
 
-import type { ComentarioObraPublico } from "../lib/obra-comment-utils";
+import { comentarioAguardaRespostaDoAutor, type ComentarioObraPublico } from "../lib/obra-comment-utils";
 import {
   commentRepliesControlsStyle,
   commentRepliesHideButtonStyle,
@@ -8,6 +8,7 @@ import {
   commentRepliesListStyle,
   commentRepliesToggleStyle,
   commentThreadStyle,
+  commentSheetTimeStyle,
 } from "../lib/obra-style-utils";
 import ObraCommentItem from "./obra-comment-item";
 
@@ -20,6 +21,7 @@ type ObraCommentThreadProps = {
   comentarioRemovendoId: string;
   comentarioCurtindoId: string;
   agoraComentarios: number;
+  comentariosRemotosConfirmados?: boolean;
   onResponder: (
     comentario: ComentarioObraPublico,
     comentarioRaizId: string,
@@ -44,6 +46,7 @@ export default function ObraCommentThread({
   comentarioRemovendoId,
   comentarioCurtindoId,
   agoraComentarios,
+  comentariosRemotosConfirmados = false,
   onResponder,
   onRemover,
   onDenunciar,
@@ -65,6 +68,10 @@ export default function ObraCommentThread({
 
   return (
     <section style={commentThreadStyle}>
+      {comentariosRemotosConfirmados &&
+      comentarioAguardaRespostaDoAutor(comentario, respostas, usuarioIdLogado, obraAutorId) ? (
+        <p style={commentSheetTimeStyle}>Sem resposta do autor</p>
+      ) : null}
       <ObraCommentItem
         comentario={comentario}
         comentarioRaizId={comentario.id}

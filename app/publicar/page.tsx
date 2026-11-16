@@ -42,11 +42,14 @@ export default function PublicarPage() {
 
   const {
     alternarAvisoConteudo18,
+    statusEditorial,
+    setStatusEditorial,
     anexarArquivoCompleto,
     arquivoCapituloErro,
     arquivoCapituloMinutos,
     arquivoCapituloNome,
     arquivoCapituloPalavras,
+    arquivoCapituloTexto,
     arquivoCapituloTitulo,
     arquivoConteudoInputRef,
     arquivoObra,
@@ -130,6 +133,8 @@ export default function PublicarPage() {
       >
         <section style={isDesktop ? desktopMainGridSingleStyle : mainGridStyle}>
           <PublicarPublicationForm
+            statusEditorial={statusEditorial}
+            onStatusEditorialChange={setStatusEditorial}
             arquivoCapituloErro={arquivoCapituloErro}
             arquivoCapituloMinutos={arquivoCapituloMinutos}
             arquivoCapituloNome={arquivoCapituloNome}
@@ -197,6 +202,11 @@ export default function PublicarPage() {
           <PublicarWorkPreview
             arquivoCapituloMinutos={arquivoCapituloMinutos}
             arquivoCapituloPalavras={arquivoCapituloPalavras}
+            arquivoCapituloTexto={
+              !arquivoTextoPendente && !arquivoCapituloErro && !arquivoObraErro
+                ? arquivoCapituloTexto
+                : ""
+            }
             arquivoCapituloTitulo={arquivoCapituloTitulo}
             autor={autor}
             capa={capa}

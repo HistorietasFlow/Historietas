@@ -209,7 +209,7 @@ test("Painel do Autor delega somente os helpers de perfil ao módulo extraído",
   assert.doesNotMatch(pagina, /function obterNomeProfilePainelAutor\(/);
   assert.doesNotMatch(pagina, /function aplicarNomeProfileNasObrasPainel\(/);
   assert.equal((initialDataHook.match(/\bobterNomeProfilePainelAutor\b/g) || []).length, 2);
-  assert.equal((initialDataHook.match(/\baplicarNomeProfileNasObrasPainel\b/g) || []).length, 2);
+  assert.equal((initialDataHook.match(/\baplicarNomeProfileNasObrasPainel\b/g) || []).length, 3);
   assert.equal((dataLoaderSource.match(/\bobterNomeProfilePainelAutor\b/g) || []).length, 2);
   assert.equal((dataLoaderSource.match(/\baplicarNomeProfileNasObrasPainel\b/g) || []).length, 2);
   assert.match(resultMergeSource, /import \{ aplicarNomeProfileNasObrasPainel \} from "\.\/painel-autor-profile-utils";/);

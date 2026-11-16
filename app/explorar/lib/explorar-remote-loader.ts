@@ -309,6 +309,7 @@ export async function carregarObrasPublicadasSupabase(
     CONSULTAS_INICIAIS_CATALOGO_EXPLORAR,
   filtroColecao: FiltroColecaoCatalogoExplorar | null = null,
   acumularObrasLocais = false,
+  consultaVigente: () => boolean = () => true,
 ): Promise<ResultadoCarregamentoCatalogoExplorar> {
   try {
     let obraIdsCatalogo: readonly string[] = [];
@@ -334,6 +335,11 @@ export async function carregarObrasPublicadasSupabase(
       obraIdsCatalogo = selecao.obraIds;
       paginaCatalogo = selecao.paginas.length === 1 ? selecao.paginas[0] : null;
     } catch (error) {
+      if (consultasCatalogo.some(consulta => consulta.palavrasMinimas != null || consulta.palavrasMaximas != null)) {
+        // Cache is preserved but cannot certify a measured range. Never retry
+        // this failed bounded request with an unbounded table sample.
+        return { obras: obrasLocais, pagina: null, falhaTemporaria: true };
+      }
       if (filtroColecao) {
         const obraIdsColecao = new Set(filtroColecao.obraIds);
         const obrasFallback = acumularObrasLocais
@@ -370,7 +376,7 @@ export async function carregarObrasPublicadasSupabase(
       if (obraIdsCatalogo.length === 0) {
         return {
           obras: await aplicarMetricasExplorar(
-            filtroColecao ? [] : obrasLocais,
+            filtroColecao && !acumularObrasLocais ? [] : obrasLocais,
             userId,
           ),
           pagina: paginaCatalogo,
@@ -401,9 +407,39 @@ export async function carregarObrasPublicadasSupabase(
     const obrasLocaisSelecionadas = filtroColecao && !acumularObrasLocais
       ? obrasLocais.filter((obra) => obraIdsCatalogo.includes(obra.id))
       : obrasLocais;
-    const nomesProfiles = await carregarNomesProfilesExplorar([
-      ...obrasLocaisSelecionadas.map((obra) => obra.autorId || ""),
-      ...obrasSupabase.map((obra) => obra.user_id || ""),
+    const idsObras = obrasSupabase.map((obra) => obra.id);
+    // As mesmas leituras públicas, sem serializar perfis antes dos capítulos.
+    const [nomesProfiles, capitulosBanco] = await Promise.all([
+      carregarNomesProfilesExplorar([
+        ...obrasLocaisSelecionadas.map((obra) => obra.autorId || ""),
+        ...obrasSupabase.map((obra) => obra.user_id || ""),
+      ]),
+      (async () => {
+        let capitulosBanco: SupabaseCapituloRow[] = [];
+        if (idsObras.length === 0) return capitulosBanco;
+
+        try {
+          capitulosBanco =
+            await carregarTodasPaginasPorLotesSupabase<SupabaseCapituloRow, string>({
+              nomeColecao: "capítulos publicados do Explorar",
+              itens: idsObras,
+              buscarPaginaLote: async (obraIdsLote, inicio, fim) =>
+                supabase
+                  .from("capitulos")
+                  .select("id,obra_id,user_id,titulo,ordem,publicado,criado_em,atualizado_em")
+                  .in("obra_id", obraIdsLote)
+                  .eq("publicado", true)
+                  .order("obra_id", { ascending: true })
+                  .order("ordem", { ascending: true })
+                  .order("id", { ascending: true })
+                  .range(inicio, fim),
+            });
+        } catch (error) {
+          falhaTemporaria = true;
+          console.warn("Não consegui carregar capítulos do Supabase no Explorar:", error);
+        }
+        return capitulosBanco;
+      })(),
     ]);
     const obrasLocaisComProfiles = aplicarNomesProfilesEmObrasExplorar(
       obrasLocaisSelecionadas,
@@ -416,33 +452,6 @@ export async function carregarObrasPublicadasSupabase(
         pagina: paginaCatalogo,
         falhaTemporaria,
       };
-    }
-
-    const idsObras = obrasSupabase.map((obra) => obra.id);
-    let capitulosBanco: SupabaseCapituloRow[] = [];
-
-    try {
-      capitulosBanco =
-        await carregarTodasPaginasPorLotesSupabase<SupabaseCapituloRow, string>({
-          nomeColecao: "capítulos publicados do Explorar",
-          itens: idsObras,
-          buscarPaginaLote: async (obraIdsLote, inicio, fim) =>
-            supabase
-              .from("capitulos")
-              .select("id,obra_id,user_id,titulo,ordem,publicado,criado_em,atualizado_em")
-              .in("obra_id", obraIdsLote)
-              .eq("publicado", true)
-              .order("obra_id", { ascending: true })
-              .order("ordem", { ascending: true })
-              .order("id", { ascending: true })
-              .range(inicio, fim),
-        });
-    } catch (error) {
-      falhaTemporaria = true;
-      console.warn(
-        "Não consegui carregar capítulos do Supabase no Explorar:",
-        error,
-      );
     }
 
     const capitulosPorObra = new Map<string, SupabaseCapituloRow[]>();
@@ -492,7 +501,9 @@ export async function carregarObrasPublicadasSupabase(
       userId,
     );
 
-    if (!filtroColecao) {
+    // A resposta pode ter sido substituída enquanto perfis/capítulos/métricas
+    // carregavam. O guard do hook deve valer antes das gravações também.
+    if (!filtroColecao && consultaVigente()) {
       salvarBackupsArquivosObras(obrasComProgresso, userId);
       salvarJsonStorageUsuarioExplorar(STORAGE_KEY, userId, obrasComProgresso);
     }

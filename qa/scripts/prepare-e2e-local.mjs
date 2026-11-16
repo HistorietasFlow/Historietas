@@ -636,7 +636,6 @@ async function preparar() {
     SUPABASE_TEST_PUBLIC_KEY: ambiente.publicKey,
     SUPABASE_TEST_SECRET_KEY: ambiente.secretKey,
     E2E_BASE_URL: "http://127.0.0.1:3000",
-    E2E_WEB_SERVER_COMMAND: "npm --prefix .. run start",
     E2E_USER_ID: userId,
     E2E_USER_EMAIL: email,
     E2E_USER_PASSWORD: password,

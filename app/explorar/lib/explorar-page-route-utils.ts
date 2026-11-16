@@ -5,6 +5,8 @@ import type { OrdenacaoExplorar } from "./explorar-derived-utils";
 import { normalizarGeneroExcluido } from "../../../lib/catalogo-genero";
 import { normalizarTagCatalogo } from "../../../lib/catalogo-tag";
 import { normalizarNotaMinimaCatalogo } from "../../../lib/catalogo-nota-minima";
+import { filtroStatusEditorial } from "../../../lib/statusEditorial";
+import { canonizarPalavrasUrl } from "../../../lib/catalogo-palavras";
 
 const LIMITE_BUSCA_EXPLORAR = 90;
 const ORDENACOES_COMPARTILHAVEIS_EXPLORAR = new Set<OrdenacaoExplorar>([
@@ -23,7 +25,10 @@ export type FiltrosCompartilhaveisExplorar = Readonly<{
   filtroTag?: string;
   tagExcluida?: string;
   generoExcluido?: string;
+  statusEditorial?: string;
   notaMinima?: number | null;
+  palavrasMinimas?: string;
+  palavrasMaximas?: string;
 }>;
 
 export const FILTROS_COMPARTILHAVEIS_EXPLORAR_PADRAO = {
@@ -66,7 +71,7 @@ function normalizarBuscaExplorar(valor: string | null) {
   return (valor || "").trim().slice(0, LIMITE_BUSCA_EXPLORAR);
 }
 
-function normalizarFormatoExplorar(valor: string | null | undefined) {
+export function normalizarFormatoExplorar(valor: string | null | undefined) {
   return OPCOES_FORMATO_OBRA.find(
     (formato) => formato.localeCompare(valor?.trim() || "", "pt-BR", {
       sensitivity: "base",
@@ -84,12 +89,18 @@ export function lerFiltrosCompartilhaveisExplorar(
 
   return {
     modoConteudo,
+    ...(modoConteudo === "obras" && params.has("palavrasMinimas")
+      ? { palavrasMinimas: canonizarPalavrasUrl(params.get("palavrasMinimas")) } : {}),
+    ...(modoConteudo === "obras" && params.has("palavrasMaximas")
+      ? { palavrasMaximas: canonizarPalavrasUrl(params.get("palavrasMaximas")) } : {}),
     categoriaSelecionada: normalizarCategoriaExplorar(
       params.get("categoria"),
     ),
     busca: normalizarBuscaExplorar(params.get("busca")),
     ordenacao: normalizarOrdenacaoExplorar(params.get("ordenacao"), modoConteudo),
     filtroFormato: normalizarFormatoExplorar(params.get("formato")),
+    ...(modoConteudo === "obras" && filtroStatusEditorial(params.get("statusEditorial"))
+      ? { statusEditorial: filtroStatusEditorial(params.get("statusEditorial")) } : {}),
     ...(notaMinima !== null ? { notaMinima } : {}),
     ...(modoConteudo === "obras" && normalizarTagCatalogo(params.get("tagExcluida"))
       ? { tagExcluida: normalizarTagCatalogo(params.get("tagExcluida")) } : {}),
@@ -143,8 +154,15 @@ export function criarUrlExplorar(
   const notaMinima = filtros.modoConteudo === "obras"
     ? normalizarNotaMinimaCatalogo(filtros.notaMinima) : null;
   if (notaMinima !== null) params.set("notaMinima", String(notaMinima));
-  const queryComTag = params.toString();
-  return queryComTag ? `/explorar?${queryComTag}` : "/explorar";
+  const statusEditorial = filtros.modoConteudo === "obras" ? filtroStatusEditorial(filtros.statusEditorial) : "";
+  if (statusEditorial) params.set("statusEditorial", statusEditorial);
+  if (filtros.modoConteudo === "obras") {
+    for (const nome of ["palavrasMinimas", "palavrasMaximas"] as const) {
+      const valor = canonizarPalavrasUrl(filtros[nome]);
+      if (valor !== "") params.set(nome, valor);
+    }
+  }
+  return params.size ? `/explorar?${params.toString()}` : "/explorar";
 }
 
 export function atualizarUrlExplorar(

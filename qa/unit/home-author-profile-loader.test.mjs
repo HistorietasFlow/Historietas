@@ -257,3 +257,11 @@ test("home-author-profile-loader delega o loader Supabase para a fronteira dedic
   assert.match(modulo, /salvarPerfisSupabaseHomeNoStorage\(perfisNormalizados, userId\)/);
   assert.doesNotMatch(modulo, /\.insert\(|\.update\(|\.delete\(|\.rpc\(/);
 });
+
+test("falhas parciais de perfis notificam a Home mantendo as duas consultas existentes", async () => {
+  preparar([{ resultado: { data: null, error: { message: "offline" } } }, { erro: Error("transport") }]);
+  let falhas = 0;
+  await comWarnings(() => carregarPerfisSupabaseHome(["autor"], "usuario", () => falhas++));
+  assert.equal(falhas, 3, "dois erros remotos e cobertura não confirmada");
+  assert.equal(estado.chamadas.length, 2);
+});

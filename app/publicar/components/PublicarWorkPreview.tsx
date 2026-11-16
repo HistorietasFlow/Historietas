@@ -2,6 +2,8 @@ import {
   traduzirFormatoPublicar,
   traduzirGeneroPublicar,
 } from "../lib/publicar-option-translations";
+import { ChapterTextPreview } from "../../../components/ChapterTextPreview";
+import { coverButtonStyle } from "../lib/publicar-form-upload-styles";
 import {
   criarPreviewCoverStyle,
   desktopEmptyPreviewBoxStyle,
@@ -26,6 +28,7 @@ import {
   previewImportedChapterStyle,
   previewImportedMiniStyle,
   previewImportedTextStyle,
+  previewImportedBodyStyle,
   previewImportedTitleStyle,
   previewMiniTitleStyle,
   previewObraTitleStyle,
@@ -47,6 +50,7 @@ import type { HistorietasLanguage } from "../../../lib/i18n";
 type PublicarWorkPreviewProps = {
   arquivoCapituloMinutos: number;
   arquivoCapituloPalavras: number;
+  arquivoCapituloTexto: string;
   arquivoCapituloTitulo: string;
   autor: string;
   capa: string;
@@ -64,6 +68,7 @@ type PublicarWorkPreviewProps = {
 export function PublicarWorkPreview({
   arquivoCapituloMinutos,
   arquivoCapituloPalavras,
+  arquivoCapituloTexto,
   arquivoCapituloTitulo,
   autor,
   capa,
@@ -77,6 +82,8 @@ export function PublicarWorkPreview({
   temCapituloImportado,
   titulo,
 }: PublicarWorkPreviewProps) {
+  const textoCapitulo = arquivoCapituloTexto.trim();
+
   return (
     <aside style={isDesktop ? desktopPreviewPanelStyle : previewPanelStyle}>
       <div style={previewHeaderStyle}>
@@ -192,6 +199,18 @@ export function PublicarWorkPreview({
             <span style={emptyPreviewTextStyle}>{t("dicaPrevia")}</span>
           </div>
         </div>
+      )}
+      {previewTemConteudo && temCapituloImportado && textoCapitulo && (
+        <section aria-label={t("primeiroCapituloImportado")} style={previewImportedChapterStyle}>
+          <ChapterTextPreview
+            textStyle={previewImportedBodyStyle}
+            buttonStyle={coverButtonStyle}
+            expandLabel={t("lerPreviaCompleta")}
+            collapseLabel={t("recolherPrevia")}
+          >
+            <span data-historietas-i18n-ignore="true">{textoCapitulo}</span>
+          </ChapterTextPreview>
+        </section>
       )}
     </aside>
   );

@@ -120,7 +120,7 @@ test("Editar Obra delega somente a reconciliação pura das obras carregadas", (
   );
   assert.match(
     initialLoadSource,
-    /salvarObrasDoUsuarioPreservandoOutrasContas\(obrasAtualizadas, userId\)/,
+    /salvarObrasDoUsuarioPreservandoOutrasContas\(obrasAtualizadas, userId, obraIdParam\)/,
   );
   assert.match(
     source,

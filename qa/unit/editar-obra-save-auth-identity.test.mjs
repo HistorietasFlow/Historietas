@@ -141,7 +141,7 @@ test("o hook delega somente o inicio autenticado e preserva o salvamento", () =>
     saveActionSource,
     /const \{ userId, nomeProfileAtualizado \} = identidadeSalvamento;/,
   );
-  assert.match(saveActionSource, /\.from\("obras"\)/);
+  assert.match(saveActionSource, /confirmarPropriedadeObraParaSalvamentoEdicao\(/);
   assert.match(saveActionSource, /prepararEEnviarAssetsEdicaoObra\(/);
-  assert.match(saveActionSource, /criarPayloadAtualizacaoObra\(/);
+  assert.match(saveActionSource, /atualizarObraRemotaEdicaoObra\(/);
 });

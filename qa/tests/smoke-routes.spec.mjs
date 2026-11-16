@@ -95,16 +95,27 @@ test("Explorar possui SEO próprio e URL canônica correta", async ({ page }) =>
   );
 });
 
-test("obra pública configurada abre sem erro", async ({ page }) => {
-  const slug = (process.env.E2E_PUBLIC_WORK_SLUG || "").trim();
-  test.skip(!slug, "Defina E2E_PUBLIC_WORK_SLUG para testar uma obra pública específica.");
+for (const dispositivo of ["desktop", "mobile"]) {
+  test(`obra pública configurada abre sem erro (${dispositivo})`, async ({ page }) => {
+    const slug = (process.env.E2E_PUBLIC_WORK_SLUG || "").trim();
+    test.skip(!slug, "Defina E2E_PUBLIC_WORK_SLUG para testar uma obra pública específica.");
 
-  const response = await page.goto(`/obra/${encodeURIComponent(slug)}`, {
-    waitUntil: "domcontentloaded"
+    await page.setViewportSize(dispositivo === "mobile"
+      ? { width: 390, height: 844 } : { width: 1440, height: 900 });
+    const response = await page.goto(`/obra/${encodeURIComponent(slug)}`, {
+      waitUntil: "domcontentloaded"
+    });
+    expect(response?.status()).toBeLessThan(500);
+    // Streaming pode manter o loading e uma cópia oculta; só a Obra confirmada é o destino.
+    const obra = page.locator('main[data-historietas-obra-dinamica-root="true"]:visible');
+    await expect(obra).toHaveCount(1);
+    await expect(obra).toHaveAttribute("data-public-work-state", "confirmada");
+    await expect(obra).toHaveAttribute("aria-busy", "false");
+    await expect(obra).not.toHaveAttribute("inert", "");
+    await expect(page.locator("main:visible")).toHaveCount(1);
+    await expect(obra.getByRole("heading", { level: 1 })).toBeVisible();
   });
-  expect(response?.status()).toBeLessThan(500);
-  await expect(page.locator("main")).toBeVisible();
-});
+}
 
 test("capítulo público configurado abre sem erro", async ({ page }) => {
   const slug = (process.env.E2E_PUBLIC_WORK_SLUG || "").trim();
@@ -116,8 +127,12 @@ test("capítulo público configurado abre sem erro", async ({ page }) => {
     { waitUntil: "domcontentloaded" }
   );
   expect(response?.status()).toBeLessThan(500);
-  const reader = page.locator('main[data-historietas-ler-capitulo-root="true"]');
-  await expect(reader).toBeVisible();
+  // Streaming pode deixar uma cópia oculta; exigir só um leitor visível e pronto.
+  const reader = page.locator('main[data-historietas-ler-capitulo-root="true"]:visible');
+  await expect(reader).toHaveCount(1);
+  await expect(reader).not.toHaveAttribute("aria-busy", "true");
+  await expect(reader).not.toHaveAttribute("inert", "");
+  await expect(page.locator("main:visible")).toHaveCount(1);
   await expect(reader.getByRole("heading", { level: 1 })).toBeVisible();
   if (process.env.E2E_ALLOW_DESTRUCTIVE === "true") {
     await expect(reader.getByRole("heading", { name: "Capítulo 1", exact: true })).toBeVisible();

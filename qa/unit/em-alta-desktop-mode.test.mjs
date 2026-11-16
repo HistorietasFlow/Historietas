@@ -166,12 +166,12 @@ test("Em Alta delega somente o modo desktop e preserva suas fronteiras", () => {
   assert.equal((rankingCard.match(/\bisDesktop\b/g) || []).length, 7);
 
   assert.match(pagina, /useEmAltaRankingLoader\(/);
-  assert.match(rankingLoaderFase891, /supabase\.auth\.getUser\(\)/);
+  assert.doesNotMatch(rankingLoaderFase891, /supabase\.auth\.getUser\(\)/);
   assert.match(
     rankingLoaderFase891,
     /import \{ carregarInteracoesLocaisRankingEmAlta \} from "\.\.\/lib\/em-alta-ranking-local-interactions";/,
   );
-  assert.match(rankingLoaderFase891, /carregarInteracoesLocaisRankingEmAlta\(userIdAtual\)/);
+  assert.match(rankingLoaderFase891, /carregarInteracoesLocaisRankingEmAlta\(usuarioLogadoId\)/);
   assert.match(interacoesLocaisRanking, /localStorage\.getItem/);
   assert.match(
     pagina,

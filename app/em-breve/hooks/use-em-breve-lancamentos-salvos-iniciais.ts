@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, type SetStateAction } from "react";
 import { supabase } from "../../../lib/supabase/client";
 import { encontrarLinkObraComConteudoEmBreve } from "../loaders/encontrar-link-obra-com-conteudo-em-breve";
 import { pegarParametro } from "../lib/em-breve-route-utils";
@@ -24,90 +24,79 @@ export function useEmBreveLancamentosSalvosIniciais(
   const [obrasSalvas, setObrasSalvas] = useState<string[]>([]);
   const [usuarioIdLogado, setUsuarioIdLogado] = useState("");
 
+  const alterarRevisaoRef = useRef<(valor: SetStateAction<string[]>) => void>(() => {});
+  const atualizarObrasSalvas: typeof setObrasSalvas = (valor) => {
+    alterarRevisaoRef.current(valor);
+    setObrasSalvas(valor);
+  };
+
   useEffect(() => {
     let componenteAtivo = true;
+    let geracao = 0;
+    let alteracoes: SetStateAction<string[]>[] = [];
+    let usuarioAtual: string | undefined;
+    const parametros = new URLSearchParams(window.location.search);
+    const obraIdParam = pegarParametro(parametros.get("obraId"));
+    const nomeObraParam = pegarParametro(parametros.get("obra"));
 
-    async function carregarLancamentosSalvos() {
-      const parametros = new URLSearchParams(window.location.search);
-      const obraIdParam = pegarParametro(parametros.get("obraId"));
-      const nomeObraParam = pegarParametro(parametros.get("obra"));
-
-      window.setTimeout(() => {
-        if (componenteAtivo) {
-          setObraIdConsultada(obraIdParam);
-          setNomeObra(nomeObraParam);
-        }
-      }, 0);
-
-      if (obraIdParam || nomeObraParam) {
-        const linkObraComConteudo = await encontrarLinkObraComConteudoEmBreve(
-          obraIdParam,
-          nomeObraParam
-        );
-
-        if (componenteAtivo && linkObraComConteudo) {
-          router.replace(linkObraComConteudo);
-          return;
-        }
-      }
-
+    async function carregarLancamentosSalvos(userId: string, atual: number) {
+      if (!componenteAtivo || atual !== geracao) return;
+      usuarioAtual = userId;
+      const locais = normalizarListaIdsEmBreve(
+        carregarJsonUsuarioEmBreve(SAVED_RELEASES_STORAGE_KEY, userId) || []
+      );
+      setUsuarioIdLogado(userId);
+      setObrasSalvas(locais);
+      alteracoes = [];
       try {
-        const { data } = await supabase.auth.getUser();
-
-        if (!data.user) {
-          window.setTimeout(() => {
-            if (componenteAtivo) {
-              setUsuarioIdLogado("");
-              setObrasSalvas([]);
-            }
-          }, 0);
-
-          return;
-        }
-
-        window.setTimeout(() => {
-          if (componenteAtivo) {
-            setUsuarioIdLogado(data.user.id);
-          }
-        }, 0);
-
-        const salvasJson: unknown =
-          carregarJsonUsuarioEmBreve(SAVED_RELEASES_STORAGE_KEY, data.user.id) ||
-          [];
-        const salvasLocaisNormalizadas = normalizarListaIdsEmBreve(salvasJson);
-        const salvasSupabase = await carregarLancamentosSalvosSupabaseEmBreve(
-          data.user.id
-        );
-        const salvasNormalizadas = normalizarListaIdsEmBreve([
-          ...salvasLocaisNormalizadas,
-          ...salvasSupabase,
-        ]);
-
-        salvarJsonUsuarioEmBreve(
-          SAVED_RELEASES_STORAGE_KEY,
-          data.user.id,
-          salvasNormalizadas
-        );
-
-        window.setTimeout(() => {
-          if (componenteAtivo) {
-            setObrasSalvas(salvasNormalizadas);
-          }
-        }, 0);
+        const remotas = await carregarLancamentosSalvosSupabaseEmBreve(userId);
+        if (!componenteAtivo || atual !== geracao) return;
+        let combinadas = normalizarListaIdsEmBreve([...locais, ...remotas]);
+        for (const alterar of alteracoes) combinadas = typeof alterar === "function" ? alterar(combinadas) : alterar;
+        salvarJsonUsuarioEmBreve(SAVED_RELEASES_STORAGE_KEY, userId, combinadas);
+        setObrasSalvas(combinadas);
       } catch {
-        window.setTimeout(() => {
-          if (componenteAtivo) {
-            setUsuarioIdLogado("");
-            setObrasSalvas([]);
-          }
-        }, 0);
+        // O cache da conta já está em memória; falha remota não o apaga.
       }
     }
 
-    void carregarLancamentosSalvos();
-
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_evento, sessao) => {
+      const proximo = sessao?.user?.id || "";
+      if (usuarioAtual === proximo) return;
+      usuarioAtual = proximo;
+      const atual = ++geracao;
+      queueMicrotask(() => {
+        if (!componenteAtivo || atual !== geracao) return;
+        setUsuarioIdLogado(""); setObrasSalvas([]);
+        if (sessao?.user) void carregarLancamentosSalvos(sessao.user.id, atual);
+        carregarDestino(atual);
+      });
+    });
+    const inicial = geracao;
+    void (async () => {
+      try {
+        const { data, error } = await supabase.auth.getUser();
+        if (!componenteAtivo || inicial !== geracao) return;
+        if (!error && data.user) await carregarLancamentosSalvos(data.user.id, inicial);
+      } catch { /* Uma falha de autenticação não mistura contas. */ }
+    })();
+    queueMicrotask(() => {
+      if (!componenteAtivo) return;
+      setObraIdConsultada(obraIdParam); setNomeObra(nomeObraParam);
+    });
+    function carregarDestino(atual: number) {
+      if (!obraIdParam && !nomeObraParam) return;
+      void encontrarLinkObraComConteudoEmBreve(obraIdParam, nomeObraParam)
+        .then(linkObraComConteudo => {
+          if (componenteAtivo && atual === geracao && linkObraComConteudo) router.replace(linkObraComConteudo);
+        }).catch(() => { /* Rede indisponível: permanece na página. */ });
+    }
+    carregarDestino(geracao);
+    alterarRevisaoRef.current = valor => { alteracoes.push(valor); };
     return () => {
       componenteAtivo = false;
+      ++geracao;
+      subscription.unsubscribe();
     };
   }, [router]);
 
@@ -115,7 +104,7 @@ export function useEmBreveLancamentosSalvosIniciais(
     nomeObra,
     obraIdConsultada,
     obrasSalvas,
-    setObrasSalvas,
+    setObrasSalvas: atualizarObrasSalvas,
     usuarioIdLogado,
     setUsuarioIdLogado,
   };

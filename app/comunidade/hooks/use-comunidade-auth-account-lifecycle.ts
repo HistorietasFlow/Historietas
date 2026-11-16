@@ -91,6 +91,7 @@ type UseComunidadeAuthAccountLifecycleOptions = {
   acoesComunidadeRef: RefObject<Set<string>>;
   textoPostRef: RefObject<HTMLTextAreaElement | null>;
   obraRelacionadaRef: RefObject<HTMLInputElement | null>;
+  setVersaoAutenticacao: SetState<number>;
   setUsuario: SetState<UsuarioComunidade | null>;
   setUsuarioEhAdmin: SetState<boolean>;
   setCarregandoUsuario: SetState<boolean>;
@@ -101,8 +102,6 @@ type UseComunidadeAuthAccountLifecycleOptions = {
   setPostsSalvosIds: SetState<string[]>;
   setVotosEnquetes: SetState<Record<string, string>>;
   setResultadosEnquetes: SetState<ResultadoVotosEnquete>;
-  setUsuariosSeguidosIds: SetState<string[]>;
-  setUsuarioSeguindoId: SetState<string | null>;
   setPostCurtindoId: SetState<string | null>;
   setPostSalvandoId: SetState<string | null>;
   setPostCompartilhandoId: SetState<string | null>;
@@ -129,6 +128,7 @@ export function useComunidadeAuthAccountLifecycle({
   acoesComunidadeRef,
   textoPostRef,
   obraRelacionadaRef,
+  setVersaoAutenticacao,
   setUsuario,
   setUsuarioEhAdmin,
   setCarregandoUsuario,
@@ -139,8 +139,6 @@ export function useComunidadeAuthAccountLifecycle({
   setPostsSalvosIds,
   setVotosEnquetes,
   setResultadosEnquetes,
-  setUsuariosSeguidosIds,
-  setUsuarioSeguindoId,
   setPostCurtindoId,
   setPostSalvandoId,
   setPostCompartilhandoId,
@@ -175,8 +173,6 @@ export function useComunidadeAuthAccountLifecycle({
       setPostsSalvosIds([]);
       setVotosEnquetes({});
       setResultadosEnquetes({});
-      setUsuariosSeguidosIds([]);
-      setUsuarioSeguindoId(null);
       setPostCurtindoId(null);
       setPostSalvandoId(null);
       setPostCompartilhandoId(null);
@@ -202,6 +198,7 @@ export function useComunidadeAuthAccountLifecycle({
 
     function agendarMudancaIdentidade(usuarioId: string) {
       autenticacaoComunidadeVersaoRef.current += 1;
+      setVersaoAutenticacao(autenticacaoComunidadeVersaoRef.current);
       limparEstadoContaAnterior();
       setCarregandoUsuario(true);
       setPosts([]);
@@ -249,6 +246,7 @@ export function useComunidadeAuthAccountLifecycle({
         autenticacaoComunidadeVersaoRef.current + 1;
 
       autenticacaoComunidadeVersaoRef.current = versaoCarregamento;
+      setVersaoAutenticacao(versaoCarregamento);
       setCarregandoUsuario(true);
 
       try {
@@ -398,10 +396,9 @@ export function useComunidadeAuthAccountLifecycle({
     setPostsSalvosIds,
     setResultadosEnquetes,
     setSugestoesObrasAbertas,
+    setVersaoAutenticacao,
     setUsuario,
     setUsuarioEhAdmin,
-    setUsuarioSeguindoId,
-    setUsuariosSeguidosIds,
     setVotosEnquetes,
     textoPostRef,
     usuarioReviewsDiarioRef,

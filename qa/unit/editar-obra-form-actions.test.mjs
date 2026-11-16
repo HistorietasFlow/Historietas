@@ -38,7 +38,7 @@ test("Editar Obra delega ações e progresso dentro do formulário existente", (
 test("ações preservam submit, estados, links, SVG e progresso", () => {
   for (const trecho of [
     'type="submit"',
-    "disabled={processando}",
+    "disabled={processando || salvamentoBloqueado}",
     '"Salvando..."',
     "<span>Atualizada</span>",
     '"Salvar alterações"',

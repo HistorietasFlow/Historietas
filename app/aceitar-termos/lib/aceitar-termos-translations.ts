@@ -14,6 +14,9 @@ export type ChaveTexto =
   | "continuar"
   | "erroLogin"
   | "erroMarcar"
+  | "erroSalvar"
+  | "erroCarregar"
+  | "tentarNovamente"
   | "voltar";
 
 export const TEXTOS: Record<HistorietasLanguage, Record<ChaveTexto, string>> = {
@@ -34,6 +37,9 @@ export const TEXTOS: Record<HistorietasLanguage, Record<ChaveTexto, string>> = {
     continuar: "CONTINUAR",
     erroLogin: "Entre na sua conta para registrar o aceite.",
     erroMarcar: "Marque as duas confirmações para continuar.",
+    erroSalvar: "Não foi possível confirmar o aceite. Tente novamente.",
+    erroCarregar: "Não foi possível verificar o aceite. Tente novamente.",
+    tentarNovamente: "Tentar novamente",
     voltar: "Voltar",
   },
   en: {
@@ -52,6 +58,9 @@ export const TEXTOS: Record<HistorietasLanguage, Record<ChaveTexto, string>> = {
     continuar: "CONTINUE",
     erroLogin: "Sign in to record your acceptance.",
     erroMarcar: "Select both confirmations to continue.",
+    erroSalvar: "Could not confirm acceptance. Try again.",
+    erroCarregar: "Could not check acceptance. Try again.",
+    tentarNovamente: "Try again",
     voltar: "Back",
   },
   es: {
@@ -71,6 +80,9 @@ export const TEXTOS: Record<HistorietasLanguage, Record<ChaveTexto, string>> = {
     continuar: "CONTINUAR",
     erroLogin: "Inicia sesión para registrar la aceptación.",
     erroMarcar: "Marca las dos confirmaciones para continuar.",
+    erroSalvar: "No se pudo confirmar la aceptación. Inténtalo de nuevo.",
+    erroCarregar: "No se pudo verificar la aceptación. Inténtalo de nuevo.",
+    tentarNovamente: "Intentar de nuevo",
     voltar: "Volver",
   },
 };

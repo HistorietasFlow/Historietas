@@ -147,7 +147,7 @@ test("Admin Comunidade mantém a orquestração, setters e redirect do acesso", 
   assert.match(hookSource, /let cancelado = false;/);
   assert.match(hookSource, /catch \(error\)/);
   assert.match(hookSource, /finally/);
-  assert.match(hookSource, /\}, \[router\]\);/);
+  assert.match(hookSource, /\}, \[router, controleModeracao, setErro, setSucesso, setAcaoEmAndamento, setMenuDenunciaAbertoId\]\);/);
   assert.match(pageSource, /useAdminComunidadeInitialData\(/);
   assert.doesNotMatch(pageSource, /async function iniciarModeracao/);
   assert.doesNotMatch(

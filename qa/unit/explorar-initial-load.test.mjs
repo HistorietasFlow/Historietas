@@ -73,6 +73,9 @@ function preparar(t, opcoes = {}) {
         filtroFormato: params.get("formato") || "todos",
         filtroTag: params.get("tag") || "",
         tagExcluida: params.get("tagExcluida") || "",
+        statusEditorial: params.get("statusEditorial") || "",
+        palavrasMinimas: params.get("palavrasMinimas") ?? "",
+        palavrasMaximas: params.get("palavrasMaximas") ?? "",
         notaMinima: params.has("notaMinima") ? Number(params.get("notaMinima")) : null,
         ordenacao: params.get("ordenacao") === "mais-recentes"
           ? "mais-recentes"
@@ -83,7 +86,7 @@ function preparar(t, opcoes = {}) {
   globalThis.__explorarInitialTest = deps;
   const props = { ...refs };
   for (const nome of [
-    "ModoConteudo", "CategoriaSelecionada", "Busca", "Ordenacao", "FiltroFormato", "FiltroTag", "TagExcluida", "GeneroExcluido", "NotaMinima", "UsuarioLogado", "ObrasLocais",
+    "IntervaloPalavras", "ModoConteudo", "CategoriaSelecionada", "Busca", "Ordenacao", "FiltroFormato", "FiltroTag", "TagExcluida", "GeneroExcluido", "StatusEditorial", "NotaMinima", "UsuarioLogado", "ObrasLocais",
     "ProximoCursorCatalogo",
     "CatalogoTemMais", "ErroCatalogoExplorar", "DadosExplorarCarregados",
   ]) {
@@ -97,6 +100,21 @@ function preparar(t, opcoes = {}) {
   return { chamadas, estado, refs, deps, cleanup };
 }
 
+test("URL inválida mantém texto e conclui carga sem disparar catálogo amplo",async t=>{
+  const c=preparar(t,{query:"?palavrasMinimas=1e3"}); await aguardar();
+  assert.deepEqual(c.estado.IntervaloPalavras,{minimo:"1e3",maximo:""});
+  assert.equal(c.chamadas.filter(([n])=>n==="catalogo").length,0);
+  assert.equal(c.estado.DadosExplorarCarregados,true);
+});
+
+test("intervalo compartilhado válido é consultado somente pelo hook paginado, nunca pela seleção ampla inicial",async t=>{
+  const c=preparar(t,{query:"?palavrasMinimas=0&palavrasMaximas=100",userId:"A",storage:'[{"id":"local"}]'}); await aguardar();
+  assert.deepEqual(c.estado.IntervaloPalavras,{minimo:"0",maximo:"100"});
+  assert.equal(c.chamadas.filter(([n])=>n==="catalogo").length,0);
+  assert.deepEqual(c.estado.ObrasLocais,[{id:"local",index:0,userId:"A"}]);
+  assert.equal(c.estado.DadosExplorarCarregados,true);
+});
+
 test("corpo do efeito preserva o lifecycle com a restauração do formato", () => {
   const inicio = codigo.indexOf("  useEffect(() => {\n");
   const fim = codigo.indexOf("\n  }, []);", inicio) + "\n  }, []);".length;
@@ -105,7 +123,7 @@ test("corpo do efeito preserva o lifecycle com a restauração do formato", () =
     "",
   );
   assert.equal(createHash("sha256").update(efeito).digest("hex"),
-    "11d05c2056c9daa84557457218f411def70409a865f621f18569a144c33b1b1b");
+    "130662d59a62d2025296a446d37b206cf8cb201fe4d178ac56e28eda0c2b61b9");
   assert.match(pagina, /useExplorarInitialLoad\(\{/);
   assert.doesNotMatch(pagina, /async function carregarExplorar\(/);
   for (const nome of ["obrasCacheLocalRef", "usuarioIdExplorarRef", "setDadosExplorarCarregados",

@@ -232,8 +232,8 @@ test("persistência local trata JSON inválido e valores que não são lista", (
     });
 
     const salvar = chamadas.find(([tipo]) => tipo === "salvar");
-    assert.deepEqual(salvar, ["salvar", "historietas-obras", "usuario-a", []]);
-    assert.deepEqual(chamadas.at(-1), ["sincronizar", [], "usuario-a"]);
+    assert.equal(salvar, undefined);
+    assert.equal(chamadas.some(([tipo]) => tipo === "sincronizar"), false);
   }
 });
 
@@ -248,7 +248,7 @@ test("Editar Obra delega somente a persistência local das obras", () => {
   );
   assert.match(
     localPersistenceSource,
-    /import \{ salvarObrasDoUsuarioPreservandoOutrasContas \} from "\.\/editar-obra-local-work-storage";/,
+    /import \{ carregarObrasLocalStorageEdicaoObra, salvarObrasDoUsuarioPreservandoOutrasContas \} from "\.\/editar-obra-local-work-storage";/,
   );
   assert.doesNotMatch(saveActionSource, /salvarObrasDoUsuarioPreservandoOutrasContas\(/);
   for (const helper of [

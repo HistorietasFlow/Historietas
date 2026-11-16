@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
+// Executado no gate posttest:session existente.
+import "./configuracoes-preference-consistency.test.mjs";
 
 const source = readFileSync(
   new URL(
@@ -168,9 +170,9 @@ test("Configurações consome a fronteira de privacidade sem manter duplicação
   );
   assert.match(
     initialAccessHook,
-    /carregarPreferenciasPrivacidade\(usuarioCarregado\.id, \{\s*usarFallbackLocal: true,\s*\}\)/,
+    /carregarPreferenciasPrivacidade\(usuarioCarregado\.id, \{\s*usarFallbackLocal: true,\s*exigirConfirmacao: true,/,
   );
-  assert.match(profileSaveAction, /salvarPreferenciasPrivacidade\(/);
+  assert.doesNotMatch(profileSaveAction, /salvarPreferenciasPrivacidade\(/);
   assert.match(profileSaveAction, /salvarPerfilConfiguracoesSupabase\(\{/);
   assert.match(
     page,
@@ -181,44 +183,19 @@ test("Configurações consome a fronteira de privacidade sem manter duplicação
   assert.doesNotMatch(page, /salvarPreferenciasPrivacidade\(/);
 });
 
-test("ações de preferências preservam estado, persistência e sincronização", () => {
-  assert.match(
-    actions,
-    /export function atualizarPreferenciaConfiguracoes[\s\S]*?criarPreferenciaAtualizadaConfiguracoes/,
-  );
-  assert.match(
-    actions,
-    /export function alternarReceberAvisosConfiguracoes[\s\S]*?criarPreferenciasComAvisosAlternadosConfiguracoes/,
-  );
-  assert.match(actions, /if \(usuarioIdLogado\) \{\s*salvarPreferencias/);
-  assert.match(
-    actions,
-    /export function aplicarPrivacidadeAtualizadaConfiguracoes/,
-  );
-  assert.match(actions, /setPrivacidade\(privacidadeAtualizada\);/);
-  assert.match(actions, /setMensagemAcao\(null\);/);
-  assert.match(actions, /const userIdSeguro = usuarioIdLogado\.trim\(\);/);
-  assert.match(actions, /void salvarPreferenciasPrivacidade\(/);
-  assert.match(actions, /resultado\.ok/);
-  assert.match(actions, /"A privacidade ficou salva neste aparelho, mas não sincronizou:"/);
-  assert.match(
-    actions,
-    /"Não foi possível sincronizar a preferência de privacidade:"/,
-  );
-  assert.match(actions, /The preference was saved only on this device/);
-  assert.match(actions, /La preferencia se guardó solo en este dispositivo/);
+test("ações de preferências aguardam persistência e o hook coordena confirmação por conta", () => {
+  assert.match(actions, /export function atualizarPreferenciaConfiguracoes/);
+  assert.match(actions, /criarPreferenciasComAvisosAlternadosConfiguracoes/);
+  assert.match(actions, /!salvarPreferencias\(preferenciasAtualizadas, usuarioIdLogado\)/);
+  assert.ok(actions.indexOf("!salvarPreferencias(") < actions.indexOf("setPreferencias(preferenciasAtualizadas)"));
+  assert.match(preferenceActionsHook, /preferenciasDaContaEstaoAtuais/);
+  assert.match(preferenceActionsHook, /revisao !== estado.revisao/);
+  assert.match(preferenceActionsHook, /setPrivacidade\(estado.confirmada\)/);
+  assert.match(preferenceActionsHook, /setStatusPrivacidade\("salvando"\)/);
+  assert.match(preferenceActionsHook, /tentarSalvarPrivacidadeNovamente/);
   assert.doesNotMatch(actions, /useState|useEffect|localStorage|supabase\./);
-
-  assert.match(
-    page,
-    /from "\.\/hooks\/use-configuracoes-preference-actions";/,
-  );
   assert.match(page, /useConfiguracoesPreferenceActions\(\{/);
-  assert.match(preferenceActionsHook, /atualizarPreferenciaConfiguracoes\(\{/);
-  assert.match(preferenceActionsHook, /alternarReceberAvisosConfiguracoes\(\{/);
-  assert.match(preferenceActionsHook, /aplicarPrivacidadeAtualizadaConfiguracoes\(\{/);
   assert.doesNotMatch(page, /void salvarPreferenciasPrivacidade\(/);
-  assert.doesNotMatch(page, /criarPreferenciasComAvisosAlternadosConfiguracoes/);
 });
 
 test("ações de privacidade preservam as três composições da página", () => {

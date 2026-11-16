@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import typescript from "typescript";
 
 const componenteThread = readFileSync(
   new URL(
@@ -34,6 +37,44 @@ const hookMutacoesComentarios = readFileSync(
   ),
   "utf8",
 );
+
+function compilar(codigo, dependencias) {
+  const js = typescript.transpileModule(codigo, {
+    compilerOptions: { module: typescript.ModuleKind.CommonJS, target: typescript.ScriptTarget.ES2022, jsx: typescript.JsxEmit.React },
+  }).outputText;
+  const modulo = { exports: {} };
+  new Function("require", "module", "exports", "React", js)((nome) => {
+    assert.ok(Object.hasOwn(dependencias, nome), `dependência inesperada: ${nome}`);
+    return dependencias[nome];
+  }, modulo, modulo.exports, React);
+  return modulo.exports;
+}
+
+const utils = compilar(readFileSync(new URL("../../app/obra/[slug]/lib/obra-comment-utils.ts", import.meta.url), "utf8"), {});
+const Thread = compilar(componenteThread, {
+  "../lib/obra-comment-utils": utils,
+  "../lib/obra-style-utils": new Proxy({}, {get: () => ({})}),
+  "./obra-comment-item": { __esModule: true, default: ({comentario}) => React.createElement("article", null, comentario.texto) },
+}).default;
+
+test("renderização identifica pendência apenas com confirmação remota para o proprietário", () => {
+  const comentario = {id: "raiz", userId: "leitor", comentarioPaiId: "", local: false, texto: "Pergunta"};
+  const props = {
+    comentario, respostas: [], usuarioIdLogado: "autor", obraAutorId: "autor",
+    quantidadeVisivelAtual: 0, comentariosRemotosConfirmados: true,
+  };
+  const render = (alteracoes = {}) => renderToStaticMarkup(React.createElement(Thread, {...props, ...alteracoes}));
+  assert.match(render(), /<p[^>]*>Sem resposta do autor<\/p>/);
+  assert.match(render(), /Pergunta/);
+  for (const alteracoes of [
+    {comentariosRemotosConfirmados: false}, {usuarioIdLogado: ""}, {usuarioIdLogado: "terceiro"},
+    {comentario: {...comentario, userId: "autor"}},
+    {respostas: [{id: "resposta-autor", userId: "autor", texto: "Resposta"}]},
+  ]) {
+    assert.doesNotMatch(render(alteracoes), /Sem resposta do autor/);
+  }
+  assert.match(render({respostas: [{id: "outro", userId: "outro-leitor"}]}), /Sem resposta do autor/);
+});
 
 test("thread preserva os calculos de respostas visiveis e ocultas", () => {
   assert.match(

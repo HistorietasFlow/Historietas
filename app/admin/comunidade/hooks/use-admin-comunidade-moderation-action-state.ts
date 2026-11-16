@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
+import type { ContextoModeracao } from "../lib/admin-comunidade-action-control";
 
 export function useAdminComunidadeModerationActionState() {
+  const controleModeracao = useRef<ContextoModeracao | null>(null);
   const [erro, setErro] = useState("");
   const [sucesso, setSucesso] = useState("");
   const [acaoEmAndamento, setAcaoEmAndamento] = useState("");
@@ -17,6 +19,7 @@ export function useAdminComunidadeModerationActionState() {
   }
 
   return {
+    controleModeracao,
     erro,
     setErro,
     sucesso,

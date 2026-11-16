@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { INTERVALO_PALAVRAS_VAZIO, type IntervaloPalavrasTexto } from "../../../lib/catalogo-palavras";
 import type { ModoConteudoExplorar } from "../components/explorar-section-components";
 import type {
   FiltroColecaoExplorar,
@@ -8,6 +9,7 @@ import type {
 } from "../lib/explorar-derived-utils";
 
 export function useExplorarNavigationFilterState() {
+  const [intervaloPalavras, setIntervaloPalavras] = useState<IntervaloPalavrasTexto>(INTERVALO_PALAVRAS_VAZIO);
   const [modoConteudo, setModoConteudo] =
     useState<ModoConteudoExplorar>("obras");
   const [categoriaSelecionada, setCategoriaSelecionada] = useState("");
@@ -16,6 +18,7 @@ export function useExplorarNavigationFilterState() {
   const [filtroTag, setFiltroTag] = useState("");
   const [tagExcluida, setTagExcluida] = useState("");
   const [generoExcluido, setGeneroExcluido] = useState("");
+  const [statusEditorial, setStatusEditorial] = useState("");
   const [notaMinima, setNotaMinima] = useState<number | null>(null);
   const [filtroClassificacao, setFiltroClassificacao] = useState("todos");
   const [filtroCapitulos, setFiltroCapitulos] = useState("todos");
@@ -24,6 +27,8 @@ export function useExplorarNavigationFilterState() {
   const [ordenacao, setOrdenacao] = useState<OrdenacaoExplorar>("relevancia");
 
   return {
+    intervaloPalavras,
+    setIntervaloPalavras,
     modoConteudo,
     setModoConteudo,
     categoriaSelecionada,
@@ -36,6 +41,8 @@ export function useExplorarNavigationFilterState() {
     setFiltroTag,
     tagExcluida,
     generoExcluido,
+    statusEditorial,
+    setStatusEditorial,
     setTagExcluida,
     setGeneroExcluido,
     notaMinima,

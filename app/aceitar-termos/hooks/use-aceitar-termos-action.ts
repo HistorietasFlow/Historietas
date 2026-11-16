@@ -1,5 +1,7 @@
 import type { Dispatch, SetStateAction } from "react";
 import { registrarAceiteTermosPublicacao } from "../../../lib/aceiteTermos";
+import { supabase } from "../../../lib/supabase/client";
+import { execucaoAceiteEstaAtual, type ReferenciaExecucaoAceite } from "../lib/aceitar-termos-execution";
 import type { ChaveTexto } from "../lib/aceitar-termos-translations";
 
 type AceitarTermosRouter = {
@@ -8,6 +10,7 @@ type AceitarTermosRouter = {
 };
 
 type UseAceitarTermosActionParams = {
+  contextoRef: ReferenciaExecucaoAceite;
   router: AceitarTermosRouter;
   salvando: boolean;
   confirmouTermos: boolean;
@@ -19,6 +22,7 @@ type UseAceitarTermosActionParams = {
 };
 
 export function useAceitarTermosAction({
+  contextoRef,
   router,
   salvando,
   confirmouTermos,
@@ -28,29 +32,52 @@ export function useAceitarTermosAction({
   setErro,
   setSalvando,
 }: UseAceitarTermosActionParams) {
+  const execucao = contextoRef.current;
   async function aceitar() {
-    if (salvando) {
+    const atual = () => execucaoAceiteEstaAtual(contextoRef, execucao);
+    if (!atual() || salvando || execucao.enviando || execucao.aceito) return;
+    if (!execucao.pronto || !execucao.usuarioId) {
+      setErro(t("erroLogin"));
       return;
     }
-
     if (!confirmouTermos || !confirmouPrivacidade) {
       setErro(t("erroMarcar"));
       return;
     }
 
+    execucao.enviando = true;
     setSalvando(true);
     setErro("");
-
-    const resultado = await registrarAceiteTermosPublicacao();
-
-    if (!resultado.aceito) {
-      setErro(resultado.erro || t("erroLogin"));
-      setSalvando(false);
-      return;
+    try {
+      const antes = await supabase.auth.getUser();
+      if (!atual()) return;
+      if (antes.error || antes.data.user?.id !== execucao.usuarioId) {
+        execucao.pronto = false;
+        setErro(t("erroLogin"));
+        return;
+      }
+      const resultado = await registrarAceiteTermosPublicacao();
+      if (!atual()) return;
+      if (!resultado.aceito) {
+        setErro(resultado.erro || t("erroSalvar"));
+        return;
+      }
+      const depois = await supabase.auth.getUser();
+      if (!atual()) return;
+      if (depois.error || depois.data.user?.id !== execucao.usuarioId) {
+        execucao.pronto = false;
+        setErro(t("erroLogin"));
+        return;
+      }
+      execucao.aceito = true;
+      router.replace(redirectTo);
+      router.refresh();
+    } catch (error) {
+      if (atual()) setErro(error instanceof Error ? error.message : t("erroSalvar"));
+    } finally {
+      execucao.enviando = false;
+      if (atual()) setSalvando(false);
     }
-
-    router.replace(redirectTo);
-    router.refresh();
   }
 
   return { aceitar };

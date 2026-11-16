@@ -25,12 +25,18 @@ import {
 
 type AjudaSupportTicketsProps = {
   carregando: boolean;
+  erro: string;
+  carregados: boolean;
+  onRecarregar: () => void;
   chamados: ProblemaTecnicoResumo[];
   language: HistorietasLanguage;
 };
 
 export function AjudaSupportTickets({
   carregando,
+  erro,
+  carregados,
+  onRecarregar,
   chamados,
   language,
 }: AjudaSupportTicketsProps) {
@@ -43,8 +49,8 @@ export function AjudaSupportTickets({
   }
 
   return (
-    <div style={supportTicketsSectionStyle}>
-      <div style={supportTicketsHeadingStyle}>
+    <section style={supportTicketsSectionStyle} aria-label={t({ pt: "Meus chamados recentes", en: "My recent tickets", es: "Mis casos recientes" })} aria-busy={carregando}>
+      <div style={{ ...supportTicketsHeadingStyle, flexWrap: "wrap" }}>
         <strong>
           {t({
             pt: "Meus chamados recentes",
@@ -57,9 +63,23 @@ export function AjudaSupportTickets({
             {t({ pt: "Carregando...", en: "Loading...", es: "Cargando..." })}
           </span>
         ) : null}
+        <button type="button" className="ajuda-refresh-tickets-button" disabled={carregando} onClick={onRecarregar}>
+          {t({ pt: "Atualizar chamados", en: "Refresh tickets", es: "Actualizar casos" })}
+        </button>
       </div>
 
-      {!carregando ? (
+      {erro ? <p role="alert">{erro}</p> : null}
+      {chamados.length > 0 && (carregando || erro) ? (
+        <p role="status">{t({
+          pt: "Exibindo os chamados da última consulta confirmada; a atualização atual ainda não foi confirmada.",
+          en: "Showing tickets from the last confirmed query; the current refresh has not been confirmed yet.",
+          es: "Se muestran los casos de la última consulta confirmada; la actualización actual aún no está confirmada.",
+        })}</p>
+      ) : null}
+      {carregados && !carregando && !erro && chamados.length === 0 ? (
+        <p role="status">{t({ pt: "Nenhum chamado recente.", en: "No recent tickets.", es: "No hay casos recientes." })}</p>
+      ) : null}
+      {chamados.length > 0 ? (
         <div style={supportTicketsListStyle}>
           {chamados.map((chamado) => (
             <article key={chamado.id} style={supportTicketStyle}>
@@ -93,6 +113,6 @@ export function AjudaSupportTickets({
           ))}
         </div>
       ) : null}
-    </div>
+    </section>
   );
 }
