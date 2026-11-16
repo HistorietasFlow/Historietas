@@ -131,8 +131,9 @@ for (const mode of ["desktop","mobile"]) {
       await page.screenshot({path:path.join(output,`${mode}-preview.png`)});
       const downloading=page.waitForEvent("download");await dialog.getByRole("button",{name:"Baixar imagem",exact:true}).click();
       const download=await downloading;expect(download.suggestedFilename()).toBe("historietas-avaliacao.png");
-      await download.saveAs(path.join(output,`${mode}-download.png`));
-      const meta=await sharp(await download.path()).metadata();expect([meta.width,meta.height]).toEqual([1080,1920]);
+      const downloadedFile=path.join(output,`${mode}-download.png`);
+      await download.saveAs(downloadedFile);
+      const meta=await sharp(downloadedFile).metadata();expect([meta.width,meta.height]).toEqual([1080,1920]);
       // Só a integração do SO é adaptada: arquivo e geração vêm do backend real.
       await page.evaluate(()=>{
         window.storyShares=[];window.storyShareMode="success";
