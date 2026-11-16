@@ -1,5 +1,7 @@
 "use client";
 
+import type { ReactNode } from "react";
+
 import {
   NOTAS_AVALIACAO_OBRA,
   obterPreenchimentoEstrela,
@@ -23,6 +25,7 @@ type ObraRatingBoxProps = {
   minhaNota: number;
   salvando: boolean;
   onAvaliar: (nota: number) => void | Promise<void>;
+  children?: ReactNode;
 };
 
 export default function ObraRatingBox({
@@ -30,6 +33,7 @@ export default function ObraRatingBox({
   minhaNota,
   salvando,
   onAvaliar,
+  children,
 }: ObraRatingBoxProps) {
   return (
     <section
@@ -78,6 +82,7 @@ export default function ObraRatingBox({
           );
         })}
       </div>
+      {children}
     </section>
   );
 }
