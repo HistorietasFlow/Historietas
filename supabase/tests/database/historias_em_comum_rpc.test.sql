@@ -311,7 +311,12 @@ insert into public.favoritos(user_id,obra_id,visibilidade) values ('cd100000-000
 
 select is((select count(*) from public.listar_historias_em_comum('cd100000-0000-4000-8000-000000000002'::uuid)),2::bigint,'revogacao restaurada via escrita autenticada');
 
-reset role; update public.obras set publicado=false where id='cd200000-0000-4000-8000-000000000001';
+reset role;
+-- Mudancas de publicacao/classificacao pertencem ao autor D,
+-- que ja aceitou os termos na fixture. Nao simular operacao como leitor A.
+select set_config('request.jwt.claim.sub','cd100000-0000-4000-8000-000000000004',true);
+select set_config('request.jwt.claims','{"sub":"cd100000-0000-4000-8000-000000000004","role":"authenticated"}',true);
+update public.obras set publicado=false where id='cd200000-0000-4000-8000-000000000001';
 
 reset role;
 select set_config('request.jwt.claim.sub','cd100000-0000-4000-8000-000000000001',true);
@@ -320,9 +325,19 @@ set local role authenticated;
 
 select is((select count(*) from public.listar_historias_em_comum('cd100000-0000-4000-8000-000000000002'::uuid)),1::bigint,'despublicacao revoga imediatamente');
 
-reset role; update public.obras set publicado=true where id='cd200000-0000-4000-8000-000000000001';
+reset role;
+-- Mudancas de publicacao/classificacao pertencem ao autor D,
+-- que ja aceitou os termos na fixture. Nao simular operacao como leitor A.
+select set_config('request.jwt.claim.sub','cd100000-0000-4000-8000-000000000004',true);
+select set_config('request.jwt.claims','{"sub":"cd100000-0000-4000-8000-000000000004","role":"authenticated"}',true);
+update public.obras set publicado=true where id='cd200000-0000-4000-8000-000000000001';
 
-reset role; update public.obras set classificacao_indicativa='18+', avisos_conteudo=array['violencia_intensa'] where id='cd200000-0000-4000-8000-000000000007';
+reset role;
+-- Mudancas de publicacao/classificacao pertencem ao autor D,
+-- que ja aceitou os termos na fixture. Nao simular operacao como leitor A.
+select set_config('request.jwt.claim.sub','cd100000-0000-4000-8000-000000000004',true);
+select set_config('request.jwt.claims','{"sub":"cd100000-0000-4000-8000-000000000004","role":"authenticated"}',true);
+update public.obras set classificacao_indicativa='18+', avisos_conteudo=array['violencia_intensa'] where id='cd200000-0000-4000-8000-000000000007';
 
 reset role;
 select set_config('request.jwt.claim.sub','cd100000-0000-4000-8000-000000000001',true);
@@ -331,7 +346,12 @@ set local role authenticated;
 
 select is((select count(*) from public.listar_historias_em_comum('cd100000-0000-4000-8000-000000000002'::uuid)),1::bigint,'classificacao 18+ revoga imediatamente');
 
-reset role; update public.obras set classificacao_indicativa='Livre', avisos_conteudo='{}'::text[] where id='cd200000-0000-4000-8000-000000000007';
+reset role;
+-- Mudancas de publicacao/classificacao pertencem ao autor D,
+-- que ja aceitou os termos na fixture. Nao simular operacao como leitor A.
+select set_config('request.jwt.claim.sub','cd100000-0000-4000-8000-000000000004',true);
+select set_config('request.jwt.claims','{"sub":"cd100000-0000-4000-8000-000000000004","role":"authenticated"}',true);
+update public.obras set classificacao_indicativa='Livre', avisos_conteudo='{}'::text[] where id='cd200000-0000-4000-8000-000000000007';
 
 reset role;
 select set_config('request.jwt.claim.sub','cd100000-0000-4000-8000-000000000001',true);
