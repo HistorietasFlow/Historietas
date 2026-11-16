@@ -62,6 +62,7 @@ import ObraCommentsSheet from "./components/obra-comments-sheet";
 import ObraClassificationPanel from "./components/obra-classification-panel";
 import ObraActionsSheet from "./components/obra-actions-sheet";
 import ObraRatingBox from "./components/obra-rating-box";
+import ObraStoryShare from "./components/obra-story-share";
 import ObraCommunitySection from "./components/obra-community-section";
 import ObraStatsGrid from "./components/obra-stats-grid";
 import ObraSynopsisSection from "./components/obra-synopsis-section";
@@ -877,7 +878,12 @@ export default function ObraDinamicaPage({ snapshotInicial }: { snapshotInicial?
             minhaNota={avaliacaoObra.minhaNota}
             salvando={avaliacaoObra.salvando}
             onAvaliar={avaliarObra}
-          />
+          >
+            {autenticacaoCarregada && usuarioIdLogado && !avaliacaoObra.salvando && avaliacaoObra.minhaNota > 0 && (
+              <ObraStoryShare key={`${slug}:${usuarioIdLogado}:${versaoIdentidade}:${avaliacaoObra.minhaNota}`}
+                slug={slug} leitorId={usuarioIdLogado} nota={avaliacaoObra.minhaNota} />
+            )}
+          </ObraRatingBox>
           </div>
         ) : null}
 

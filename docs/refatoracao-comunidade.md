@@ -1,5 +1,33 @@
 # Refatoração da Comunidade
 
+## Stories de avaliações — etapa 4: homologação integrada
+
+- Dados, imagem e interface revisados em conjunto: 31 unitários e 15 integrações
+  locais aprovados. Playwright final complementar: nove passes e uma falha desktop
+  aguardando a geração do PNG. Parecer NÃO APTO; manter PR draft.
+- Corrigida somente a sincronização QA dos pré-requisitos de métricas, sem
+  alterar timeouts, retries, aplicação, design ou privacidade.
+- [Relatório e evidências](memory/STORIES_AVALIACOES_ETAPA_4.md).
+
+## Stories de avaliações — etapa 2: geração, sem interface
+
+- Geração server-only de PNG 1080×1920 por ImageResponse, sempre a partir do
+  loader seguro, com revalidação final antes de devolver bytes privados/no-store.
+- Composição medida do modelo aprovado; wordmark original, rótulos fixos
+  preservados, Geist autorizado nos dados e nota real com meia estrela.
+- Mídia pública validada/limitada, sem novos pacotes ou alterações de produção.
+- Contrato: [Memory Bank](memory/STORIES_AVALIACOES_ETAPA_2.md).
+
+## Stories de avaliações — etapa 1: dados e segurança, sem UI
+
+- Loader server-only reutiliza projeção pública da obra, avaliação individual
+  pública sob RLS anônima e profiles_publicos com username explícito do autor.
+- Auth SSR valida no servidor que o solicitante é o proprietário da avaliação;
+  ID recebido ou leitura pública isolada não comprovam essa identidade.
+- DTO sem dados privados, com nota real/meia estrela, ausências, textos longos
+  e flags para ocultar o handle e o símbolo “&” juntos. Sem SQL ou ativação.
+- Contrato e limites: [Memory Bank](memory/STORIES_AVALIACOES_ETAPA_1.md).
+
 ## Ler Capítulo — Fase 6: estado de feedback e overlays do leitor
 
 - Os estados locais de denúncia, mensagem de ação e ajustes do leitor foram reunidos em hook dedicado, preservando autenticação, mensagens, denúncia, callbacks e consumidores existentes.
@@ -3111,3 +3139,11 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 ## Performance — Fase 1: filtros avançados do Explorar
 
 - A composição visual dos filtros avançados de `/explorar` passou a ser carregada em um chunk sob demanda, preservando na página os estados, regras de negócio, body lock e callbacks existentes.
+
+## Stories de avaliações — etapa 3
+
+Interface de compartilhamento na página da obra: confirmação server-side antes
+do botão, geração segura da etapa 2, prévia e download PNG, Web Share por arquivo
+e fallback. Diálogo acessível PT/EN/ES, descarte em troca de identidade e cancelamento.
+Sem alteração do fluxo de avaliações, design do Story, migrations ou etapa 4.
+Contrato e limites em `docs/memory/STORIES_AVALIACOES_ETAPA_3.md`.
