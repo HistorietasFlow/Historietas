@@ -54,3 +54,15 @@ test("capa opcional não interrompe a listagem", () => {
   assert.equal(semCapa.capa, "");
   assert.equal(semCapa.autor, "");
 });
+
+
+test("IDs duplicados com caixa diferente e protocolos maliciosos são rejeitados", () => {
+  assert.deepEqual(normalizarHistoriasEmComum([
+    valido,
+    { ...valido, obra_id: valido.obra_id.toUpperCase() },
+  ]), []);
+  assert.deepEqual(normalizarHistoriasEmComum([{ ...valido, slug: "javascript:alert(1)" }]), []);
+  assert.deepEqual(normalizarHistoriasEmComum([{ ...valido, slug: "obra?segredo=1" }]), []);
+  const [valida] = normalizarHistoriasEmComum([{ ...valido, capa_url: "/capas/obra.webp" }]);
+  assert.equal(valida.capa, "/capas/obra.webp");
+});
