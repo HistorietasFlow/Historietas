@@ -19,6 +19,11 @@
 - Corrigida somente a sincronização QA dos pré-requisitos de métricas, sem
   alterar timeouts, retries, aplicação, design ou privacidade.
 - [Relatório e evidências](memory/STORIES_AVALIACOES_ETAPA_4.md).
+- Complemento #2336: Geist explicitamente fornecida ao ImageResponse e tempos
+  sanitizados por etapa, sem alterar composição ou segurança. PNG antes/depois
+  idêntico; 33 unitários, 5 integrações e 2 cenários Playwright desktop/mobile
+  aprovados (um worker, zero retries). APTO no escopo local focado; causa da
+  lentidão histórica não comprovada. PR permanece draft, gates remotos separados.
 
 ## Stories de avaliações — etapa 2: geração, sem interface
 

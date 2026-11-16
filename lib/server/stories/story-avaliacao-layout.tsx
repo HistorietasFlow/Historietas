@@ -35,7 +35,8 @@ function Foto({ src, x, y, size, radius }: { src: string | null; x: number; y: n
   </div>;
 }
 
-export function comporStoryAvaliacao(payload: PayloadStoryAvaliacao, media: MidiasStory) {
+export function comporStoryAvaliacao(payload: PayloadStoryAvaliacao, media: MidiasStory, geist: ArrayBuffer) {
+  if (!geist?.byteLength) throw new Error("fonte_indisponivel");
   const leitor = payload.leitor.nome.texto, titulo = payload.obra.titulo.texto, autor = payload.autor.nome.texto;
   if (!payload.compartilhavel || !leitor || !titulo || !autor ||
     payload.leitor.nome.truncado || payload.obra.titulo.truncado || payload.autor.nome.truncado ||
@@ -84,6 +85,7 @@ export function comporStoryAvaliacao(payload: PayloadStoryAvaliacao, media: Midi
       {/* eslint-disable-next-line @next/next/no-img-element -- Wordmark autorizado, sem redesenho. */}
       <img src={media.wordmark} alt="" width={p(331)} height={p(72)} style={{ ...box(305.5, 1514, 331, 72) }} />
     </div>,
-    { width: STORY.width, height: STORY.height, headers: { "Cache-Control": "private, no-store, max-age=0", "X-Content-Type-Options": "nosniff" } },
+    { width: STORY.width, height: STORY.height, fonts: [{ name: "geist", data: geist, weight: 400, style: "normal" }],
+      headers: { "Cache-Control": "private, no-store, max-age=0", "X-Content-Type-Options": "nosniff" } },
   );
 }

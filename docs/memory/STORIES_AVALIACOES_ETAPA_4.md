@@ -1,6 +1,67 @@
 # Stories — homologação integrada, 16/11/2026
 
-Parecer: **NÃO APTO para homologação final**. A PR deve permanecer draft.
+## Complemento #2336 — Geist explícita e diagnóstico do PNG
+
+Parecer atualizado: **APTO no escopo da homologação local focada**. Manter a PR
+draft, sem merge/deploy. Checks remotos e integração com a main atual são gates
+separados. A falha histórica abaixo foi preservada, não apagada pelo passe atual.
+
+- Geist Regular carregada explicitamente do TTF já distribuído pelo Next
+  16.4.5 travado no lockfile, via `fonts` do ImageResponse. Sem dependências,
+  downloads de fontes, mudanças de layout ou alteração do wordmark.
+- Build isolado novo aprovado, incluindo TypeScript. File tracing da rota
+  confirma o TTF e os quatro PNGs necessários, todos existentes.
+- 33/33 unitários focados (30,76 s), incluindo fonte obrigatória/opções reais
+  do renderer e diagnóstico que não serializa dados retornados nem erros.
+- Integração do gerador com Supabase LOCAL: 5/5 (19,47 s), Auth SSR e mídia
+  reais, recusas de acesso e revalidação de privacidade preservadas.
+- Playwright: **2/2 na primeira execução**, desktop 16,7 s e mobile 8,3 s;
+  workers=1, retries=0, mesmo timeout de teste 45 s e expectativa 12 s.
+  Prévia, download real, Web Share adaptado, cancelamento, fallback, teclado
+  e axe passaram. Downloads conferidos como PNG 1080×1920.
+- ESLint focado e diff --check aprovados. Não repetida a CI completa nem os
+  oito outros cenários Playwright já aprovados: não se alega nova rodada 10/10.
+- Preservado o avanço remoto `2016238b` (teste do arquivo baixado), incorporado
+  por fast-forward antes da validação, sem merge commit ou force push.
+
+| Etapa (ms) | Desktop | Mobile |
+| --- | ---: | ---: |
+| Loader inicial: identidade e fonte pública | 425 | 330 |
+| Capa validada | 292 | 421 |
+| Fotos ausentes da fixture (cada) | 0 | 0 |
+| Assets originais | 10 | 6 |
+| Leitura explícita Geist | 4 | 2 |
+| Renderização PNG | 1822 | 1182 |
+| Revalidação final | 320 | 340 |
+| Total da geração | 2879 | 2285 |
+
+O maior custo observado foi a renderização, não a fonte. A lentidão histórica
+desktop **não foi reproduzida**; estes tempos não comprovam sua causa anterior
+nem estabilidade estatística. Nenhuma otimização especulativa ou remoção de
+checagens foi feita. As integrações geraram em 5132/3666 ms, com leitura da
+fonte em 6/4 ms, também abaixo dos limites existentes.
+
+Diagnóstico opt-in server-side: `STORY_PNG_DIAGNOSTICS=1`. Somente `etapa`,
+`status` predefinidos e `duracaoMs` numérico; início, término/falha e total.
+Sem URL, IDs, nomes, payload, erros livres, cookies, tokens ou senhas. Desativado
+por padrão e sem expor controles pelo navegador; falha do logger não interfere
+na autorização/geração. Consultas e revalidação de segurança não foram reduzidas.
+
+PNG de fixture antes/depois da fonte explícita: **8.294.400 bytes RGBA idênticos**.
+Comparação visual com o modelo aprovado e casos longos/meia estrela/sem @ e &
+conferidos; wordmark com o mesmo SHA-256 registrado abaixo. Novas capturas
+desktop/mobile substituem as anteriores, usando somente fixtures sintéticas.
+
+Evidências locais: `qa/reports/story-font-final/` (unit.log, integration.log,
+build.log, lint.log, server.log e playwright.json/log); PNGs gerados em
+`qa/reports/story-stage2/` e downloads em `qa/reports/story-stage3/`.
+Tempos sanitizados versionados em `docs/qa/stories/tempos-png.json`.
+Stack/servidor iniciados nesta tarefa encerrados, volumes/dados/SQL e demais
+trabalhos locais preservados. Sem produção, migrations, merge de PR ou deploy.
+
+## Registro da homologação anterior (antes desta correção)
+
+Parecer anterior: **NÃO APTO para homologação final**.
 Dados/segurança, imagem e interface estão integrados; permanece uma falha da
 última validação desktop de prévia, aguardando resposta da geração do PNG.
 Nenhuma mudança em funcionalidades aprovadas foi feita nesta homologação.

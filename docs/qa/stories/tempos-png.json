@@ -1,0 +1,24 @@
+{
+  "desktop": {
+    "fonte_inicial": 425,
+    "capa": 292,
+    "foto_leitor": 0,
+    "foto_autor": 0,
+    "assets": 10,
+    "geist": 4,
+    "render_png": 1822,
+    "revalidacao": 320,
+    "total": 2879
+  },
+  "mobile": {
+    "fonte_inicial": 330,
+    "capa": 421,
+    "foto_leitor": 0,
+    "foto_autor": 0,
+    "assets": 6,
+    "geist": 2,
+    "render_png": 1182,
+    "revalidacao": 340,
+    "total": 2285
+  }
+}

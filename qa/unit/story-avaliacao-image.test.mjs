@@ -8,6 +8,8 @@ import { carregarFonteStory } from "../scripts/story-source-loader.mjs";
 const load = carregarFonteStory();
 const { comporStoryAvaliacao, STORY, tamanhoTextoStory } = load("lib/server/stories/story-avaliacao-layout.tsx");
 const { montarPayloadStoryAvaliacao } = load("lib/stories/avaliacao-story-payload.ts");
+const { carregarGeistStory } = load("lib/server/stories/fonte-story.ts");
+const geist = await carregarGeistStory();
 const folder = "qa/reports/story-stage2";
 mkdirSync(folder, { recursive: true });
 const reference = readFileSync("qa/references/Historietas_Modelo_Stories_Aprovado.png");
@@ -33,7 +35,7 @@ function payload(overrides = {}) {
 }
 const results = [];
 async function render(name, value, images = media) {
-  const response = comporStoryAvaliacao(value, images);
+  const response = comporStoryAvaliacao(value, images, geist);
   assert.equal(response.headers.get("cache-control"), "private, no-store, max-age=0");
   const png = Buffer.from(await response.arrayBuffer());
   const m = await sharp(png).metadata();
@@ -84,10 +86,57 @@ test("nomes e título longos cabem nas caixas; fotos ausentes preservam composi�
   await render("fotos-ausentes",payload(),{...media,leitor:null,autor:null});
 });
 test("payload incompleto/truncado nunca é exportado silenciosamente", () => {
-  assert.throws(()=>comporStoryAvaliacao({...payload(),compartilhavel:false},media));
+  assert.throws(()=>comporStoryAvaliacao({...payload(),compartilhavel:false},media,geist));
   const p=payload();p.obra.titulo.truncado=true;
-  assert.throws(()=>comporStoryAvaliacao(p,media));
-  assert.throws(()=>comporStoryAvaliacao(payload({leitor:{nome:"Nome 😀",avatar_url:null}}),media),/glifo_indisponivel/);
+  assert.throws(()=>comporStoryAvaliacao(p,media,geist));
+  assert.throws(()=>comporStoryAvaliacao(payload({leitor:{nome:"Nome 😀",avatar_url:null}}),media,geist),/glifo_indisponivel/);
+});
+
+test("Geist explícita usa exatamente os bytes locais do Next e é obrigatória", async () => {
+  assert.deepEqual(Buffer.from(geist), readFileSync("node_modules/next/dist/compiled/@vercel/og/Geist-Regular.ttf"));
+  assert.throws(() => comporStoryAvaliacao(payload(), media), /fonte_indisponivel/);
+  assert.throws(() => comporStoryAvaliacao(payload(), media, new ArrayBuffer(0)), /fonte_indisponivel/);
+  let options;
+  const renderer = carregarFonteStory({ "next/og": { ImageResponse: class {
+    constructor(_element, value) { options = value; }
+  } } })("lib/server/stories/story-avaliacao-layout.tsx");
+  renderer.comporStoryAvaliacao(payload(), media, geist);
+  assert.deepEqual(options.fonts, [{ name: "geist", data: geist, weight: 400, style: "normal" }]);
+});
+
+test("diagnóstico registra somente etapas/status/tempos, inclusive falha sem vazamento", async () => {
+  const previous = process.env.STORY_PNG_DIAGNOSTICS, info = console.info;
+  const records = [];
+  console.info = (...args) => records.push(args);
+  try {
+    process.env.STORY_PNG_DIAGNOSTICS = "1";
+    const { diagnosticoPng } = load("lib/server/stories/diagnostico-png.ts");
+    const diag = diagnosticoPng();
+    const secret = "password=segredo Cookie=privado Bearer token leitor@privado.invalid id-pessoal";
+    assert.equal(await diag.medir("geist", async () => secret), secret);
+    await assert.rejects(diag.medir("render_png", async () => { throw new Error(secret); }));
+    diag.finalizar("indisponivel");
+    assert.equal(records.length, 5);
+    assert(!JSON.stringify(records).includes(secret));
+    for (const [prefix, json] of records) {
+      assert.equal(prefix, "[story-png]");
+      const r = JSON.parse(json);
+      assert.deepEqual(Object.keys(r), ["etapa", "status", "duracaoMs"]);
+      assert(["geist", "render_png", "total"].includes(r.etapa));
+      assert(["inicio", "concluido", "falhou", "indisponivel"].includes(r.status));
+      assert(Number.isInteger(r.duracaoMs) && r.duracaoMs >= 0);
+    }
+    process.env.STORY_PNG_DIAGNOSTICS = "0";
+    await diagnosticoPng().medir("geist", async () => null);
+    assert.equal(records.length, 5);
+    process.env.STORY_PNG_DIAGNOSTICS = "1";
+    console.info = () => { throw new Error(secret); };
+    assert.equal(await diagnosticoPng().medir("geist", async () => 42), 42);
+  } finally {
+    console.info = info;
+    if (previous === undefined) delete process.env.STORY_PNG_DIAGNOSTICS;
+    else process.env.STORY_PNG_DIAGNOSTICS = previous;
+  }
 });
 test("mídia pública: decoder real, limites e ausência de credenciais/redirects",async()=>{
   const original=globalThis.fetch, old=process.env.NEXT_PUBLIC_SUPABASE_URL;
