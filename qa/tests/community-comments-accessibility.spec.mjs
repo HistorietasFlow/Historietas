@@ -45,6 +45,7 @@ test("sheet de comentários da Comunidade preserva diálogo, foco e teclado", as
 
   const handle = dialog.locator('[data-comments-sheet-handle="true"]');
   const enviar = dialog.getByRole("button", { name: "Enviar comentário" });
+  await expect(enviar).toBeEnabled();
   await expect(handle).toBeFocused();
 
   await page.keyboard.press("Shift+Tab");

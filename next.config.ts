@@ -45,6 +45,8 @@ if (supabaseUrl) {
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // Inclui o título da obra ou do capítulo no <head> do primeiro documento.
+  htmlLimitedBots: /.*/,
   async headers() {
     return [
       {
