@@ -82,7 +82,7 @@ const call=(role,query)=>role==="anon"?anon(query):
  logged("authenticated",query,role);
 function addProfiles(){
  sql("INSERT INTO public.profiles(id,user_id,nome,tipo) SELECT x.id,x.id,"+
-  "'QA '+i,CASE WHEN i=1 THEN 'autor' ELSE 'leitor' END "+
+  "'QA '||i,CASE WHEN i=1 THEN 'autor' ELSE 'leitor' END "+
   "FROM (SELECT i,('f8400000-0000-4000-8000-'||lpad(i::text,12,'0'))::uuid AS id "+
   "FROM generate_series(1,256) i) x;");
 }
@@ -92,9 +92,9 @@ function insertRange(start,end){
   "lpad((((i*11+j)%255)+2)::text,12,'0'))::uuid";
  sql("INSERT INTO public.obras(id,user_id,titulo,autor,genero,formato,"+
   "classificacao_indicativa,avisos_conteudo,publicado,arquivo_url,slug) "+
-  "SELECT "+work+",'"+userUuid(1)+"'::uuid,'QA RLS '+i,'QA',"+
+  "SELECT "+work+",'"+userUuid(1)+"'::uuid,'QA RLS '||i,'QA',"+
   "'Fantasia','HQ','Livre',ARRAY[]::text[],true,"+
-  "'https://example.invalid/qa.txt','qa-2353-'+i "+
+  "'https://example.invalid/qa.txt','qa-2353-'||i "+
   "FROM generate_series("+start+","+end+") i;");
  sql("INSERT INTO public.obra_avaliacoes(obra_id,user_id,nota,visibilidade) "+
   "SELECT "+work+","+voter+",(((i+j)%10+1)::numeric/2),"+
