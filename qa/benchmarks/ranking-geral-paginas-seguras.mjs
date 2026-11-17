@@ -50,6 +50,7 @@ const call=(role,query)=>role==="anon"?anon(query):
  role==="service_role"?logged("service_role",query):
  logged("authenticated",query,role);
 function addProfiles(){
+ sql("INSERT INTO auth.users(id) SELECT "+uid+" FROM generate_series(1,256) i;");
  sql("INSERT INTO public.profiles(id,user_id,nome,tipo) SELECT x.id,x.id,"+
   "'QA '||i,CASE WHEN i=1 THEN 'autor' ELSE 'leitor' END "+
   "FROM (SELECT i,('f8400000-0000-4000-8000-'||lpad(i::text,12,'0'))::uuid AS id "+
