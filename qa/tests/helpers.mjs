@@ -1,6 +1,6 @@
 import { expect } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
-import { observeSafeFlow } from "./playwright-safe-flow-diagnostics.mjs";
+import { observeSafeFlow, readLoginFailureForm } from "./playwright-safe-flow-diagnostics.mjs";
 
 export const authorEmail = (process.env.E2E_USER_EMAIL || "").trim();
 export const authorPassword = process.env.E2E_USER_PASSWORD || "";
@@ -61,10 +61,10 @@ export async function loginWithCredentials(page, email, password, descricao, { d
   const observador = ["desktop", "mobile"].includes(diagnosticoLogin)
     ? observeSafeFlow(page, "login-flaky", { device: diagnosticoLogin })
     : null;
+  const form = page.locator("form");
 
   try {
     await page.goto("/login", { waitUntil: "domcontentloaded" });
-    const form = page.locator("form");
     await form.getByPlaceholder("seuemail@email.com").fill(email);
     await form.getByPlaceholder("Mínimo de 6 caracteres").fill(password);
     await Promise.all([
@@ -77,9 +77,9 @@ export async function loginWithCredentials(page, email, password, descricao, { d
       await observador.capture("failure", {
         authState: "unknown",
         rendered: {
-          error: page.getByRole("alert"),
-          loading: page.locator('form button[type="submit"]:disabled'),
-          continue: page.getByRole("button", {
+          ...await readLoginFailureForm(form, { email, password }),
+          loading: form.locator('button[type="submit"]:disabled'),
+          continue: form.getByRole("button", {
             name: /^(Continuar com a sessão|Continue with this session|Continuar con la sesión)$/,
           }),
         },

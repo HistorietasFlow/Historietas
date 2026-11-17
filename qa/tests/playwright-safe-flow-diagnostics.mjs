@@ -34,6 +34,53 @@ function routeOf(url) {
 
 function networkKey(endpoint, method) { return `${endpoint}:${method}`; }
 
+// Only fixed counts leave the page. Field values and alert text stay in memory.
+export async function readLoginFailureForm(form, expected) {
+  try {
+    return await form.evaluateAll((forms, expected) => {
+      if (forms.length !== 1) return { "login-form-readable": 0 };
+      const form = forms[0];
+      const email = form.querySelector('input[type="email"]');
+      const password = form.querySelector('input[type="password"]');
+      const readable = Boolean(email && password && email.validity && password.validity);
+      const messages = Array.from(form.querySelectorAll('[role="alert"]'), el => el.textContent?.trim() || "");
+      const emailRequired = new Set([
+        "Digite seu e-mail.", "Enter your email address.", "Escribe tu correo electrónico.",
+      ]);
+      const passwordMin = new Set([
+        "A senha precisa ter pelo menos 6 caracteres.",
+        "Your password must be at least 6 characters long.",
+        "La contraseña debe tener al menos 6 caracteres.",
+      ]);
+      const emailErrors = messages.filter(message => emailRequired.has(message)).length;
+      const passwordErrors = messages.filter(message => passwordMin.has(message)).length;
+      return {
+        "login-form-readable": 1,
+        "login-fields-readable": Number(readable),
+        "login-email-empty": Number(readable && email.value === ""),
+        "login-email-expected": Number(readable && email.value === expected.email),
+        "login-password-empty": Number(readable && password.value === ""),
+        "login-password-expected": Number(readable && password.value === expected.password),
+        "login-email-invalid": Number(readable && !email.validity.valid),
+        "login-password-invalid": Number(readable && !password.validity.valid),
+        error: messages.length,
+        "login-email-required": emailErrors,
+        "login-password-min": passwordErrors,
+        "login-other-error": messages.length - emailErrors - passwordErrors,
+      };
+    }, expected);
+  } catch {
+    return { "login-form-readable": 0 };
+  }
+}
+
+function isLoginDocument(request, page) {
+  try {
+    return new URL(request.url()).pathname === "/login" &&
+      request.isNavigationRequest() && request.frame() === page.mainFrame();
+  } catch { return false; }
+}
+
 // Compare only in memory. Never return IDs, query strings or body fields.
 export function readerPayloadMatch(request, endpoint, target) {
   if (!target || !["public-reader", "content-metrics"].includes(endpoint)) return null;
@@ -54,7 +101,8 @@ export function observeSafeFlow(page, scenario, {readerTarget, device} = {}) {
   const snapshots = [];
 
   const entryFor = request => {
-    const endpoint = endpointOf(request.url());
+    const endpoint = endpointOf(request.url()) ??
+      (scenario === "login-flaky" && isLoginDocument(request, page) ? "login-document" : null);
     const method = request.method();
     if (!endpoint || !["GET", "POST", "PATCH", "DELETE"].includes(method)) return null;
     const payloadMatch = readerPayloadMatch(request, endpoint, readerTarget);
@@ -79,7 +127,7 @@ export function observeSafeFlow(page, scenario, {readerTarget, device} = {}) {
       const renderedStates = [];
       for (const [state, locator] of Object.entries(rendered)) {
         let count = 0;
-        try { count = await locator.count(); } catch {}
+        try { count = typeof locator === "number" ? locator : await locator.count(); } catch {}
         renderedStates.push({ state, count });
       }
       snapshots.push({ phase, route: routeOf(page.url()), readyState, authState, rendered: renderedStates });
