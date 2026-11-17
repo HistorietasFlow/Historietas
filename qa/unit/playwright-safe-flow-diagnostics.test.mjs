@@ -139,3 +139,40 @@ test("metrics classification preserves the wait predicate for absent work IDs", 
   assert.equal(readerPayloadMatch(req(null), "content-metrics", target), "other");
   assert.equal(readerPayloadMatch(req({p_capitulo_ids: {}}), "content-metrics", target), "unavailable");
 });
+
+
+test("flaky de login: guarda somente rede, estados fixos e contagens", () => {
+  const segredo = "private-password-session-cookie-user-id";
+  const report = sanitizeSafeFlowDiagnostic({
+    scenario: "login-flaky", device: "desktop",
+    email: segredo, password: segredo, authToken: segredo,
+    network: [
+      { endpoint: "auth-token", method: "POST", requestCount: 1, failedCount: 0,
+        url: "http://127.0.0.1/auth/v1/token?token=" + segredo,
+        statuses: [{ code: 200, count: 1, body: segredo }] },
+      { endpoint: "profiles", method: "PATCH", requestCount: 1, failedCount: 1,
+        statuses: [{ code: 503, count: 1, body: segredo }] },
+    ],
+    snapshots: [{
+      phase: "failure", route: "login", readyState: "complete", authState: "unknown",
+      rendered: [{ state: "error", count: 1, text: segredo },
+        { state: "loading", count: 0, text: segredo },
+        { state: "continue", count: 1, text: segredo }],
+    }],
+  });
+  assert.deepEqual(report, {
+    schemaVersion: 1, scenario: "login-flaky", device: "desktop",
+    network: [
+      { endpoint: "auth-token", method: "POST", requestCount: 1, failedCount: 0,
+        statuses: [{ code: 200, count: 1 }] },
+      { endpoint: "profiles", method: "PATCH", requestCount: 1, failedCount: 1,
+        statuses: [{ code: 503, count: 1 }] },
+    ],
+    snapshots: [{ phase: "failure", route: "login", readyState: "complete",
+      authState: "unknown",
+      rendered: [{ state: "error", count: 1 },{ state: "loading", count: 0 },
+        { state: "continue", count: 1 }] }],
+  });
+  assert.ok(!JSON.stringify(report).includes(segredo));
+  assert.equal(sanitizeSafeFlowDiagnostic({ scenario: "login-private" }), null);
+});

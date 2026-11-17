@@ -1,5 +1,6 @@
 import { expect } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
+import { observeSafeFlow } from "./playwright-safe-flow-diagnostics.mjs";
 
 export const authorEmail = (process.env.E2E_USER_EMAIL || "").trim();
 export const authorPassword = process.env.E2E_USER_PASSWORD || "";
@@ -52,27 +53,51 @@ export function monitorRuntime(page) {
   };
 }
 
-export async function loginWithCredentials(page, email, password, descricao) {
+export async function loginWithCredentials(page, email, password, descricao, { diagnosticoLogin } = {}) {
   if (!email || !password) {
     throw new Error(`Credenciais E2E ausentes para ${descricao}.`);
   }
 
-  await page.goto("/login", { waitUntil: "domcontentloaded" });
-  const form = page.locator("form");
-  await form.getByPlaceholder("seuemail@email.com").fill(email);
-  await form.getByPlaceholder("Mínimo de 6 caracteres").fill(password);
-  await Promise.all([
-    page.waitForURL((url) => !url.pathname.endsWith("/login"), { timeout: 30_000 }),
-    form.getByRole("button", { name: "ENTRAR", exact: true }).click()
-  ]);
+  const observador = ["desktop", "mobile"].includes(diagnosticoLogin)
+    ? observeSafeFlow(page, "login-flaky", { device: diagnosticoLogin })
+    : null;
+
+  try {
+    await page.goto("/login", { waitUntil: "domcontentloaded" });
+    const form = page.locator("form");
+    await form.getByPlaceholder("seuemail@email.com").fill(email);
+    await form.getByPlaceholder("Mínimo de 6 caracteres").fill(password);
+    await Promise.all([
+      page.waitForURL((url) => !url.pathname.endsWith("/login"), { timeout: 30_000 }),
+      form.getByRole("button", { name: "ENTRAR", exact: true }).click()
+    ]);
+  } catch (error) {
+    if (observador) {
+      // Somente enumerações, códigos HTTP e contagens; nunca URL, identidade ou formulário.
+      await observador.capture("failure", {
+        authState: "unknown",
+        rendered: {
+          error: page.getByRole("alert"),
+          loading: page.locator('form button[type="submit"]:disabled'),
+          continue: page.getByRole("button", {
+            name: /^(Continuar com a sessão|Continue with this session|Continuar con la sesión)$/,
+          }),
+        },
+      });
+      observador.emit();
+    }
+    throw error;
+  } finally {
+    observador?.dispose();
+  }
 }
 
-export async function loginAsAuthor(page) {
+export async function loginAsAuthor(page, options) {
   if (!hasAuthorCredentials) {
     throw new Error("Defina E2E_USER_EMAIL e E2E_USER_PASSWORD em qa/.env.e2e.");
   }
 
-  await loginWithCredentials(page, authorEmail, authorPassword, "autor");
+  await loginWithCredentials(page, authorEmail, authorPassword, "autor", options);
 }
 
 export async function loginAsVisitor(page) {

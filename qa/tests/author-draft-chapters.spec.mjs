@@ -58,7 +58,7 @@ for (const [device, viewport] of [["desktop", { width: 1440, height: 900 }], ["m
     test.skip(!hasAuthorCredentials || !destructiveEnabled, "Requer fixtures descartáveis locais.");
     expect(["127.0.0.1", "localhost", "[::1]"]).toContain(new URL(baseURL).hostname);
     await page.setViewportSize(viewport);
-    await loginAsAuthor(page);
+    await loginAsAuthor(page, { diagnosticoLogin: device });
     const consultas = [], escritas = [];
     page.on("request", request => {
       const url = new URL(request.url());

@@ -9,6 +9,7 @@ const ENDPOINT_BY_PATH = new Map([
   ["/rest/v1/obras", "works"],
   ["/rest/v1/capitulos", "chapters"],
   ["/rest/v1/profiles_publicos", "profiles"],
+  ["/rest/v1/profiles", "profiles"],
   ["/rest/v1/favoritos", "favorites"],
   ["/rest/v1/permissoes_listas", "permissions"],
 ]);
