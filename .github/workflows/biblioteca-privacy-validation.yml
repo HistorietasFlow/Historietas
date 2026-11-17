@@ -1,0 +1,137 @@
+name: Biblioteca - validacao isolada de privacidade
+
+on:
+  push:
+    branches:
+      - perf/biblioteca-privacy-single-read
+
+permissions:
+  contents: read
+
+jobs:
+  privacy-local:
+    name: pgTAP, Data API, Ranking e benchmark (Supabase descartavel)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      CI: "true"
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - name: Checkout da branch com a migration local do Codex
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Referencia imutavel da PR 2348 (somente para regressao no runner)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: 5aac2c3ceb6bf5795b27606113285d21119251c1
+          path: qa_ranking_reference
+          persist-credentials: false
+
+      - name: Node 22
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Verificar sintaxe e presenca dos testes locais da alteracao
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check qa/benchmarks/biblioteca-privacy-migration-compare.mjs
+          MIGRATION_FILE="$(find supabase/migrations -maxdepth 1 -name '20261117035853*.sql' -print -quit)"
+          MIGRATION_COUNT="$(find supabase/migrations -maxdepth 1 -name '20261117035853*.sql' | wc -l)"
+          if [[ "$MIGRATION_COUNT" -ne 1 ]]; then
+            echo "::error::Esperada exatamente uma migration 20261117035853 da branch Local."
+            exit 1
+          fi
+          grep -q 'usuario_pode_ver_registro_biblioteca' "$MIGRATION_FILE"
+          git diff --name-only origin/main...HEAD > /tmp/alteracoes_privacidade.txt
+          if ! grep -Eq '^supabase/tests/database/.*\.test\.sql$' /tmp/alteracoes_privacidade.txt; then
+            echo "::error::Os testes pgTAP do Codex Local ainda nao foram commitados."
+            exit 1
+          fi
+          echo "Migration e pgTAP presentes na branch de validacao."
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Instalar Supabase CLI
+        uses: supabase/setup-cli@689adcfb80d947100a1eab127289b97d1fb07b13 # v3.2.0
+        with:
+          version: 2.116.0
+
+      - name: Preparar migration candidata e regressao do Ranking (somente runner)
+        shell: bash
+        run: |
+          set -euo pipefail
+          MIGRATION_FILE="$(find supabase/migrations -maxdepth 1 -name '20261117035853*.sql' -print -quit)"
+          test -n "$MIGRATION_FILE"
+          mv "$MIGRATION_FILE" "$RUNNER_TEMP/biblioteca-privacy-candidate.sql"
+          test ! -e supabase/migrations/20261116230000_listar_ranking_geral.sql
+          cp qa_ranking_reference/supabase/migrations/20261116230000_listar_ranking_geral.sql supabase/migrations/
+          cp qa_ranking_reference/supabase/tests/database/ranking_geral.test.sql supabase/tests/database/
+          cp qa_ranking_reference/qa/integration/ranking-geral-supabase-real.test.mjs qa/integration/
+          echo "Migration Local isolada; regressao de #2348 adicionada apenas ao runner."
+
+      - name: Inicializar Supabase real local com migrations da main e do Ranking
+        shell: bash
+        run: |
+          set -euo pipefail
+          supabase init
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import {readFileSync,writeFileSync} from 'node:fs';
+          const path='supabase/config.toml';
+          const text=readFileSync(path,'utf8');
+          const section=text.match(/\[db\.pooler\][\s\S]*?(?=\n\[|$)/)?.[0];
+          assert.ok(section,'Secao db.pooler ausente');
+          const updated=section.replace(/^enabled = false$/m,'enabled = true')
+            .replace(/^pool_mode = "transaction"$/m,'pool_mode = "session"');
+          assert.match(updated,/^enabled = true$/m);
+          writeFileSync(path,text.replace(section,updated));
+          NODE
+          cp qa/integration/supabase/20260826000637_normalizar_acl_baseline_local.sql \
+             supabase/migrations/20260826000637_normalizar_acl_baseline_local.sql
+          supabase start
+
+      - name: Capturar definicao original da helper antes de aplicar a alteracao
+        run: node qa/benchmarks/biblioteca-privacy-migration-compare.mjs capture
+
+      - name: Aplicar SOMENTE no PostgreSQL descartavel a migration candidata
+        shell: bash
+        run: |
+          set -euo pipefail
+          DB_COUNT="$(docker ps --format '{{.Names}}' | grep -c '^supabase_db_')"
+          test "$DB_COUNT" -eq 1
+          DB="$(docker ps --format '{{.Names}}' | grep '^supabase_db_')"
+          docker exec -i "$DB" psql -U postgres -d postgres \
+            -X -v ON_ERROR_STOP=1 < "$RUNNER_TEMP/biblioteca-privacy-candidate.sql"
+          docker exec "$DB" psql -U postgres -d postgres \
+            -X -v ON_ERROR_STOP=1 -c "NOTIFY pgrst, 'reload schema';"
+          node qa/benchmarks/biblioteca-privacy-migration-compare.mjs verify
+
+      - name: Executar pgTAP original, da nova helper e do Ranking
+        run: supabase test db
+
+      - name: Regressao de privacidade e Biblioteca pela Data API local
+        run: npm run test:historias-em-comum:integration
+
+      - name: Regressao de paginacao pela Data API local
+        run: npm run test:pagination:integration
+
+      - name: Regressao da PR 2348 com Auth e Data API locais
+        run: node --test --test-concurrency=1 qa/integration/ranking-geral-supabase-real.test.mjs
+
+      - name: Benchmark equivalente entre helper original e candidata, ambas sob anon RLS
+        run: node qa/benchmarks/biblioteca-privacy-migration-compare.mjs bench
+
+      - name: Encerrar banco e containers descartaveis
+        if: always()
+        shell: bash
+        run: |
+          if command -v supabase >/dev/null && supabase status >/dev/null 2>&1; then
+            supabase stop --no-backup
+          fi
