@@ -3,6 +3,7 @@
 import assert from "node:assert/strict";
 import {execFileSync} from "node:child_process";
 import {readFileSync} from "node:fs";
+import {createHash} from "node:crypto";
 
 const envText=execFileSync("supabase",["status","-o","env"],{encoding:"utf8"});
 const vars=Object.fromEntries(envText.split(/\r?\n/).map(line=>
@@ -210,22 +211,61 @@ function extra(){
   workUuid(5005)+"'::uuid"),"1","Valid chapter-only must be visible");
  console.log("LEGACY_CHAPTER_POLICY_OK mismatch_hidden=true valid_visible=true");
 }
-function baselineAggregates(){
- const q="WITH works AS MATERIALIZED ("+
- "SELECT o.id,o.user_id FROM public.obras o WHERE o.publicado IS TRUE "+
- "AND o.classificacao_indicativa IN ('Livre','10+','12+','14+','16+') "+
- "AND (COALESCE(NULLIF(BTRIM(o.arquivo_url),''),'')<>'' OR EXISTS ("+
- "SELECT 1 FROM public.capitulos c WHERE c.obra_id=o.id AND c.publicado IS TRUE))"+
- "), votes AS MATERIALIZED ("+
- "SELECT a.obra_id,COUNT(*)::bigint n,SUM(a.nota)::numeric s "+
- "FROM public.obra_avaliacoes a JOIN works w ON w.id=a.obra_id "+
- "WHERE a.user_id<>w.user_id GROUP BY a.obra_id) "+
- "SELECT json_build_object('rows',"+
- "COALESCE((SELECT json_agg(json_build_object('id',obra_id,'n',n,'s',s::text) "+
- "ORDER BY (s+30::numeric)/(n+10::numeric) DESC,n DESC,obra_id) FROM votes),'[]'::json),"+
- "'signature',(SELECT md5(COALESCE(string_agg(obra_id::text||':'||n::text||':'||s::text,"+
- "'|' ORDER BY obra_id),'')) FROM votes))::text";
- return JSON.parse(anon(q));
+// A referencia usa a RLS anon real em blocos de ate 1.000 obras.
+// O resultado e ordenado globalmente com comparacao racional exata.
+function sumTenths(value) {
+ const x=String(value);
+ assert.match(x,/^\d+(?:\.\d+)?$/,"Soma numerica inesperada");
+ const [whole,decimal=""] = x.split(".");
+ assert.ok(!/[1-9]/.test(decimal.slice(1)),
+  "Notas de meia estrela devem ter no maximo um digito decimal nao zero");
+ return BigInt(whole)*10n + BigInt(decimal[0]||"0");
+}
+function baselineAggregates(stage){
+ const maxWork=stage==="20k"?5000:1000;
+ const ranges=[];
+ for(let first=1;first<=maxWork;first+=1000)
+  ranges.push([first,Math.min(maxWork,first+999)]);
+ ranges.push([5001,5005]); // 18+, draft, vazio, legado, capitulo valido.
+ let rows=[];
+ for(const [first,last] of ranges){
+  const q="WITH works AS MATERIALIZED ("+
+   "SELECT o.id,o.user_id FROM public.obras o "+
+   "WHERE o.id BETWEEN '"+workUuid(first)+"'::uuid AND '"+
+    workUuid(last)+"'::uuid "+
+   "AND o.publicado IS TRUE AND "+
+   "o.classificacao_indicativa IN ('Livre','10+','12+','14+','16+') "+
+   "AND (COALESCE(NULLIF(BTRIM(o.arquivo_url),''),'')<>'' OR EXISTS ("+
+   "SELECT 1 FROM public.capitulos c WHERE c.obra_id=o.id "+
+   "AND c.publicado IS TRUE))"+
+   "), votes AS MATERIALIZED ("+
+   "SELECT a.obra_id,COUNT(*)::bigint n,SUM(a.nota)::numeric s "+
+   "FROM public.obra_avaliacoes a JOIN works w ON w.id=a.obra_id "+
+   "WHERE a.user_id<>w.user_id GROUP BY a.obra_id) "+
+   "SELECT COALESCE(json_agg(json_build_object('id',obra_id,'n',n,'s',s::text)),"+
+   "'[]'::json)::text FROM votes";
+  const fragment=JSON.parse(anon(q));
+  assert.ok(Array.isArray(fragment),"Bloco anon deve retornar lista");
+  rows.push(...fragment);
+ }
+ const ids=new Set(rows.map(x=>x.id));
+ assert.equal(ids.size,rows.length,"Agregados duplicados entre blocos anon");
+ assert.ok(rows.length>0,"Nenhum voto publico na referencia");
+ const lexical=[...rows].sort((a,b)=>a.id<b.id?-1:a.id>b.id?1:0);
+ const signature=createHash("md5").update(
+  lexical.map(r=>r.id+":"+String(r.n)+":"+String(r.s)).join("|")
+ ).digest("hex");
+ const scoreNumber=r=>sumTenths(r.s)+300n;
+ rows.sort((a,b)=>{
+  const left=scoreNumber(a)*(BigInt(b.n)+10n);
+  const right=scoreNumber(b)*(BigInt(a.n)+10n);
+  if(left!==right)return left>right?-1:1;
+  if(a.n!==b.n)return a.n>b.n?-1:1;
+  return a.id<b.id?-1:a.id>b.id?1:0;
+ });
+ console.log("RLS_REFERENCE_CHUNKS_OK stage="+stage+
+  " chunks="+ranges.length+" works="+rows.length+" sql_timeout_s=8");
+ return {rows,signature};
 }
 function allPages(){
  let after=null,sig=null,items=[];
@@ -243,7 +283,7 @@ function allPages(){
  return {items,signature:sig};
 }
 function global(label){
- const actual=allPages(),expected=baselineAggregates();
+ const actual=allPages(),expected=baselineAggregates(label);
  assert.ok(expected.rows.length>0,
   "Fixture inválida: nenhuma avaliação pública; comparar ranking vazio não prova equivalência");
  console.log("QA_GLOBAL_DIAGNOSTIC "+JSON.stringify({
@@ -312,9 +352,14 @@ async function main(){
  sql("UPDATE public.preferencias_privacidade SET mostrar_avaliacoes=true "+
   "WHERE user_id='"+userUuid(5)+"'::uuid;");
  for(let i=1001;i<=5000;i+=1000)insertRange(i,i+999);
- baseline();const old20=perf("baseline_20k");
+ baseline();
+ // Baseline 20k completo excedeu 8s em #44047011014; nao repetir consulta conhecida por expirar.
+ const old20=null;
+ console.log("RPC_BASELINE_20K_EXCEEDED_LIMIT previous_run=44047011014 "+
+  "sql_timeout_s=8 not_repeated=true");
  candidate();global("20k");const new20=perf("candidate_20k");
- console.log("RESULT "+JSON.stringify({old4,new4,old20,new20,global_verified:true,
+ console.log("RESULT "+JSON.stringify({old4,new4,old20,new20,baseline20_status:"exceeded_8_seconds_in_previous_run",
+  global_verified:true,
   definer_direct_parity:true,production_approval:false}));
 }
 main().catch(e=>{console.error("QA_FAILURE",e?.stack||String(e));process.exitCode=1;});
