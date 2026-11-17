@@ -1,5 +1,5 @@
 begin;
-select plan(22);
+select plan(26);
 -- SQL regression for the corrective DRAFT; all data is synthetic/rolled back.
 insert into auth.users(id)
 select ('b9100000-0000-4000-8000-'||lpad(i::text,12,'0'))::uuid
@@ -153,6 +153,56 @@ select set_config('request.jwt.claim.sub','',true);
 set local role anon;
 select is((select total_avaliacoes from public.listar_ranking_geral()),1::bigint,
  'restaurar policies e helper restaura a permissao de leitura');
+reset role;
+
+-- Changes in the real private cores must invalidate the seal too, even when
+-- their public wrappers stay byte-for-byte unchanged. Restore exact DDL.
+create temp table qa_ranking_private_helper_ddl(signature text primary key, ddl text);
+insert into qa_ranking_private_helper_ddl
+select signature, pg_get_functiondef(signature::regprocedure)
+from (values
+  ('historietas_privado.usuario_pode_ver_aba_perfil(uuid,text)'),
+  ('historietas_privado.usuarios_possuem_bloqueio(uuid,uuid)')
+) helpers(signature);
+
+create or replace function historietas_privado.usuario_pode_ver_aba_perfil(
+  p_user_id uuid, p_visibilidade text
+) returns boolean language sql stable security definer set search_path = ''
+as $drift$ select true; $drift$;
+set local role anon;
+select throws_ok(
+ $$select * from public.listar_ranking_geral(null,null,20)$$,
+ '42501','Ranking Geral bloqueado por divergencia nas regras de acesso.',
+ 'alterar corpo do nucleo privado de perfil bloqueia o ranking');
+reset role;
+do $restore$
+begin
+  execute (select ddl from qa_ranking_private_helper_ddl
+    where signature='historietas_privado.usuario_pode_ver_aba_perfil(uuid,text)');
+end $restore$;
+set local role anon;
+select is((select total_avaliacoes from public.listar_ranking_geral()),1::bigint,
+ 'restaurar nucleo privado de perfil restaura leitura');
+reset role;
+
+create or replace function historietas_privado.usuarios_possuem_bloqueio(
+  p_usuario_a uuid, p_usuario_b uuid
+) returns boolean language sql stable security definer set search_path = ''
+as $drift$ select false; $drift$;
+set local role anon;
+select throws_ok(
+ $$select * from public.listar_ranking_geral(null,null,20)$$,
+ '42501','Ranking Geral bloqueado por divergencia nas regras de acesso.',
+ 'alterar corpo do nucleo privado de bloqueios bloqueia o ranking');
+reset role;
+do $restore$
+begin
+  execute (select ddl from qa_ranking_private_helper_ddl
+    where signature='historietas_privado.usuarios_possuem_bloqueio(uuid,uuid)');
+end $restore$;
+set local role anon;
+select is((select total_avaliacoes from public.listar_ranking_geral()),1::bigint,
+ 'restaurar nucleo privado de bloqueios restaura leitura');
 reset role;
 
 select * from finish();

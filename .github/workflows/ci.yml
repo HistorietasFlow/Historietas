@@ -72,6 +72,8 @@ jobs:
 
   tests:
     name: Tests
+    needs: ranking_rls_global
+    if: ${{ always() }}
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:
@@ -82,6 +84,15 @@ jobs:
       # Official image: same Playwright version as qa/package-lock.json, immutable digest.
       PLAYWRIGHT_IMAGE: mcr.microsoft.com/playwright:v1.62.1-noble@sha256:dcc5531e97840b9b5e794f2814476b21571c5124a3fca2267d73041f56e7580e
     steps:
+      - name: Exigir equivalencia RLS aprovada
+        env:
+          RANKING_RLS_RESULT: ${{ needs.ranking_rls_global.result }}
+        run: |
+          if [ "$RANKING_RLS_RESULT" != "success" ]; then
+            echo "::error::Equivalencia RLS nao aprovada: $RANKING_RLS_RESULT"
+            exit 1
+          fi
+
       - name: Baixar o código
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:

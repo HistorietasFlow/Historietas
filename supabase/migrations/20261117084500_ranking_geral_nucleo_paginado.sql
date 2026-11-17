@@ -51,19 +51,26 @@ with tables_and_policies as (
   where n.nspname='public' and c.relkind in ('r','p')
     and c.relname in ('obra_avaliacoes','obras','capitulos',
       'preferencias_privacidade','usuarios_bloqueados','seguindo_usuarios')
+), audited_helpers(signature) as (
+  -- Include the real DEFINER cores behind the public INVOKER wrappers,
+  -- plus their current admin/JWT dependencies. Use exact signatures.
+  values
+    ('historietas_privado.usuario_pode_ver_registro_biblioteca(uuid,text,text)'),
+    ('public.usuario_pode_ver_aba_perfil(uuid,text)'),
+    ('historietas_privado.usuario_pode_ver_aba_perfil(uuid,text)'),
+    ('public.usuarios_possuem_bloqueio(uuid,uuid)'),
+    ('historietas_privado.usuarios_possuem_bloqueio(uuid,uuid)'),
+    ('public.usuario_e_admin()'),
+    ('historietas_privado.usuario_e_admin()'),
+    ('auth.uid()'),
+    ('auth.jwt()')
 ), auth_helpers as (
-  select 'F:'||n.nspname||'.'||p.proname||':'||
-    p.pronargs::text||':'||p.prosrc||':'||p.prosecdef::text||':'||
-    p.provolatile::text||':'||p.proowner::text||':'||
-    coalesce(p.proconfig::text,'')||':'||coalesce(p.proacl::text,'') as item
-  from pg_catalog.pg_proc p
-  join pg_catalog.pg_namespace n on n.oid=p.pronamespace
-  where (n.nspname='historietas_privado'
-      and p.proname='usuario_pode_ver_registro_biblioteca' and p.pronargs=3)
-    or (n.nspname='public' and p.proname='usuario_pode_ver_aba_perfil'
-      and p.pronargs=2)
-    or (n.nspname='public' and p.proname='usuarios_possuem_bloqueio'
-      and p.pronargs=2)
+  select 'F:'||audited.signature||':'||
+    pg_catalog.pg_get_functiondef(p.oid)||':'||p.proowner::text||':'||
+    coalesce(p.proacl::text,'') as item
+  from audited_helpers audited
+  join pg_catalog.pg_proc p
+    on p.oid=pg_catalog.to_regprocedure(audited.signature)
 ), items as (
   select item from tables_and_policies
   union all select item from auth_helpers
@@ -98,7 +105,19 @@ begin
     ) is null
     or pg_catalog.to_regprocedure('public.usuario_pode_ver_aba_perfil(uuid,text)')
       is null
+    or pg_catalog.to_regprocedure('historietas_privado.usuario_pode_ver_aba_perfil(uuid,text)')
+      is null
     or pg_catalog.to_regprocedure('public.usuarios_possuem_bloqueio(uuid,uuid)')
+      is null
+    or pg_catalog.to_regprocedure('historietas_privado.usuarios_possuem_bloqueio(uuid,uuid)')
+      is null
+    or pg_catalog.to_regprocedure('public.usuario_e_admin()')
+      is null
+    or pg_catalog.to_regprocedure('historietas_privado.usuario_e_admin()')
+      is null
+    or pg_catalog.to_regprocedure('auth.uid()')
+      is null
+    or pg_catalog.to_regprocedure('auth.jwt()')
       is null then
     raise exception 'Ranking Geral: contrato de auditoria RLS incompleto.';
   end if;
