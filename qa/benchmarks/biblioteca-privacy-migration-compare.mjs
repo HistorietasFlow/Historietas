@@ -29,7 +29,7 @@ function psql(source, timeout = 150000) {
 }
 function anon(query) {
   return psql("BEGIN;\nSET LOCAL ROLE " + roleTest +
-    ";\nSET LOCAL statement_timeout='90s';\n" + query + ";\nROLLBACK;");
+    ";\nSET LOCAL statement_timeout='8s';\n" + query + ";\nROLLBACK;");
 }
 const quote = s => "'" + s.replaceAll("'", "''") + "'";
 const fingerprint = name => psql("SELECT md5(prosrc) FROM pg_proc " +
