@@ -1,5 +1,16 @@
 # Estado atual
 
+### Ranking Geral — PR corretiva paginada de desempenho (17/11/2026, DRAFT)
+
+- A CI [#44062900816](https://github.com/HistorietasFlow/Historietas/actions/runs/44062900816) passou no head `ab2523b`: pgTAP 1.368 (26 assercoes corretivas), Data API e equivalencia global em 951/950/4.756 obras; RPC sintetica 72,54 ms/90,43 ms em 4k/20k. Playwright terminou 263 aprovados e 1 flaky no segundo login de `editorial-status` desktop; causa nao comprovada. Nao e homologacao de producao.
+- Reforco apos revisao final da #2354: selo usa nove assinaturas exatas, incluindo os nucleos privados de perfil/bloqueios e dependencias admin/JWT; captura definicao completa, owner e ACL. pgTAP corretivo passa a 26 assercoes, com alteracao do corpo de cada nucleo privado e restauracao exata. O check `Tests`, ja exigido pela main, usa `needs` + `always()` e recusa qualquer resultado da equivalencia diferente de `success`, inclusive cancelamento/skip. Sete testes focados, Lint, 199/199 verificacoes estaticas e parse SQL passaram localmente em Node 22.23.5; execucao pgTAP/Data API/global confirmada na CI acima para `ab2523b`. Sem alteracao das regras de protecao do repositorio, merge, remoto, deploy ou flag.
+- Diagnostico de login habilitado nos dois contextos do cenario de conflito editorial, reutilizando `diagnosticoLogin: device`. Somente codigos HTTP, categorias de endpoints, estados fechados e contagens; sem credenciais/identidades. Mudanca de observabilidade, nao correcao do flaky. Timeouts, retries e assercoes preservados. Local: 15/15 unitarios de sanitizacao/coletor, Lint focado, sintaxe Node 22.23.5 e diff check aprovados; execucao E2E depende da nova CI.
+- Stacked sobre a PR #2348, sem modificar a #2348 nem a #2352.
+- Variante para reduzir repeticao da helper de privacidade por voto: nucleo paginado interno `historietas_privado.listar_ranking_geral_nucleo`, `SECURITY DEFINER`, apenas `anon` sem identidade, `search_path` vazio e owner `postgres`. A RPC publica permanece `SECURITY INVOKER`; RLS e grants das tabelas nao mudam.
+- O nucleo privado e executavel diretamente pelo papel SQL `anon`: sua propria autorizacao, a pagina maxima 50, o cursor e o retorno sem IDs de avaliadores sao controles obrigatorios; a RLS das tabelas nao protege a execucao privilegiada. Qualquer mudanca em policy de obras/capitulos/avaliacoes/privacidade exige revisao de equivalencia.
+- QA anterior [#44047977166](https://github.com/HistorietasFlow/Historietas/actions/runs/44047977166) validou equivalencia global em 4k/20k e paginas, com RPC candidata 82,59 ms/102,02 ms no Supabase descartavel; nao e desempenho de producao. A PR corretiva exige sua propria CI, teste SQL e auditoria antes de qualquer integracao.
+- **Nao aplicar migration remota, merge, deploy ou ativar o gate** sem autorizacao especifica. Issue: #2353.
+
 Atualizado em: 2026-11-13
 
 ### Capas privadas — integração de código para validação, sem ativação
