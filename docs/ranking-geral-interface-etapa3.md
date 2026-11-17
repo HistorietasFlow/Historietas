@@ -1,4 +1,20 @@
-# Ranking Geral — Etapa 3, preparação sem publicação
+# Ranking Geral — interface e acesso ao deploy protegido
+
+## Estado atual (17/11/2026)
+
+Interface/SQL integrados pela #2355, main `758e3fd`, duas migrations aplicadas após
+autorização e CI da main aprovada. A ativação chegou a READY/API 200, mas a seção
+falhou no navegador protegido. Recuperação concluída: deployment anterior e flag
+production false, domínio principal com endpoint 404/desativado. Não considerar
+o recurso ativado. Ver [estado e evidências](memory/CURRENT_STATUS.md).
+
+Correção dedicada: o fetch do navegador para a rota relativa usa `same-origin`
+para levar o cookie de acesso do gateway Vercel. A rota continua ignorando
+cookies/JWT recebidos e usando exclusivamente cliente Supabase anônimo; enviar
+cookie ao próprio Next não personaliza a classificação. Playwright inclui cookie
+HttpOnly sintético/gateway simulado e mantém o ensaio real de sessão ignorada.
+
+## Origem da preparação
 
 Base: main `77beb0e4`. Branch independente `feat/ranking-geral-interface-etapa3`.
 Dependência não incorporada: #2348, SQL `20261116230000_listar_ranking_geral.sql`
@@ -8,7 +24,7 @@ no commit `5aac2c3ceb6bf5795b27606113285d21119251c1`.
 
 - Todos os rankings anteriores permanecem intactos. A seção nova é aditiva.
 - `NEXT_PUBLIC_RANKING_GERAL_PREVIEW` ausente/desligado oculta a seção e faz o
-  endpoint retornar 404 antes de consultar. Não definir essa variável em produção.
+  endpoint retornar 404 antes de consultar. Definir true em produção exige autorização própria.
   É gate de implantação, não autorização de usuário. A ativação exige aprovação
   própria, disponibilidade da RPC e resolução da ressalva de desempenho.
 - Somente o loader server-only chama a RPC, com `criarSupabasePublicClient`,
@@ -41,11 +57,11 @@ não substitui testes de privacidade da #2348 nem fixture populada.
 
 Para homologar, em máquina com recursos suficientes:
 
-1. Preparar Supabase **descartável**, exclusivamente loopback, com migrations da
-   main e adicionar somente no workspace do banco de testes o SQL da #2348 no
-   SHA acima. Não copiar para migrations desta PR nem usar projeto vinculado.
-2. Executar os testes de contrato Data API/pgTAP da #2348 nesse descartável,
-   sem incorporar sua branch. Preparar fixtures públicas sintéticas com mais
+1. Usar o workflow integrado em `.github/workflows/ranking-geral-interface-integrada-qa.yml`,
+   com Supabase **descartável**, exclusivamente loopback, e as duas migrations do
+   mesmo checkout. Não copiar SQL de outra branch nem usar projeto vinculado.
+2. Executar os testes de contrato Data API/pgTAP nesse descartável,
+   com as fixtures públicas sintéticas de mais
    de 20 obras, votos 1–4/5+, privadas, 18+ e revogações.
 3. Construir o app com URLs/chaves descartáveis e
    `NEXT_PUBLIC_RANKING_GERAL_PREVIEW=true` apenas no ambiente de teste.
@@ -53,6 +69,8 @@ Para homologar, em máquina com recursos suficientes:
 5. Conferir navegação real por duas páginas, revogação de avaliação/obra entre
    páginas, anonimato mesmo com sessão autenticada, regressões dos rankings
    existentes, axe, screenshots e fidelidade visual desktop/mobile.
+
+## Histórico da preparação original da #2352
 
 No notebook: Docker Engine indisponível (pipe dockerDesktopLinuxEngine ausente),
 RAM livre 1.958.744 KiB de 8.016.284 KiB. Não iniciado Docker nem aplicado SQL.
