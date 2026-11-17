@@ -132,7 +132,7 @@ on public.obra_avaliacoes for select to anon using (true);
 select set_config('request.jwt.claim.sub','',true);
 set local role anon;
 select throws_ok(
- $select * from public.listar_ranking_geral(null,null,20)$,
+ $$select * from public.listar_ranking_geral(null,null,20)$$,
  '42501','Ranking Geral bloqueado por divergencia nas regras de acesso.',
  'policy anon criada apos migration deve bloquear o nucleo privilegiado');
 reset role;
@@ -143,7 +143,7 @@ alter function public.usuario_pode_ver_aba_perfil(uuid,text) volatile;
 select set_config('request.jwt.claim.sub','',true);
 set local role anon;
 select throws_ok(
- $select * from public.listar_ranking_geral(null,null,20)$,
+ $$select * from public.listar_ranking_geral(null,null,20)$$,
  '42501','Ranking Geral bloqueado por divergencia nas regras de acesso.',
  'mudanca posterior de helper autorizadora bloqueia o ranking');
 reset role;

@@ -46,9 +46,6 @@ function logged(role,query,user){
  if(user) prefix+="SET LOCAL request.jwt.claim.sub = '"+user+"';\n";
  return sql(prefix+"SET LOCAL statement_timeout='8s';\n"+query+";\nROLLBACK;");
 }
-const call=(role,query)=>role==="anon"?anon(query):
- role==="service_role"?logged("service_role",query):
- logged("authenticated",query,role);
 function addProfiles(){
  sql("INSERT INTO auth.users(id) SELECT "+uid+" FROM generate_series(1,256) i;");
  sql("INSERT INTO public.profiles(id,user_id,nome,tipo) SELECT x.id,x.id,"+
