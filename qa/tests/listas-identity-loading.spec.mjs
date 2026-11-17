@@ -21,6 +21,11 @@ function authOwner(request) {
   try { return JSON.parse(Buffer.from(payload, "base64url").toString("utf8")).sub || ""; }
   catch { return ""; }
 }
+function isAuthFor(request, owner) {
+  return request.method() === "GET" &&
+    new URL(request.url()).pathname === "/auth/v1/user" &&
+    authOwner(request) === owner;
+}
 function session(owner) {
   if (!owner) return null;
   const now = Math.floor(Date.now() / 1000);
@@ -36,7 +41,7 @@ test.afterEach(async ({ page }) => {
   await page.unrouteAll({ behavior: "wait" });
 });
 
-async function setup(page, baseURL, server, { privateProfiles = [A, B], holdProfile = "", holdAuthForRoute = "", failFavorites = "", empty = false } = {}) {
+async function setup(page, baseURL, server, { privateProfiles = [A, B], holdProfile = "", holdAuthForViewer = "", failFavorites = "", empty = false } = {}) {
   let viewer = A, failed = failFavorites;
   const gate = deferred();
   releaseGates.set(page, gate.resolve);
@@ -75,7 +80,7 @@ async function setup(page, baseURL, server, { privateProfiles = [A, B], holdProf
     const args = request.method() === "POST" ? request.postDataJSON() : {};
     requests.push({ table, owner, args });
     if (url.pathname.includes("/auth/v1/user")) {
-      if (holdAuthForRoute && new URL(page.url()).searchParams.get("usuario") === holdAuthForRoute) await gate.promise;
+      if (holdAuthForViewer && isAuthFor(request, holdAuthForViewer)) await gate.promise;
       const requestOwner = authOwner(request);
       return requestOwner ? route.fulfill({ json: session(requestOwner).user }) : route.fulfill({ status: 401, json: { message: "no session" } });
     }
@@ -105,22 +110,6 @@ async function setup(page, baseURL, server, { privateProfiles = [A, B], holdProf
     async switchViewer(owner, event = owner ? "SIGNED_IN" : "SIGNED_OUT") {
       viewer = owner;
       const next = session(owner);
-      const invalidacaoRenderizada = owner
-        ? expect(page.getByText("Carregando lista...", { exact: true })).toBeVisible()
-        : null;
-      const validacaoConcluida = owner ? page.waitForResponse(response => {
-        const url = new URL(response.url());
-        return response.request().method() === "GET" &&
-          url.pathname === "/auth/v1/user" &&
-          authOwner(response.request()) === owner;
-      }) : null;
-      const identidadeAplicada = owner ? page.waitForResponse(response => {
-        const url = new URL(response.url());
-        const filtro = url.searchParams.get("user_id") || url.searchParams.get("id");
-        return response.request().method() === "GET" &&
-          url.pathname === "/rest/v1/profiles_publicos" &&
-          filtro === `eq.${owner}`;
-      }) : null;
       await page.evaluate(({ key, next, event }) => {
         document.cookie = next
           ? `${key}=base64-${btoa(JSON.stringify(next)).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "")}; path=/; SameSite=Lax`
@@ -129,19 +118,6 @@ async function setup(page, baseURL, server, { privateProfiles = [A, B], holdProf
         channel.postMessage({ event, session: next });
         channel.close();
       }, { key, next, event });
-      if (invalidacaoRenderizada) await invalidacaoRenderizada;
-      if (validacaoConcluida) {
-        const response = await validacaoConcluida;
-        expect(await response.finished()).toBeNull();
-        expect(response.status()).toBe(200);
-        expect((await response.json()).id).toBe(owner);
-      }
-      if (identidadeAplicada) {
-        const response = await identidadeAplicada;
-        expect(await response.finished()).toBeNull();
-        expect(response.status()).toBe(200);
-        expect((await response.json()).user_id).toBe(owner);
-      }
     },
   };
 }
@@ -206,7 +182,7 @@ for (const device of [{ name: "desktop", viewport: { width: 1440, height: 900 } 
     try {
       await diagnostics.capture("start");
       assertLocal(baseURL); await page.setViewportSize(device.viewport);
-      const f = await setup(page, baseURL, request);
+      const f = await setup(page, baseURL, request, { holdAuthForViewer: B });
       await page.goto(routeFor(A)); await expect(page.getByText(title(A), { exact: true })).toBeVisible();
       await diagnostics.capture("account-a-ready", { authState: "authenticated", rendered: { target: page.getByText(title(A), { exact: true }) } });
       await f.switchViewer(null);
@@ -214,7 +190,30 @@ for (const device of [{ name: "desktop", viewport: { width: 1440, height: 900 } 
       await expect(privateState).toBeVisible();
       await expect(page.getByText(title(A), { exact: true })).toHaveCount(0);
       await diagnostics.capture("signed-out", { authState: "anonymous", rendered: { private: privateState, previous: page.getByText(title(A), { exact: true }) } });
-      await f.switchViewer(B);
+      await Promise.all([
+        page.waitForRequest(request => isAuthFor(request, B)),
+        f.switchViewer(B),
+      ]);
+      await expect(page.getByText("Carregando lista...", { exact: true })).toBeVisible();
+      await expect(page.getByText(title(A), { exact: true })).toHaveCount(0);
+
+      // Registre as duas esperas antes de liberar a validação retida de B.
+      const [auth, profile] = await Promise.all([
+        page.waitForResponse(response => isAuthFor(response.request(), B)),
+        page.waitForResponse(response => {
+          const url = new URL(response.url());
+          const filtro = url.searchParams.get("user_id") || url.searchParams.get("id");
+          return response.request().method() === "GET" &&
+            url.pathname === "/rest/v1/profiles_publicos" && filtro === `eq.${B}`;
+        }),
+        f.release(),
+      ]);
+      expect(await auth.finished()).toBeNull();
+      expect(auth.status()).toBe(200);
+      expect((await auth.json()).id).toBe(B);
+      expect(await profile.finished()).toBeNull();
+      expect(profile.status()).toBe(200);
+      expect((await profile.json()).user_id).toBe(B);
       await expect(privateState).toBeVisible();
       await diagnostics.capture("account-b-authenticated", { authState: "authenticated", rendered: { private: privateState, loading: page.getByText("Carregando lista...", { exact: true }) } });
       await navigate(page, routeFor(B));
