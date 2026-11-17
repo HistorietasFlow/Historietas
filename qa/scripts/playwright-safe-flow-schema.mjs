@@ -1,13 +1,13 @@
 export const SAFE_FLOW_MARKER = "HISTORIETAS_QA_SAFE_FLOW ";
 
-const SCENARIOS = new Set(["editorial-status", "listas-identity", "canonical-reader-progress", "reading-progress-cross-device"]);
+const SCENARIOS = new Set(["editorial-status", "listas-identity", "canonical-reader-progress", "reading-progress-cross-device", "login-flaky"]);
 const ENDPOINTS = new Set(["auth-token", "auth-user", "works", "chapters", "profiles", "favorites", "permissions", "public-reader", "content-metrics", "reading-progress"]);
 const METHODS = new Set(["GET", "POST", "PATCH", "DELETE"]);
 const ROUTES = new Set(["login", "editor", "lists", "public-work", "reader", "home", "library", "other"]);
 const READY_STATES = new Set(["loading", "interactive", "complete", "unavailable"]);
 const AUTH_STATES = new Set(["unknown", "transition", "authenticated", "anonymous"]);
 const RENDERED_STATES = new Set([
-  "loading", "editor-enabled", "updated", "public-confirmed", "private", "target", "previous", "organizing", "error",
+  "loading", "editor-enabled", "updated", "public-confirmed", "private", "target", "previous", "organizing", "error", "continue",
 ]);
 const READER_PHASES = new Set(["start", "navigation", "identity-ready", "mark-read", "sync-read", "home", "library", "unmark-read", "sync-unread", "final"]);
 const PHASES = {
@@ -15,6 +15,7 @@ const PHASES = {
   "reading-progress-cross-device": READER_PHASES,
   "editorial-status": new Set(["start", "after-login", "editor-navigation", "editor-ready", "save-confirmed", "public-confirmed", "final"]),
   "listas-identity": new Set(["start", "account-a-ready", "signed-out", "account-b-authenticated", "route-b", "favorites", "final"]),
+  "login-flaky": new Set(["failure"]),
 };
 
 function boundedInteger(value, maximum = 1_000_000) {

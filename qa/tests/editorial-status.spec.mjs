@@ -108,7 +108,7 @@ for(const [device,viewport] of [["desktop",{width:1440,height:900}],["mobile",{w
     check(await client.storage.from("capas-obras").upload(path,png,{contentType:"image/png",upsert:false}));
     const url=client.storage.from("capas-obras").getPublicUrl(path).data.publicUrl;
     check(await client.from("obras").update({capa_url:url}).eq("id",editWork.id));
-    await page.setViewportSize(viewport);await loginAsAuthor(page);await editor(page);
+    await page.setViewportSize(viewport);await loginAsAuthor(page, { diagnosticoLogin: device });await editor(page);
     const writes=[];page.on("request",r=>{if(/[\/]rest\/v1\/obras|[\/]storage\/v1\//.test(r.url())&&["PATCH","POST","DELETE"].includes(r.method()))writes.push(r);});
     await select(page).selectOption("pausada");
     await page.getByRole("combobox",{name:"Classificação indicativa",exact:true}).selectOption("18+");
