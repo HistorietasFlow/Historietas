@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { supportTitle, readSupportFormCounts, reportSupportFormFailure } from "./ajuda-support-diagnostics.mjs";
 import AxeBuilder from "@axe-core/playwright";
 
 test.use({ serviceWorkers: "block" });
@@ -63,7 +64,7 @@ async function setup(page, baseURL) {
 const section = page => page.getByRole("region", { name: "Meus chamados recentes", exact: true });
 const submit = page => page.getByRole("button", { name: "Enviar problema técnico", exact: true });
 async function fill(page) {
-  await page.getByLabel("Título do problema", { exact: false }).fill("Erro ao abrir capítulo");
+  await supportTitle(page).fill("Erro ao abrir capítulo");
   await page.getByLabel("O que aconteceu?", { exact: false }).fill("A leitura não abre quando tento acessar o capítulo.");
 }
 for (const device of [{ name: "desktop", viewport: { width: 1440, height: 900 } }, { name: "mobile", viewport: { width: 390, height: 844 } }]) {
@@ -106,26 +107,31 @@ for (const device of [{ name: "desktop", viewport: { width: 1440, height: 900 } 
     await expect(page.getByText(/^Problema técnico enviado\./)).toBeVisible();
     await expect(section(page).getByRole("alert")).toBeVisible();
     await expect(section(page).getByText(title(A), { exact: true })).toBeVisible();
-    await expect(page.getByLabel("Título do problema", { exact: false })).toHaveValue(""); expect(f.writes).toHaveLength(1);
+    await expect(supportTitle(page)).toHaveValue(""); expect(f.writes).toHaveLength(1);
   });
 
   test(`Ajuda não repete envio incerto e permite retry manual após rejeição confirmada (${device.name})`, async ({ page, baseURL }) => {
-    await page.setViewportSize(device.viewport); const f = await setup(page, baseURL);
-    await page.goto("/ajuda#problema-tecnico"); await expect(submit(page)).toBeEnabled(); await fill(page);
-    f.createMode = "uncertain"; await submit(page).click();
-    await expect(page.getByRole("alert").filter({ hasText: "O envio não foi confirmado" })).toBeVisible();
-    await expect(submit(page)).toBeDisabled(); await expect(page.getByLabel("Título do problema", { exact: false })).toHaveValue("Erro ao abrir capítulo");
-    await page.getByRole("button", { name: "Atualizar chamados" }).click();
-    await expect(page.getByRole("button", { name: "Atualizar chamados" })).toBeEnabled();
-    await page.locator("#problema-tecnico form").evaluate(form => form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })));
-    await expect(page.getByRole("alert").filter({ hasText: "não repita o envio" })).toBeVisible(); expect(f.writes).toHaveLength(1);
-    await expect(page.getByText(/^Problema técnico enviado\./)).toHaveCount(0);
-    await page.getByLabel("Título do problema", { exact: false }).fill("Outro problema independente");
-    f.createMode = "rejected"; await submit(page).click();
-    await expect(page.getByRole("alert").filter({ hasText: "Não foi possível enviar" })).toBeVisible();
-    await expect(submit(page)).toBeEnabled(); f.createMode = "confirmed"; await submit(page).click();
-    await expect(page.getByText(/^Problema técnico enviado\./)).toBeVisible(); expect(f.writes).toHaveLength(3);
-    expect(f.writes[1]).toEqual(f.writes[2]);
+    try {
+      await page.setViewportSize(device.viewport); const f = await setup(page, baseURL);
+      await page.goto("/ajuda#problema-tecnico"); await expect(submit(page)).toBeEnabled(); await fill(page);
+      f.createMode = "uncertain"; await submit(page).click();
+      await expect(page.getByRole("alert").filter({ hasText: "O envio não foi confirmado" })).toBeVisible();
+      await expect(submit(page)).toBeDisabled(); await expect(supportTitle(page)).toHaveValue("Erro ao abrir capítulo");
+      await page.getByRole("button", { name: "Atualizar chamados" }).click();
+      await expect(page.getByRole("button", { name: "Atualizar chamados" })).toBeEnabled();
+      await page.locator("#problema-tecnico form").evaluate(form => form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })));
+      await expect(page.getByRole("alert").filter({ hasText: "não repita o envio" })).toBeVisible(); expect(f.writes).toHaveLength(1);
+      await expect(page.getByText(/^Problema técnico enviado\./)).toHaveCount(0);
+      await supportTitle(page).fill("Outro problema independente");
+      f.createMode = "rejected"; await submit(page).click();
+      await expect(page.getByRole("alert").filter({ hasText: "Não foi possível enviar" })).toBeVisible();
+      await expect(submit(page)).toBeEnabled(); f.createMode = "confirmed"; await submit(page).click();
+      await expect(page.getByText(/^Problema técnico enviado\./)).toBeVisible(); expect(f.writes).toHaveLength(3);
+      expect(f.writes[1]).toEqual(f.writes[2]);
+    } catch (error) {
+      await reportSupportFormFailure(page, device.name);
+      throw error;
+    }
   });
 
   test(`Ajuda recupera sessão falha por retry manual sem fingir logout (${device.name})`, async ({ page, baseURL }) => {
@@ -149,6 +155,14 @@ for (const device of [{ name: "desktop", viewport: { width: 1440, height: 900 } 
     await expect(page.getByText(title(A), { exact: true })).toHaveCount(0);
     await fill(page); await f.switchViewer(null);
     await expect(page.getByText("Você precisa entrar na conta para enviar e acompanhar chamados.", { exact: true })).toBeVisible();
-    await expect(section(page)).toHaveCount(0); await expect(page.getByLabel("Título do problema", { exact: false })).toHaveValue(""); await expect(submit(page)).toBeDisabled();
+    await expect(section(page)).toHaveCount(0); await expect(supportTitle(page)).toHaveValue(""); await expect(submit(page)).toBeDisabled();
   });
 }
+
+test("Diagnóstico da Ajuda distingue títulos e formulários visíveis e ocultos", async ({ page }) => {
+  const form = "<form><label>Título do problema<input></label></form>";
+  await page.setContent(`<section id="problema-tecnico">${form}<div hidden>${form}</div></section>`);
+  expect(await readSupportFormCounts(page)).toEqual({ forms: 2, visibleForms: 1, titles: 2, visibleTitles: 1 });
+  await page.locator("[hidden]").evaluate(element => element.removeAttribute("hidden"));
+  expect(await readSupportFormCounts(page)).toEqual({ forms: 2, visibleForms: 2, titles: 2, visibleTitles: 2 });
+});
