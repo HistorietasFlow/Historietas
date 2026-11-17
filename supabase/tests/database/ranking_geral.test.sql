@@ -24,7 +24,7 @@ select ('a1200000-0000-4000-8000-' || lpad(i::text,12,'0'))::uuid,
   'QA Ranking Geral ' || i, 'QA autor','Fantasia','HQ',
   case when i=6 then '18+' else 'Livre' end,
   case when i=6 then array['violencia_intensa'] else '{}'::text[] end,
-  case when i=8 then null else 'https://example.invalid/qa.txt' end,
+  case when i=8 then '' else 'https://example.invalid/qa.txt' end,
   i<>7, 'qa-ranking-geral-'||i
 from generate_series(1,11) as i;
 

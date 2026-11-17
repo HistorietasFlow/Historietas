@@ -89,7 +89,7 @@ test("Ranking Geral: anon, edicao, revogacao, paginacao e escala", async t => {
       classificacao_indicativa: opts.adulta ? "18+" : "Livre",
       avisos_conteudo: opts.adulta ? ["violencia_intensa"] : [],
       publicado: !opts.draft,
-      arquivo_url: opts.semConteudo ? null : "https://example.invalid/qa.txt",
+      arquivo_url: opts.semConteudo ? "" : "https://example.invalid/qa.txt",
       slug: slug + "-" + obras.length,
     }), "obra sintetica");
     return id;
