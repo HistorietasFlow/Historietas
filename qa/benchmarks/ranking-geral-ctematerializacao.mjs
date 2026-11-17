@@ -174,7 +174,7 @@ function firstPageCursor() {
   assert.ok(id&&signature);
   return {id,signature};
 }
-function resultHash(q) {
+function hashSqlResults(q) {
   return anonSql("SELECT md5(coalesce(string_agg("
     +"obra_id::text||':'||posicao::text||':'||nota_media::text||':'||total_avaliacoes::text"
     +"||':'||pontuacao::text||':'||tem_mais::text,'|' order by posicao),'')) "
@@ -199,7 +199,7 @@ for(const stage of [{obras:1000,votos:4},{obras:1000,votos:20}]) {
   for(const page of ["first","second"]) {
     const cursor=page==="second"?firstPageCursor():null;
     const q=variants(cursor);
-    assert.equal(resultHash(q.original),resultHash(q.inline),"Resultado diferente");
+    assert.equal(hashSqlResults(q.original),hashSqlResults(q.inline),"Resultado diferente");
     const data={original:[],inline:[]};
     for(let i=0;i<9;i++) {
       const order=i%2===0?["original","inline"]:["inline","original"];
