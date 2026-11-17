@@ -29,6 +29,8 @@ function anon(query) {
     query+";\nROLLBACK;",60000);
 }
 const uid="('f8400000-0000-4000-8000-'||lpad(i::text,12,'0'))::uuid";
+const userUuid=n=>"f8400000-0000-4000-8000-"+String(n).padStart(12,"0");
+const workUuid=n=>"f8500000-0000-4000-8000-"+String(n).padStart(12,"0");
 const schema="qa_rank_aggregate_2353";
 
 const policy=sql("SELECT count(*)::int||'|'||bool_and(qual like '%usuario_pode_ver_registro_biblioteca%')::text "+
