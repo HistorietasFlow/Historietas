@@ -69,3 +69,26 @@ Typecheck final aprovado após corrigir a resolução local de dependências; Li
 focado sem erros. A regressão estrutural desktop contava oito ocorrências de
 `isDesktop` e detectou os dois usos novos (prop e valor). Atualizada para exigir
 exatamente um mount novo protegido pelo gate e preservar os oito usos legados.
+
+## Ajuste visual da #2352
+
+Cards com posição destacada, borda discreta, tokens escuros existentes, títulos
+sem truncamento e badge de amostra pequena. Botões secundário/primário de 48 px,
+foco visível, quebra em coluna no mobile e reserva inferior de 104 px + safe area.
+CSS limitado à seção nova; sem mudanças no gate, RPC, cálculo ou rankings antigos.
+
+Ensaio reproduzível: `node qa/scripts/ranking-geral-visual.mjs`. Chromium serial,
+sem retries, rede bloqueada, fonte TSX real renderizada com estados sintéticos.
+Validados 1440/390/320 px: nenhum overflow, botão Voltar ao início inteiramente
+acima da barra, hit testing da área útil, alvo de 48 px, Tab/foco visível,
+axe sem violações. Capturas completas e da paginação em
+`qa/reports/ranking-geral-visual/`; imagens revisadas visualmente.
+
+Limites: navegação inferior simulada com CSS de posicionamento extraído do layout;
+cabecalho de ensaio próprio, sem hidratação, roteamento ou chamadas ao banco.
+Não representa captura da página integrada nem prova de clique React/privacidade.
+O primeiro hit test atingia cantos transparentes da borda arredondada; corrigido
+para pontos úteis e adicionado teste da caixa inteira acima da navegação.
+O primeiro axe detectou ausência de h1 no documento isolado; incluído título
+identificando o ensaio, sem alterar o cabeçalho existente do produto.
+Supabase/Build/Playwright integrado permanecem pendentes e gate desligado.

@@ -105,3 +105,12 @@ test("payload inválido, duplicações e cursor divergente são rejeitados", () 
     assert.equal(contract.paginaRankingValida(value),false);
   }
 });
+
+test("estilos novos são isolados e preservam área de toque, foco e reserva mobile", () => {
+  const css = readFileSync("app/em-alta/lib/ranking-geral-css.ts", "utf8");
+  assert.match(css, /min-height: 48px/);
+  assert.match(css, /:focus-visible/);
+  assert.match(css, /padding-bottom: calc\(104px \+ env\(safe-area-inset-bottom, 0px\)\)/);
+  assert.match(css, /scroll-margin-block:/);
+  assert.doesNotMatch(css, /position:\s*fixed|outline:\s*none|!important/);
+});

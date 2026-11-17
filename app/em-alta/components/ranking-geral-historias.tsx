@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { paginaRankingValida, type RankingCursor, type RankingPage } from "../../../lib/ranking-geral-contract";
 import { sectionStyle, desktopSectionStyle, sectionHeaderStyle, sectionTitleStyle } from "../lib/em-alta-ranking-visual-style-utils";
+import { rankingGeralCss } from "../lib/ranking-geral-css";
 
 export function RankingGeralHistorias({ isDesktop }: { isDesktop: boolean }) {
   const [pedido, setPedido] = useState<{ cursor: RankingCursor | null; versao: number }>({ cursor: null, versao: 0 });
@@ -32,10 +33,11 @@ export function RankingGeralHistorias({ isDesktop }: { isDesktop: boolean }) {
     setPagina(null); setEstado("carregando");
     setPedido(current => ({ cursor, versao: current.versao + 1 }));
   }
-  return <section aria-labelledby="ranking-geral-titulo" style={isDesktop ? desktopSectionStyle : sectionStyle}>
+  return <section className="ranking-geral-historias" aria-labelledby="ranking-geral-titulo" style={isDesktop ? desktopSectionStyle : sectionStyle}>
+    <style>{rankingGeralCss}</style>
     <div style={sectionHeaderStyle}>
       <h2 id="ranking-geral-titulo" ref={titulo} tabIndex={-1} style={sectionTitleStyle}>Ranking Geral de Histórias</h2>
-      <p>Classificação por avaliações públicas. A nota média não é a pontuação de ordenação.</p>
+      <p className="ranking-geral-descricao">Classificação por avaliações públicas. A nota média não é a pontuação de ordenação.</p>
     </div>
     <div aria-busy={estado === "carregando"}>
       {estado === "carregando" && <p role="status">Carregando Ranking Geral…</p>}
@@ -47,17 +49,19 @@ export function RankingGeralHistorias({ isDesktop }: { isDesktop: boolean }) {
       </div>}
       {pagina?.estado === "ok" && <>
         {pagina.itens.length === 0 ? <p role="status">Nenhuma história com avaliações públicas disponível.</p>
-          : <ol start={pagina.itens[0].posicao} style={{ paddingLeft: "2.5rem" }}>
-            {pagina.itens.map(item => <li key={item.id} value={item.posicao} style={{ marginBottom: 16, padding: 12, borderRadius: 16,
-              background: "var(--historietas-surface, rgba(139,92,246,0.08))", overflowWrap: "anywhere" }}>
-              <Link prefetch={false} href={`/obra/${encodeURIComponent(item.slug)}`} style={{ color: "inherit", fontWeight: 800 }}>{item.titulo}</Link>
-              <p>Nota média pública: {item.nota.toLocaleString("pt-BR", { maximumFractionDigits: 2 })} / 5 · {item.avaliacoes.toLocaleString("pt-BR")} {item.avaliacoes === 1 ? "avaliação" : "avaliações"}</p>
-              {item.avaliacoes <= 4 && <span>Poucas avaliações</span>}
+          : <ol className="ranking-geral-lista" role="list" start={pagina.itens[0].posicao}>
+            {pagina.itens.map(item => <li className="ranking-geral-card" key={item.id} value={item.posicao}>
+              <span className="ranking-geral-posicao" aria-label={`Posição ${item.posicao}`}>{item.posicao}</span>
+              <div className="ranking-geral-info">
+              <Link className="ranking-geral-obra" prefetch={false} href={`/obra/${encodeURIComponent(item.slug)}`}>{item.titulo}</Link>
+              <p className="ranking-geral-metricas">Nota média pública: {item.nota.toLocaleString("pt-BR", { maximumFractionDigits: 2 })} / 5 · {item.avaliacoes.toLocaleString("pt-BR")} {item.avaliacoes === 1 ? "avaliação" : "avaliações"}</p>
+              {item.avaliacoes <= 4 && <span className="ranking-geral-aviso">Poucas avaliações</span>}
+              </div>
             </li>)}
           </ol>}
-        <nav aria-label="Paginação do Ranking Geral" style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+        <nav className="ranking-geral-paginacao" aria-label="Paginação do Ranking Geral">
           {pedido.cursor && <button type="button" onClick={() => carregar(null)}>Voltar ao início</button>}
-          {pagina.proximo && <button type="button" onClick={() => carregar(pagina.proximo)}>Próxima página</button>}
+          {pagina.proximo && <button className="ranking-geral-proxima" type="button" onClick={() => carregar(pagina.proximo)}>Próxima página</button>}
         </nav>
       </>}
     </div>
