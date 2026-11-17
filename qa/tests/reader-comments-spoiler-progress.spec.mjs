@@ -144,7 +144,7 @@ for (const dispositivo of ["desktop", "mobile"]) {
     });
 
     test("autor verificado mantém acesso sem marcar leitura", async ({ page }) => {
-      await loginAsAuthor(page);
+      await loginAsAuthor(page, dispositivo === "mobile" ? { diagnosticoLogin: dispositivo } : undefined);
       const dialog = await abrir(page);
       await expect(dialog.getByText(texto, { exact: true })).toBeVisible();
       await expect(dialog.getByRole("button", { name: "Mostrar comentários — podem conter spoilers" })).toHaveCount(0);
