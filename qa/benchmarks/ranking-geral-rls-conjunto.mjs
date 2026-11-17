@@ -86,23 +86,44 @@ function generate(rows,users) {
   ];
   sql(statements.join("\n"),120000);
 }
+// Cada SELECT permanece sob o timeout SQL original de 8s.
+const BATCH_SIZE=4000;
+function slices(total) {
+  const out=[];
+  for(let start=1;start<=total;start+=BATCH_SIZE) {
+    out.push({start,end:Math.min(total,start+BATCH_SIZE-1)});
+  }
+  return out;
+}
+function batchFilter(batch){return " WHERE id BETWEEN "+batch.start+" AND "+batch.end;}
 function equality(stage){
-  const mismatches=anon("SELECT count(*) FROM ("+
-    "(SELECT id FROM "+schema+".original EXCEPT SELECT id FROM "+schema+".conjunto) "+
-    "UNION ALL (SELECT id FROM "+schema+".conjunto EXCEPT SELECT id FROM "+schema+".original)"+
-    ") AS diffs");
-  assert.equal(mismatches,"0","DIVERGENCIA RLS, etapa "+stage);
-  const first=anon("SELECT count(*)||'|'||coalesce(sum(nota),0) FROM "+schema+".original");
-  const second=anon("SELECT count(*)||'|'||coalesce(sum(nota),0) FROM "+schema+".conjunto");
-  assert.equal(first,second,"DIVERGENCIA agregados "+stage);
-  const count=Number(first.split("|")[0]);
+  let count=0,sum=0;
+  const chunks=slices(totalRows);
+  for(const batch of chunks){
+    const filter=batchFilter(batch);
+    const mismatches=anon("SELECT count(*) FROM ("+
+      "(SELECT id FROM "+schema+".original"+filter+
+      " EXCEPT SELECT id FROM "+schema+".conjunto"+filter+") "+
+      "UNION ALL (SELECT id FROM "+schema+".conjunto"+filter+
+      " EXCEPT SELECT id FROM "+schema+".original"+filter+")"+
+      ") AS diffs");
+    assert.equal(mismatches,"0","DIVERGENCIA RLS "+stage+" batch="+batch.start+"-"+batch.end);
+    const first=anon("SELECT count(*)||'|'||coalesce(sum(nota),0) FROM "+
+      schema+".original"+filter);
+    const second=anon("SELECT count(*)||'|'||coalesce(sum(nota),0) FROM "+
+      schema+".conjunto"+filter);
+    assert.equal(first,second,"DIVERGENCIA agregados "+stage+" batch="+batch.start+"-"+batch.end);
+    const [n,s]=first.split("|");
+    count+=Number(n);sum+=Number(s);
+  }
   assert.ok(count>0 && count<totalRows,"Teste precisa de votos visiveis e ocultos");
   console.log("EQUIVALENCE_OK stage="+stage+" visible="+count+" hidden="+(totalRows-count)+
-    " diff=0 values="+first);
+    " diff=0 chunks="+chunks.length+" sum="+sum+" sql_timeout=8s");
 }
-function explain(table){
+function explain(table,batch){
   const s=anon("EXPLAIN (ANALYZE,BUFFERS,FORMAT JSON) "+
-     "SELECT count(*),coalesce(sum(nota),0) FROM "+schema+"."+table);
+    "SELECT count(*),coalesce(sum(nota),0) FROM "+schema+"."+table+
+    batchFilter(batch));
   const plan=JSON.parse(s)[0];
   return {ms:plan["Execution Time"],
     hit:plan.Plan["Shared Hit Blocks"]??0,read:plan.Plan["Shared Read Blocks"]??0};
@@ -123,15 +144,27 @@ for(const c of [{rows:4000,users:16},{rows:20000,users:16},{rows:20000,users:256
  generate(c.rows,c.users);
  equality("original rows="+c.rows+" users="+c.users);
  const samples={original:[],conjunto:[]};
+ const batches=slices(c.rows);
  for(let iteration=0;iteration<9;iteration++){
-   const order=iteration%2===0?["original","conjunto"]:["conjunto","original"];
-   for(const type of order){
-     const m=explain(type);
-     if(iteration>=2)samples[type].push(m);
+   const totals={original:{ms:0,hit:0,read:0},conjunto:{ms:0,hit:0,read:0}};
+   for(const batch of batches){
+     const order=(iteration+batches.indexOf(batch))%2===0?
+       ["original","conjunto"]:["conjunto","original"];
+     for(const type of order){
+       const m=explain(type,batch);
+       totals[type].ms+=m.ms;
+       totals[type].hit+=m.hit;
+       totals[type].read+=m.read;
+     }
+   }
+   if(iteration>=2) for(const type of ["original","conjunto"]){
+     samples[type].push(totals[type]);
    }
  }
  const old=summary(samples.original),cand=summary(samples.conjunto);
  console.log("RLS_SET_BENCH "+JSON.stringify({rows:c.rows,users:c.users,
+   measurement:"sum_of_per_batch_EXPLAIN_times_NOT_a_full_query_latency",
+   batch_size:BATCH_SIZE,batches:batches.length,sql_timeout_seconds:8,
    old,candidate:cand,change_pct:round((cand.median_ms-old.median_ms)/old.median_ms*100),
    sameVisibleRows:true,warmups:2,samples:7}));
  // Confirmar que revogacoes e mudanca de linha sao observadas em nova consulta.
