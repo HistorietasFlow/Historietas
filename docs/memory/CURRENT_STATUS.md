@@ -10,8 +10,20 @@ Hook npm da interface unificado ao posttest existente, sem chave duplicada ou
 perda de testes. Local: 25/25 focados, Typecheck, Lint, auditoria 199/199, Build e HTTP 404
 com flag ausente aprovados. Telemetria do plugin Sentry desativada e DSN/token
 vazios nos jobs de QA, apos bloqueio inicial do Build pela revisao automatica;
-monitoramento da aplicacao e configuracao Vercel preservados. CI real da
-combinacao pendente. Plano, fontes e limites em
+monitoramento da aplicacao e configuracao Vercel preservados. A CI conjunta
+[#44076599332](https://github.com/HistorietasFlow/Historietas/actions/runs/44076599332)
+passou em `96e60be`: 1.368 pgTAP, equivalência 4k/20k e 17 cenários do ranking
+sem retries (skip mobile intencional no desktop). Suíte geral: 263 aprovados e
+um flaky de foco na Comunidade, #2349, aprovado na terceira tentativa.
+Revisão visual encontrou uma captura integrada de retorno em 390 px inteiramente
+preta; outras nove imagens continham conteúdo. Causa inconclusiva e reprodução
+local bloqueada no socket do Chromium. QA mobile reforçada com foco/visibilidade
+inteira de título, primeiro item e barra, frames de pintura e recusa de imagem
+canônica uniforme; conserva captura imediata e JSON só de geometria/booleanos.
+Sem alteração de aplicação, timeouts ou retries. Local do ajuste: sintaxe Node 22,
+Lint focado, 19/19 testes e auditoria estática 199/199 aprovados.
+Nova CI/capturas pendentes.
+Plano, fontes e limites em
 [Ranking Geral — validação conjunta](../ranking-geral-validacao-conjunta.md).
 Sem merge na main, migration remota, deploy ou ativação.
 

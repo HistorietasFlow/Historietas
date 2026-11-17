@@ -117,12 +117,14 @@ jobs:
       - name: Playwright real desktop/mobile, axe, revogacao e capturas
         run: node qa/scripts/run-playwright-local.mjs --config=playwright.ranking-geral.config.mjs --workers=1 --retries=0
 
-      - name: Disponibilizar somente imagens sinteticas da secao (sem credenciais)
+      - name: Disponibilizar imagens sinteticas e geometria fechada (sem credenciais)
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ranking-geral-validacao-conjunta-visual
-          path: qa/reports/ranking-geral-etapa3-visual/*.png
+          path: |
+            qa/reports/ranking-geral-etapa3-visual/*.png
+            qa/reports/ranking-geral-etapa3-visual/*-viewport.json
           if-no-files-found: ignore
           retention-days: 3
 

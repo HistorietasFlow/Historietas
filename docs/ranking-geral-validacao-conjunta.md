@@ -21,9 +21,10 @@ ou a main. A #2351 não faz parte desta integração.
   Agora há uma chave única, com o comando anterior integral e os 11 testes da interface.
 - Código funcional da UI e as duas migrations/testes SQL preservados byte a byte
   em relação aos heads acima. Fórmula, cursor, ACL e RLS não foram reescritos.
-- A QA real da interface é reutilizada de `8bbbeaca6fd15264a33662a8f0e5aa4699778e9b`
-  (CI anterior #44033271168). Os testes/fixture são os mesmos; o novo workflow
-  utiliza exclusivamente o checkout integrado, sem copiar SQL de outra branch.
+- A QA real da interface veio de `8bbbeaca6fd15264a33662a8f0e5aa4699778e9b`
+  (CI anterior #44033271168). A fixture e os testes de dados foram preservados;
+  a captura mobile recebeu as verificações descritas abaixo. O workflow utiliza
+  exclusivamente o checkout integrado, sem copiar SQL de outra branch.
 
 ## Gates da combinação
 
@@ -77,9 +78,40 @@ o diagnóstico sanitizado foi habilitado e não houve recorrência nessa rodada.
 Validação local da combinação: 25/25 testes focados, Typecheck, ESLint focado,
 auditoria estática 199/199, JSON sem chaves duplicadas, sintaxe da fixture/QA e
 paridade dos fontes, Build e validação HTTP da flag desligada aprovados.
-Sem Docker/Supabase/navegador local preparado: pgTAP, Data API e Playwright reais
-da combinação dependem da nova CI desta branch. Uma execução anterior verde não
-homologa automaticamente a integração nem produção.
+### CI da integração e captura mobile
 
-Próximo passo: conferir os gates/capturas da nova PR draft antes de qualquer
-decisão de merge, migration remota, deploy ou ativação.
+A [CI #44076599332](https://github.com/HistorietasFlow/Historietas/actions/runs/44076599332)
+passou no head `96e60be`: 1.368 pgTAP, equivalência global 4k/20k e 17 cenários
+do Ranking Geral sem retries, além do skip intencional da barra mobile no desktop.
+A suíte geral teve 263 aprovados e um flaky de foco na Comunidade, já registrado
+na [#2349](https://github.com/HistorietasFlow/Historietas/issues/2349): duas
+tentativas falharam e a terceira passou. A causa não foi atribuída ao ranking.
+
+Na revisão do artefato, `mobile-integrado-pagina1-com-barra.png` (390×844) continha
+somente pixels RGB zero. As outras nove imagens continham conteúdo; as capturas
+da seção mostravam as páginas 1/2 e os botões de paginação em desktop/390/320 px.
+Isso impede concluir a validação visual do retorno integrado em 390 px.
+A reprodução local não chegou ao aplicativo: o Chromium encerrou ao criar seu
+socket de processo (`Operation not permitted`). Sem causa funcional comprovada.
+
+O teste mobile agora conserva uma captura/diagnóstico no instante original do
+retorno e, para a captura canônica, exige foco no título e título/primeiro item/
+barra inferior inteiros no visor. Aguarda dois frames de pintura após essas
+condições, sem mudar CSS, induzir rolagem, aumentar timeout ou adicionar retries.
+As imagens canônicas das páginas 1/2 falham o teste se todos os pixels tiverem
+a mesma cor; a análise decodifica o PNG no navegador, sem nova dependência.
+
+Cada captura integrada recebe um JSON de esquema fechado: dimensões, caixas,
+scroll, booleano de foco e booleanos de imagem uniforme/preta. Não contém texto
+da página, URL, identidade, storage, cookies ou credenciais. Somente os PNGs
+sintéticos e arquivos `*-viewport.json` são disponibilizados pelo job.
+Essa instrumentação não declara corrigida a causa da captura preta.
+
+Validação local desse ajuste: sintaxe Node 22.23.5, ESLint focado, 19/19 testes
+de interface/gates/auditoria de Actions, 199/199 verificações estáticas e
+`git diff --check` aprovados. O cenário browser alterado depende da nova CI,
+pois o bloqueio local do Chromium permanece.
+
+Próximo passo: conferir a nova CI/capturas e comparar os diagnósticos imediato e
+canônico antes de concluir a revisão visual. Sem homologação de produção ou
+autorização de merge, migration remota, deploy e ativação.
