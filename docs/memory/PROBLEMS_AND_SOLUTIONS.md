@@ -1,5 +1,16 @@
 # Problemas conhecidos e soluções
 
+## Biblioteca: candidata de leitura unica, ainda nao homologada
+
+Sobre main `77beb0e4`, a candidata `20261117035853` reune as duas leituras de
+preferencias da helper compartilhada sem mudar policies, ACL ou retorno NULL.
+Guard de pg_proc aborta mudancas em propriedades diferentes do corpo SQL.
+Validacao estatica 4/4 e unitarios relacionados 19/19; pgTAP, Data API e benchmark
+pendentes: Docker Engine indisponivel e somente 883 MiB livres no notebook.
+Nao reutilizar o ganho do experimento como homologacao desta migration.
+Escopo, consumidores, limites do experimento e plano de retomada em
+[Otimizacao da privacidade da Biblioteca](../biblioteca-privacidade-otimizacao.md).
+
 ## Favoritos: referencias a obras nao divulgaveis
 
 O diagnostico de Historias em Comum (CI `43935598538`) comprovou que a
