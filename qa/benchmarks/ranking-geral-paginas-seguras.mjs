@@ -264,7 +264,14 @@ function global(label){
  const ids=actual.items.map(x=>x.obra_id);
  for(const i of [5001,5002,5003,5004])
   assert.ok(!ids.includes(workUuid(i)),"Ineligible work "+i+" leaked");
- assert.ok(ids.includes(workUuid(5005)),"Valid chapter-only missing");
+ // Após revogação, obra válida sem avaliações públicas deve sair do ranking.
+ const votingVisible=Number(anon("SELECT count(*) FROM public.obra_avaliacoes "+
+  "WHERE obra_id='"+workUuid(5005)+"'::uuid"));
+ const expectedPresent=label==="4k_revoked"?false:true;
+ assert.equal(votingVisible>0,expectedPresent,
+  "Fixture: consentimento sintético do único avaliador inesperado "+label);
+ assert.equal(ids.includes(workUuid(5005)),expectedPresent,
+  "Chapter-only ranking must follow anonymous vote visibility "+label);
  console.log("GLOBAL_MATCH_OK "+label+" works="+actual.items.length+
   " all_sums_counts_positions_signature=true");
  return actual;
