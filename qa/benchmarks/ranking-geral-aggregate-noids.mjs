@@ -204,12 +204,19 @@ async function checkHelperExposure(){
   ".votos_publicos()'::regprocedure)");
  assert.ok(!colInfo.includes("user_id")&&!colInfo.includes("avaliador"),
   "Never return evaluator identifiers");
+ console.log("QA_PROBE anonymous SQL and role privileges");
  const noAnonIdentity=logged("anon","SELECT count(*) FROM "+
   schema+".votos_publicos()",userUuid(3));
  assert.equal(noAnonIdentity,"0","Helper must reject claimed authenticated ID");
- assert.equal(logged("authenticated","SELECT has_function_privilege(current_user,'"+
-  schema+".votos_publicos()','EXECUTE')::text",userUuid(3)),"false",
-  "Authenticated cannot invoke helper");
+ // Usar OIDs dos catalogos; resolver regprocedure pelo nome exige USAGE no schema.
+ const privileges=logged("authenticated",
+  "SELECT has_schema_privilege(current_user,n.oid,'USAGE')::text||'|'||"+
+  "has_function_privilege(current_user,p.oid,'EXECUTE')::text "+
+  "FROM pg_catalog.pg_proc p "+
+  "JOIN pg_catalog.pg_namespace n ON n.oid=p.pronamespace "+
+  "WHERE n.nspname='"+schema+"' AND p.proname='votos_publicos' AND p.pronargs=0",
+  userUuid(3));
+ assert.equal(privileges,"false|false","Authenticated must have neither USAGE nor EXECUTE");
  const key=vars.ANON_KEY||vars.PUBLISHABLE_KEY;
  assert.ok(key,"Local anon key missing");
  const resp=await fetch(vars.API_URL+"/rest/v1/rpc/votos_publicos",{
@@ -270,4 +277,4 @@ async function main(){
   production_approval:false}));
  console.log("QA_AGGREGATE_PRIVACY_DONE no_data_or_migrations_persisted");
 }
-main().catch(e=>{console.error("QA_FAIL",String(e));process.exitCode=1;});
+main().catch(e=>{console.error("QA_FAIL",e?.stack||String(e));process.exitCode=1;});
