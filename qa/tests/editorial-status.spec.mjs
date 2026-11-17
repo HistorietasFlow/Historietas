@@ -168,7 +168,7 @@ for(const [device,viewport] of [["desktop",{width:1440,height:900}],["mobile",{w
     const diagnostics=observeSafeFlow(page,"editorial-status");
     try {
       await diagnostics.capture("start");
-      await reset();await page.setViewportSize(viewport);await loginAsAuthor(page);
+      await reset();await page.setViewportSize(viewport);await loginAsAuthor(page, { diagnosticoLogin: device });
       await diagnostics.capture("after-login",{authState:"authenticated"});
       await editor(page,diagnostics);
       await diagnostics.capture("editor-ready",{authState:"authenticated",rendered:{"editor-enabled":select(page)}});

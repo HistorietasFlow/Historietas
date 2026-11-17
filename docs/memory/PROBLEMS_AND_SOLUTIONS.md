@@ -1,6 +1,20 @@
 # Problemas conhecidos e soluções
 
+## QA login mobile — alerta global não identifica erro do formulário (17/11/2026)
+
+A CI verde da main [#44132670035](https://github.com/HistorietasFlow/Historietas/actions/runs/44132670035), commit `a93e4ef`, teve um flaky em `author-draft-chapters.spec.mjs:57` mobile: `waitForURL` após clicar ENTRAR excedeu 30 s; primeira tentativa 30.735 ms, retry aprovado em 5.770 ms. O artefato sanitizado registra documento complete em login, zero eventos dos endpoints categorizados, error count 1 e loading/continue 0. Esses dados não comprovam a causa.
+
+O observador anterior contava `page.getByRole("alert")`. O Next instalado cria `#__next-route-announcer__` com role alert em shadow DOM fora do formulário, mesmo sem erro de login. A contagem global é ambígua; a interpretação anterior como erro do formulário foi excessiva. O anunciador é acessibilidade legítima e permanece intacto.
+
+O diagnóstico agora conta somente os alertas do form. Em falha, uma leitura DOM devolve apenas contagens: formulário/campos legíveis, campos vazios/iguais às credenciais sintéticas esperadas, validade HTML, emailRequired/passwordMin conhecidos em pt/en/es ou outro erro. Textos e valores nunca deixam a leitura em memória. Documento /login no frame principal tem categoria própria, ignorando RSC e iframe; códigos HTTP e contagens continuam sem URL, query, headers ou body. Categorias novas são aceitas apenas no cenário login-flaky, e o coletor ressanitiza tudo antes de summary.json.
+
+Regressões determinísticas cobrem contaminação por alerta externo, campos apagados/divergentes/inválidos, idiomas, DOM indisponível, navegação de documento versus iframe/RSC, descarte de dados livres e passagem pelo coletor final. Node 22.23.5: 21/21 testes, ESLint, sintaxe e diff check aprovados. Execução browser efetiva pendente da CI; Chromium local continua indisponível por restrição de socket, sem nova tentativa idêntica. Nenhum timeout/retry, asserção, fluxo de autenticação, dado remoto ou gate foi alterado. **Causa do flaky ainda inconclusiva; não declarar corrigido nem repetir CI apenas para provocar recorrência.** Relacionado à #2346, sem fechar o issue.
+
+Na [CI da #2357](https://github.com/HistorietasFlow/Historietas/actions/runs/44142509361), o login do cenário de rascunho mobile passou de primeira. O cenário editorial de edição confirmada parou em /login no desktop e passou na repetição. Esse cenário agora também ativa o observador de formulário em desktop e mobile. A causa do timeout segue inconclusiva.
+
 ## Ranking Geral — cookies do gateway e consulta anônima (17/11/2026)
+
+Estado posterior: #2356 mesclada, reativação privada autorizada e API/interface real no estado vazio confirmadas; CI da main aprovada. Os parágrafos abaixo descrevem a falha e a recuperação anteriores, não o estado atual da flag. Histórico operacional na #2356.
 
 Após ativação autorizada na #2355, o build foi READY e a API respondeu 200/ok/vazio,
 mas a seção no navegador protegido exibiu erro, inclusive após retry manual.

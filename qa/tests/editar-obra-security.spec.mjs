@@ -88,7 +88,7 @@ for (const [device, viewport] of [
   test(`salva metadados de texto sem reescrever status, capítulos ou publicação — ${device}`, async ({ page }) => {
     const work = await fixture();
     await page.setViewportSize(viewport);
-    await loginAsAuthor(page);
+    await loginAsAuthor(page, device === "mobile" ? { diagnosticoLogin: device } : undefined);
     await editor(page, work);
     const before = check(await author.from("obras").select("status_editorial_versao").eq("id", work.id).single());
     const patches = [], storageWrites = [];
