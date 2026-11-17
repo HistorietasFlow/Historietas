@@ -1,5 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { setImmediate } from "node:timers/promises";
+import { AuthSessionMissingError } from "@supabase/supabase-js";
+import { loadApplicationModule } from "../helpers/load-application-module.mjs";
 import {
   erroExigeLimpezaSessaoLocal,
   obterChaveSessaoSupabase,
@@ -89,3 +92,39 @@ import "./redefinir-senha-static-modules.test.mjs";
 import "./redefinir-senha-sessao-segura.test.mjs";
 import "./redefinir-senha-session-mutation.test.mjs";
 import "./redefinir-senha-page-accessibility.test.mjs";
+
+test("a recuperação do cliente preserva a limpeza e evita recarregar a rota do visitante", async (t) => {
+  const urlAnterior = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const documentoAnterior = globalThis.document;
+  process.env.NEXT_PUBLIC_SUPABASE_URL = "http://localhost:54321";
+  t.after(() => {
+    if (urlAnterior === undefined) delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+    else process.env.NEXT_PUBLIC_SUPABASE_URL = urlAnterior;
+    if (documentoAnterior === undefined) delete globalThis.document;
+    else globalThis.document = documentoAnterior;
+  });
+
+  const sessaoAusente = new AuthSessionMissingError();
+  for (const [cookie, error, recargas, saidas] of [
+    ["preferencia=pt", sessaoAusente, 0, 1],
+    ["sb-localhost-auth-token.0=expirado", sessaoAusente, 1, 1],
+    ["", { code: "session_expired" }, 1, 1],
+    ["", new Error("Failed to fetch"), 0, 0],
+    ["", null, 0, 0],
+  ]) {
+    globalThis.document = { cookie };
+    const refresh = t.mock.fn();
+    const signOut = t.mock.fn();
+    const { default: Recovery } = loadApplicationModule("components/SupabaseSessionRecovery.tsx", {
+      react: { useEffect: (effect) => effect() },
+      "next/navigation": { useRouter: () => ({ refresh }) },
+      "@/lib/supabase/client": { supabase: { auth: { getUser: async () => ({ error }), signOut } } },
+      "@/lib/supabase/session-recovery.mjs": { erroExigeLimpezaSessaoLocal, obterNomesCookiesSessaoSupabase },
+    });
+
+    Recovery();
+    await setImmediate();
+    assert.equal(signOut.mock.callCount(), saidas);
+    assert.equal(refresh.mock.callCount(), recargas);
+  }
+});

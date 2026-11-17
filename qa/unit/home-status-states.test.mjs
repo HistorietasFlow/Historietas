@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { loadApplicationModule } from "../helpers/load-application-module.mjs";
 
 const componente = readFileSync(
   new URL("../../components/HomeStatusStates.tsx", import.meta.url),
@@ -70,4 +73,12 @@ test("Home delega os estados simples sem levar estilos exclusivos para a página
 
   assert.doesNotMatch(componente, /supabase|localStorage|useEffect|useState|useMemo/);
   assert.match(componente, /import type \{ CSSProperties \} from "react";/);
+});
+
+test("o carregamento entre rotas usa o indicador acessível da Home sem exibir o cartão", () => {
+  const { default: Loading } = loadApplicationModule("app/loading.tsx");
+  const html = renderToStaticMarkup(createElement(Loading));
+  assert.match(html, /role="status"[^>]*aria-label="Carregando página"/);
+  assert.match(html, /class="historietas-loading-spinner"/);
+  assert.doesNotMatch(html, /historietas-loading-(?:logo|cards|line)|not-found-title/);
 });
