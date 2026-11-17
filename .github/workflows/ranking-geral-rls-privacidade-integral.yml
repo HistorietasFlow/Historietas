@@ -1,0 +1,86 @@
+name: Ranking Geral - RLS integrada, privacidade e RPC (QA)
+
+on:
+  push:
+    branches:
+      - qa/ranking-geral-rls-integrado-2353
+
+permissions:
+  contents: read
+
+concurrency:
+  group: qa-ranking-geral-rls-integrado-2353
+  cancel-in-progress: true
+
+jobs:
+  matriz:
+    name: Supabase descartavel - papeis, acesso direto e RPC completa
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      CI: "true"
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - name: Checkout seguro da base #2348 e diagnostico de QA
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Node 22
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+
+      - name: Limites da branch de QA
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check qa/benchmarks/ranking-geral-privacidade-integral.mjs
+          test -f supabase/migrations/20261116230000_listar_ranking_geral.sql
+          if git diff --name-only 5aac2c3ceb6bf5795b27606113285d21119251c1 HEAD | grep -vE '^(\.github/workflows/ranking-geral-rls-privacidade-integral\.yml|qa/benchmarks/ranking-geral-privacidade-integral\.mjs)$'; then
+            echo "::error::A branch QA alterou arquivos fora dos dois artefatos de teste."
+            exit 1
+          fi
+
+      - name: Supabase CLI fixa
+        uses: supabase/setup-cli@689adcfb80d947100a1eab127289b97d1fb07b13 # v3.2.0
+        with:
+          version: 2.116.0
+
+      - name: Iniciar projeto Supabase descartavel com ACL reais
+        shell: bash
+        run: |
+          set -euo pipefail
+          supabase init
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import {readFileSync,writeFileSync} from 'node:fs';
+          const file='supabase/config.toml',raw=readFileSync(file,'utf8');
+          const section=raw.match(/\[db\.pooler\][\s\S]*?(?=\n\[|$)/)?.[0];
+          assert.ok(section,'Pooler local ausente');
+          const enabled=section.replace(/^enabled = false$/m,'enabled = true')
+            .replace(/^pool_mode = "transaction"$/m,'pool_mode = "session"');
+          assert.match(enabled,/^enabled = true$/m);
+          writeFileSync(file,raw.replace(section,enabled));
+          NODE
+          cp qa/integration/supabase/20260826000637_normalizar_acl_baseline_local.sql \
+             supabase/migrations/20260826000637_normalizar_acl_baseline_local.sql
+          supabase start > /tmp/qa-supabase-start.log 2>&1 || {
+            echo "::error::Falha ao inicializar Supabase descartavel"
+            exit 1
+          }
+
+      - name: Validar RLS real com variante apenas no banco QA, papeis e RPC integral
+        shell: bash
+        run: |
+          set -euo pipefail
+          node qa/benchmarks/ranking-geral-privacidade-integral.mjs
+
+      - name: Eliminar banco e dados sinteticos sem backup
+        if: always()
+        shell: bash
+        run: |
+          if command -v supabase >/dev/null && supabase status >/dev/null 2>&1; then
+            supabase stop --no-backup
+          fi
