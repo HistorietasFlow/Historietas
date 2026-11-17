@@ -2,6 +2,8 @@
 
 ### Ranking Geral — corretiva de escala em DRAFT (#2353)
 
+- O CI de integracao invoca o **job isolado** de equivalencia sob RLS `anon` como workflow reutilizavel, sobre Supabase descartavel proprio. O job `Tests` original permanece intacto, e o gate de equivalencia torna-se obrigatorio tanto para PRs de `main` quanto para a branch-base #2348.
+- O selo privado de autorizacao armazena um hash das policies, grants de tabelas e codigos/ACLs das helpers de perfil/Biblioteca; cada execucao privilegiada compara o estado corrente ao snapshot. Alteracoes posteriores falham fechadas ate uma nova migration auditada; `anon` nao tem acesso SQL ao selo nem ao calculo.
 - Nova migration **proposta**, em branch corretiva stacked na #2348. A funcao exposta `public.listar_ranking_geral(uuid,text,integer)` permanece `SECURITY INVOKER` e apenas `anon`; delega a mesma pagina publica ao `historietas_privado.listar_ranking_geral_nucleo(uuid,text,integer)`, `SECURITY DEFINER` com owner `postgres`, `search_path` fixo e EXECUTE apenas `anon`.
 - O nucleo privado efetua filtragem explicita de avaliacao `publico/parcial`, preferencia permitida pela helper de Biblioteca existente, obra publica e capitulo com autoria consistente. Nao agrega votos privados, exclui autoavaliacoes, mantem formula bayesiana e cursor. Nao divulga votos individuais nem soma bruta no retorno.
 - **Trust boundary:** a funcao privada ignora RLS porque executa com privilegio de proprietario. A pagina maxima (50), cursor, papeis e identidade sao checados nela propria, inclusive em chamada SQL direta. A RLS de `public.obra_avaliacoes` nao muda e continua regendo consultas convencionais.

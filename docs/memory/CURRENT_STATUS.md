@@ -2,6 +2,7 @@
 
 ### Ranking Geral — PR corretiva paginada de desempenho (17/11/2026, DRAFT)
 
+- Revisao de segurança adicional em #2354: selo privado das policies/funcoes de autorizacao validado na leitura, com testes de alteracao temporaria de policy e da helper de perfil que devem bloquear o ranking ate restauracao. CI principal passa a executar obrigatoriamente a comparacao global de RLS de `anon`, inclusive no PR stacked sobre #2348. Mudancas apenas em branch/PR draft; CI da nova revisao ainda pendente.
 - Stacked sobre a PR #2348, sem modificar a #2348 nem a #2352.
 - Variante para reduzir repeticao da helper de privacidade por voto: nucleo paginado interno `historietas_privado.listar_ranking_geral_nucleo`, `SECURITY DEFINER`, apenas `anon` sem identidade, `search_path` vazio e owner `postgres`. A RPC publica permanece `SECURITY INVOKER`; RLS e grants das tabelas nao mudam.
 - O nucleo privado e executavel diretamente pelo papel SQL `anon`: sua propria autorizacao, a pagina maxima 50, o cursor e o retorno sem IDs de avaliadores sao controles obrigatorios; a RLS das tabelas nao protege a execucao privilegiada. Qualquer mudanca em policy de obras/capitulos/avaliacoes/privacidade exige revisao de equivalencia.

@@ -2,6 +2,7 @@
 
 ## Ranking Geral — gargalo RLS e fronteira privilegiada (PR corretiva DRAFT, 17/11/2026)
 
+- Protecao contra divergencia posterior: fingerprint privado de `pg_policy`, flags de RLS, ACLs e funcoes de autorizacao comparado a cada chamada do nucleo `SECURITY DEFINER`. O teste pgTAP cria policy de leitura adicional e altera temporariamente a volatilidade de uma helper; ambos os cenarios devem falhar fechados, restaurando a configuracao no banco local. Regressao de equivalencia integral promovida ao workflow principal de CI. E uma defesa para mudancas acidentais nas regras, nao substitui revisao independente nem constitui autorizacao de producao.
 - A RPC da #2348 era limitada por helper RLS por voto; reproducoes com 4k/20k apresentaram varios segundos. A #2351 de leitura unica de privacidade reduziu muito pouco a latencia.
 - QA [#44047977166](https://github.com/HistorietasFlow/Historietas/actions/runs/44047977166) testou a alternativa de autorizacao em lote: pagina completa, sem IDs de votantes, equivalencia global, cursor revogado, legado de capitulo, 18+, draft, limites e ACL; 82,59 ms / 102,02 ms em dados sinteticos.
 - A alternativa exige `SECURITY DEFINER` interno, o qual ignora RLS. So deve ser aceito com papeis/grants especificos, limite/cursor no proprio nucleo, mesma regra de preferencia, compatibilidade com RLS sob `anon`, tests pgTAP e Data API, e revisão independente. A execucao SQL direta por `anon` da funcao paginada permanece parte do modelo de ameacas.

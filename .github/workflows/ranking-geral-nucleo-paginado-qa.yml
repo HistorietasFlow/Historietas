@@ -1,9 +1,7 @@
 name: Ranking Geral - corretiva pagina segura (QA isolada)
 
 on:
-  push:
-    branches:
-      - fix/ranking-geral-nucleo-paginado-2353
+  workflow_call:
 
 permissions:
   contents: read

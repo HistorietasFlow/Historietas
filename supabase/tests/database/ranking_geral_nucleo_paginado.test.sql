@@ -1,5 +1,5 @@
 begin;
-select plan(17);
+select plan(22);
 -- SQL regression for the corrective DRAFT; all data is synthetic/rolled back.
 insert into auth.users(id)
 select ('b9100000-0000-4000-8000-'||lpad(i::text,12,'0'))::uuid
@@ -118,5 +118,42 @@ select is((select total_avaliacoes from public.listar_ranking_geral()),1::bigint
  'revogacao retira apenas voto do usuario revogado');
 
 reset role;
+-- Selo de auditoria nao oferece acesso direto a anon.
+select ok(not has_function_privilege('anon',
+  'historietas_privado.ranking_geral_assinatura_acesso()','EXECUTE'),
+  'anon nao executa diretamente o gerador do selo RLS');
+select ok(not has_table_privilege('anon',
+  'historietas_privado.ranking_geral_selo_acesso','SELECT'),
+  'anon nao consulta o registro privado do selo RLS');
+
+-- Uma policy NOVA e permissiva deve invalidar o selo imediatamente.
+create policy qa_ranking_drift_rejeitado
+on public.obra_avaliacoes for select to anon using (true);
+select set_config('request.jwt.claim.sub','',true);
+set local role anon;
+select throws_ok(
+ $select * from public.listar_ranking_geral(null,null,20)$,
+ '42501','Ranking Geral bloqueado por divergencia nas regras de acesso.',
+ 'policy anon criada apos migration deve bloquear o nucleo privilegiado');
+reset role;
+drop policy qa_ranking_drift_rejeitado on public.obra_avaliacoes;
+
+-- Edicao da helper de privacidade tambem deve bloquear ate nova auditoria.
+alter function public.usuario_pode_ver_aba_perfil(uuid,text) volatile;
+select set_config('request.jwt.claim.sub','',true);
+set local role anon;
+select throws_ok(
+ $select * from public.listar_ranking_geral(null,null,20)$,
+ '42501','Ranking Geral bloqueado por divergencia nas regras de acesso.',
+ 'mudanca posterior de helper autorizadora bloqueia o ranking');
+reset role;
+alter function public.usuario_pode_ver_aba_perfil(uuid,text) stable;
+
+select set_config('request.jwt.claim.sub','',true);
+set local role anon;
+select is((select total_avaliacoes from public.listar_ranking_geral()),1::bigint,
+ 'restaurar policies e helper restaura a permissao de leitura');
+reset role;
+
 select * from finish();
 rollback;

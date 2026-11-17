@@ -32,6 +32,81 @@ begin
   end if;
 end $guard$;
 
+-- RLS fail-closed signature for tables, policies and privacy helpers.
+-- The privileged page function checks this record on EVERY call.
+create function historietas_privado.ranking_geral_assinatura_acesso()
+returns text language sql stable security invoker set search_path = ''
+as $audit$
+with tables_and_policies as (
+  select 'T:'||n.nspname||'.'||c.relname||':'||
+    c.relrowsecurity::text||':'||c.relforcerowsecurity::text||':'||
+    coalesce(c.relacl::text,'')||':'||coalesce(p.polname,'')||':'||
+    coalesce(p.polcmd::text,'')||':'||coalesce(p.polpermissive::text,'')||':'||
+    coalesce(p.polroles::text,'')||':'||
+    coalesce(pg_catalog.pg_get_expr(p.polqual,c.oid,true),'')||':'||
+    coalesce(pg_catalog.pg_get_expr(p.polwithcheck,c.oid,true),'') as item
+  from pg_catalog.pg_class c
+  join pg_catalog.pg_namespace n on n.oid=c.relnamespace
+  left join pg_catalog.pg_policy p on p.polrelid=c.oid
+  where n.nspname='public' and c.relkind in ('r','p')
+    and c.relname in ('obra_avaliacoes','obras','capitulos',
+      'preferencias_privacidade','usuarios_bloqueados','seguindo_usuarios')
+), auth_helpers as (
+  select 'F:'||n.nspname||'.'||p.proname||':'||
+    p.pronargs::text||':'||p.prosrc||':'||p.prosecdef::text||':'||
+    p.provolatile::text||':'||p.proowner::text||':'||
+    coalesce(p.proconfig::text,'')||':'||coalesce(p.proacl::text,'') as item
+  from pg_catalog.pg_proc p
+  join pg_catalog.pg_namespace n on n.oid=p.pronamespace
+  where (n.nspname='historietas_privado'
+      and p.proname='usuario_pode_ver_registro_biblioteca' and p.pronargs=3)
+    or (n.nspname='public' and p.proname='usuario_pode_ver_aba_perfil'
+      and p.pronargs=2)
+    or (n.nspname='public' and p.proname='usuarios_possuem_bloqueio'
+      and p.pronargs=2)
+), items as (
+  select item from tables_and_policies
+  union all select item from auth_helpers
+)
+select pg_catalog.md5(coalesce(pg_catalog.string_agg(item,E'\n'
+  order by item),''))
+from items;
+$audit$;
+alter function historietas_privado.ranking_geral_assinatura_acesso()
+  owner to postgres;
+revoke all on function historietas_privado.ranking_geral_assinatura_acesso()
+  from public, anon, authenticated, service_role;
+
+create table historietas_privado.ranking_geral_selo_acesso (
+  id boolean primary key default true check (id),
+  assinatura text not null check (assinatura ~ '^[0-9a-f]{32}$')
+);
+alter table historietas_privado.ranking_geral_selo_acesso owner to postgres;
+revoke all on historietas_privado.ranking_geral_selo_acesso
+  from public, anon, authenticated, service_role;
+
+do $audit_ready$
+begin
+  if (select count(*) from pg_catalog.pg_class c
+      join pg_catalog.pg_namespace n on n.oid=c.relnamespace
+      where n.nspname='public' and c.relkind in ('r','p')
+      and c.relname in ('obra_avaliacoes','obras','capitulos',
+        'preferencias_privacidade','usuarios_bloqueados','seguindo_usuarios')
+    ) <> 6
+    or pg_catalog.to_regprocedure(
+      'historietas_privado.usuario_pode_ver_registro_biblioteca(uuid,text,text)'
+    ) is null
+    or pg_catalog.to_regprocedure('public.usuario_pode_ver_aba_perfil(uuid,text)')
+      is null
+    or pg_catalog.to_regprocedure('public.usuarios_possuem_bloqueio(uuid,uuid)')
+      is null then
+    raise exception 'Ranking Geral: contrato de auditoria RLS incompleto.';
+  end if;
+end $audit_ready$;
+
+insert into historietas_privado.ranking_geral_selo_acesso(id,assinatura)
+values (true,historietas_privado.ranking_geral_assinatura_acesso());
+
 -- This INTERNAL function bypasses RLS: its explicit visibility filters, 
 -- source schema/owner, EXECUTE ACL and role/identity gate are security-critical.
 -- Its output intentionally equals the public paginated RPC (never raw votes
@@ -66,6 +141,17 @@ begin
      or auth.uid() is not null then
     raise exception using errcode = '42501',
       message = 'O Ranking Geral exige contexto anonimo.';
+  end if;
+
+  -- Fail closed when any audited SQL permission, RLS policy or helper
+  -- changes after migration. Definer code must not silently outlive RLS.
+  if not exists (
+    select 1 from historietas_privado.ranking_geral_selo_acesso as selo
+    where selo.id is true
+      and selo.assinatura = historietas_privado.ranking_geral_assinatura_acesso()
+  ) then
+    raise exception using errcode = '42501',
+      message = 'Ranking Geral bloqueado por divergencia nas regras de acesso.';
   end if;
 
   if p_limite is null or p_limite not between 1 and 50 then
@@ -275,6 +361,15 @@ begin
       and prosecdef and provolatile='s' and proowner='postgres'::pg_catalog.regrole
   ) then
     raise exception 'Ranking Geral: identidade/owner da funcao incorretos.';
+  end if;
+  if pg_catalog.has_function_privilege('anon',
+      'historietas_privado.ranking_geral_assinatura_acesso()','EXECUTE')
+     or pg_catalog.has_table_privilege('anon',
+      'historietas_privado.ranking_geral_selo_acesso','SELECT')
+     or (select count(*) from historietas_privado.ranking_geral_selo_acesso
+         where id is true and assinatura =
+           historietas_privado.ranking_geral_assinatura_acesso()) <> 1 then
+    raise exception 'Ranking Geral: selo RLS ausente ou divergente.';
   end if;
   if not pg_catalog.has_function_privilege('anon',
        'historietas_privado.listar_ranking_geral_nucleo(uuid,text,integer)',
