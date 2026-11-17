@@ -1,5 +1,16 @@
 # Arquitetura e infraestrutura
 
+### Ranking Geral — corretiva de escala em DRAFT (#2353)
+
+- Na branch de validacao conjunta #2348/#2354/#2352, `Tests` tambem depende de `ranking_interface_integrada` e exige sucesso dos dois jobs. A QA da UI usa outro Supabase descartavel com o SQL real do mesmo checkout, fixture 25+4, Playwright 1440/390/320, axe e navegacao inferior real. Preview habilitado apenas nesse job; padrao/CI geral e producao permanecem desativados. Ver [contratos da integracao](../ranking-geral-validacao-conjunta.md).
+- Builds desabilitam a telemetria de uso do plugin Sentry (`telemetry: false`); os jobs de QA zeram auth token e DSN para nao transmitir dados/artefatos de validacao. Runtime Sentry e sourcemaps de producao permanecem configurados; nenhuma variavel Vercel e alterada.
+- O CI invoca a equivalencia sob RLS `anon` em workflow reutilizavel e Supabase descartavel isolado. O check `Tests`, ja obrigatorio na protecao da main, depende de `ranking_rls_global`, executa com `always()` e falha explicitamente quando o resultado da dependencia nao e `success`. Isso inclui failure/cancelled/skipped e evita que um job apenas pulado libere merge. Todos os gates originais mantem cobertura, tanto em PRs para `main` quanto para a branch-base #2348; regras remotas de protecao nao sao alteradas.
+- O selo privado inclui policies/RLS/ACL de seis tabelas e definicao completa, owner e ACL de nove funcoes por assinatura exata: Biblioteca privada; wrappers e nucleos privados de perfil, bloqueios e admin; `auth.uid()` e `auth.jwt()`. Cada chamada privilegiada compara o estado ao snapshot e falha fechada em divergencia; dependencias novas exigem revisao do inventario. O pgTAP altera os corpos dos dois nucleos privados, exige recusa e restaura o DDL original antes de confirmar leitura. `anon` nao acessa o selo nem seu calculo.
+- Nova migration **proposta**, em branch corretiva stacked na #2348. A funcao exposta `public.listar_ranking_geral(uuid,text,integer)` permanece `SECURITY INVOKER` e apenas `anon`; delega a mesma pagina publica ao `historietas_privado.listar_ranking_geral_nucleo(uuid,text,integer)`, `SECURITY DEFINER` com owner `postgres`, `search_path` fixo e EXECUTE apenas `anon`.
+- O nucleo privado efetua filtragem explicita de avaliacao `publico/parcial`, preferencia permitida pela helper de Biblioteca existente, obra publica e capitulo com autoria consistente. Nao agrega votos privados, exclui autoavaliacoes, mantem formula bayesiana e cursor. Nao divulga votos individuais nem soma bruta no retorno.
+- **Trust boundary:** a funcao privada ignora RLS porque executa com privilegio de proprietario. A pagina maxima (50), cursor, papeis e identidade sao checados nela propria, inclusive em chamada SQL direta. A RLS de `public.obra_avaliacoes` nao muda e continua regendo consultas convencionais.
+- Trata-se de proposta em PR DRAFT sujeita a auditoria e CI local. Alteracoes futuras nas policies de visibilidade exigem teste de equivalencia global; proibido aplicar migration ou liberar UI enquanto nao houver autorizacao.
+
 ## Aplicação
 
 - Framework: Next.js 16.3.4
@@ -28,6 +39,16 @@
 - O deep link reage à navegação Back/Forward e não altera links de capítulos ou de outros tipos de notificação.
 
 ## Backend e dados
+
+### Ranking Geral — consulta pública separada de Em Alta
+
+- `public.listar_ranking_geral(uuid,text,integer)` (migration da Etapa 2) retorna ID, posição global, média pública elegível, quantidade de votos e pontuação bayesiana, além de assinatura de classificação e estado de cursor.
+- É `SECURITY INVOKER` com GRANT apenas a `anon` e proteção explícita contra execução por contexto autenticado. Somente avaliações visíveis à RLS anônima, inclusive `parcial` autorizada, entram na soma. Nenhum ID de avaliador é exposto. Dados privados podem continuar diferentes na página individual de obra, cujo contrato não muda.
+- Fórmula temporária: `(sum(nota)+30)/(count+10)`, computada com `numeric`. Elegibilidade de obra igual ao catálogo público atual, sem 18+, enquanto esse bloqueio permanecer. Uma avaliação elegível basta. Empate: pontuação DESC, votos DESC, UUID ASC.
+- Paginação por UUID da última obra + assinatura de classificação; se uma votação, publicação ou visibilidade alterar o conjunto, a RPC retorna `cursor_desatualizado` em vez de página incerta. Assinatura por `md5(string_agg(...))` é hipótese sujeita a medição contra keyset simples e carga RLS em Supabase descartável, **não homologada** antes do benchmark.
+- O cliente `lib/supabase/public.ts` é server-only. Etapa 2 não conecta UI, não toca em Em Alta nem altera tabelas, policies ou chamadas existentes. Etapa 3 fará o consumo sem cookie de sessão.
+- Os testes SQL `supabase/tests/database/ranking_geral.test.sql` usam pgTAP e rollback. `qa/integration/ranking-geral-supabase-real.test.mjs` usa Data API local, JWT real e compara `EXPLAIN ANALYZE` com 1.003 obras e 4.012 votos sintéticos. CI só adiciona o gate focado.
+
 
 ### Agendamento de capítulos — contratos e executor administrativo privado
 

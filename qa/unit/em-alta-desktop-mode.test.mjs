@@ -140,7 +140,11 @@ test("Em Alta delega somente o modo desktop e preserva suas fronteiras", () => {
     /window\.matchMedia\("\(min-width: 1024px\)"\)/,
   );
   assert.doesNotMatch(pagina, /atualizarModoDesktopTimer/);
-  assert.equal((pagina.match(/\bisDesktop\b/g) || []).length, 8);
+  const novaSecao = '<RankingGeralHistorias isDesktop={isDesktop} />';
+  assert.equal(pagina.split(novaSecao).length - 1, 1);
+  assert.match(pagina, /process\.env\.NEXT_PUBLIC_RANKING_GERAL_PREVIEW === "true" && <RankingGeralHistorias/);
+  // Os oito usos legados permanecem; somente a seção aditiva recebe a prop.
+  assert.equal((pagina.replace(novaSecao, "").match(/\bisDesktop\b/g) || []).length, 8);
   assert.equal((header.match(/\bisDesktop\b/g) || []).length, 6);
   assert.equal((decorations.match(/\bisDesktop\b/g) || []).length, 4);
   assert.match(

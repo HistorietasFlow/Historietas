@@ -4,6 +4,7 @@ on:
   pull_request:
     branches:
       - main
+      - feat/ranking-geral-sql-etapa2
   push:
     branches:
       - main
@@ -19,8 +20,19 @@ concurrency:
 env:
   CI: "true"
   NEXT_TELEMETRY_DISABLED: "1"
+  SENTRY_AUTH_TOKEN: ""
+  NEXT_PUBLIC_SENTRY_DSN: ""
+  SENTRY_DSN: ""
 
 jobs:
+  ranking_rls_global:
+    name: Ranking Geral - equivalencia RLS obrigatoria
+    uses: ./.github/workflows/ranking-geral-nucleo-paginado-qa.yml
+
+  ranking_interface_integrada:
+    name: Ranking Geral - interface e SQL reais
+    uses: ./.github/workflows/ranking-geral-interface-integrada-qa.yml
+
   lint:
     name: Lint
     runs-on: ubuntu-24.04
@@ -67,6 +79,8 @@ jobs:
 
   tests:
     name: Tests
+    needs: [ranking_rls_global, ranking_interface_integrada]
+    if: ${{ always() }}
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:
@@ -77,6 +91,16 @@ jobs:
       # Official image: same Playwright version as qa/package-lock.json, immutable digest.
       PLAYWRIGHT_IMAGE: mcr.microsoft.com/playwright:v1.62.1-noble@sha256:dcc5531e97840b9b5e794f2814476b21571c5124a3fca2267d73041f56e7580e
     steps:
+      - name: Exigir equivalencia RLS e interface aprovadas
+        env:
+          RANKING_RLS_RESULT: ${{ needs.ranking_rls_global.result }}
+          RANKING_INTERFACE_RESULT: ${{ needs.ranking_interface_integrada.result }}
+        run: |
+          if [ "$RANKING_RLS_RESULT" != "success" ] || [ "$RANKING_INTERFACE_RESULT" != "success" ]; then
+            echo "::error::Ranking Geral nao aprovado: RLS=$RANKING_RLS_RESULT interface=$RANKING_INTERFACE_RESULT"
+            exit 1
+          fi
+
       - name: Baixar o código
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -228,6 +252,9 @@ jobs:
 
       - name: Validar Histórias em Comum com Auth e Data API locais
         run: npm run test:historias-em-comum:integration
+
+      - name: Validar Ranking Geral anon, paginação e benchmark em Supabase local
+        run: npm run test:ranking-geral:integration
 
       - name: Preparar autenticação e conteúdo E2E locais
         run: npm run test:e2e:prepare:local -- --github-env "$GITHUB_ENV"

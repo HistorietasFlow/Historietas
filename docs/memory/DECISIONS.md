@@ -1,5 +1,17 @@
 # Decisões importantes
 
+## Ranking Geral — contrato estatístico e etapa SQL (16/11/2026)
+
+- Etapa 1 aprovada: Ranking Geral de qualidade, distinto dos sete rankings de popularidade/engajamento de Em Alta, embora futuramente compartilhem a página.
+- Pontuação apenas de ordenação: `(sum(nota_publicamente_visivel) + 30) / (count(*) + 10)`. Parâmetros `m=10` e `C=3,0` são provisórios e não são atualizados automaticamente; revisão somente após proposta e autorização com amostra real.
+- A partir de **uma** avaliação elegível; a interface da etapa 3 deve indicar "Poucas avaliações" para 1–4. Preservar a nota média que a página da obra apresenta atualmente.
+- O conjunto da classificação é o conjunto que o papel `anon` efetivamente pode ler por RLS, inclusive votos `parcial` cuja Biblioteca/preferências os tornem públicos. Não restringir literalmente a `visibilidade='publico'`. Ignorar autoavaliações legadas.
+- Obras seguem elegibilidade do catálogo (publicadas, não 18+ no bloqueio atual, e com conteúdo publicado), sem restrições novas. A nova RPC SQL `public.listar_ranking_geral(uuid,text,integer)` é invoker, somente `anon`, com `search_path` fixo. Consumidor da etapa 3 deve usar `lib/supabase/public.ts` apenas no servidor.
+- Desempate: pontuação numérica descendente, quantidade descendente e UUID ascendente. Posição global calculada antes da paginação.
+- A assinatura da classificação é uma **candidata sob benchmark**, não uma decisão definitiva: cursor obsoleto retorna estado dedicado e exige reiniciar; comparar custo contra ranking sem assinatura em dados sintéticos representativos. Se houver bloqueio, discutir alternativa antes de introduzir tabelas/cron/triggers.
+- Etapa 2 autoriza somente branch, migration versionada no repositório, pgTAP/Data API local e PR draft após validação proporcional; não autoriza merge, migration no remoto ou deploy. Site privado com Vercel Authentication preservado.
+- Antes de eventual aplicação remota, comprovar correspondência do Supabase com a URL efetiva do deployment Vercel.
+
 ## Histórias em Comum — contrato de consulta (fase 2, ainda não homologado)
 
 - A primeira versão calcula apenas a interseção entre os favoritos de duas contas:

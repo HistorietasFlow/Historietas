@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { ROOT_DIR, QA_DIR } from "../env.mjs";
 import { hasUseClientDirective } from "./static-audit-use-client-utils.mjs";
+import { workflowActionsArePinned } from "./static-audit-workflow-actions.mjs";
 
 const results = [];
 const pass = (name, details = "") =>
@@ -2838,22 +2839,19 @@ for (const contract of ciContracts) {
   }
 }
 
-const ciActions = [
-  ...ciWorkflow.matchAll(/^\s*uses:\s*([^\s#]+)/gm)
-].map((match) => match[1]);
-
 if (
-  ciActions.length > 0 &&
-  ciActions.every((action) => /@[0-9a-f]{40}$/.test(action))
+  workflowActionsArePinned(ciWorkflow, (relative) =>
+    fs.readFileSync(path.join(ROOT_DIR, relative), "utf8")
+  )
 ) {
   pass(
     "CI fixa GitHub Actions por SHA",
-    `${ciActions.length} usos verificados`
+    "Actions remotas por SHA; workflows locais auditados recursivamente"
   );
 } else {
   fail(
     "CI fixa GitHub Actions por SHA",
-    "há Action ausente ou referenciada por tag mutável"
+    "há Action ausente, referência mutável ou workflow local inválido"
   );
 }
 

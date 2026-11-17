@@ -1,5 +1,53 @@
 # Estado atual
 
+### Ranking Geral — validação conjunta em branch isolada (17/11/2026)
+
+Reunidas #2348 (`5aac2c3`), #2354 (`1d01b56`) e #2352 (`420cf82d`), sem modificar
+as PRs de origem/main. QA real reutilizada, em Supabase descartável exclusivo,
+com UI em 1440/390/320 px, fixture 25+4 e flag ligada apenas no job local.
+`Tests` exige sucesso tanto da equivalência RLS quanto da interface integrada.
+Hook npm da interface unificado ao posttest existente, sem chave duplicada ou
+perda de testes. Local: 25/25 focados, Typecheck, Lint, auditoria 199/199, Build e HTTP 404
+com flag ausente aprovados. Telemetria do plugin Sentry desativada e DSN/token
+vazios nos jobs de QA, apos bloqueio inicial do Build pela revisao automatica;
+monitoramento da aplicacao e configuracao Vercel preservados. A CI conjunta
+[#44076599332](https://github.com/HistorietasFlow/Historietas/actions/runs/44076599332)
+passou em `96e60be`: 1.368 pgTAP, equivalência 4k/20k e 17 cenários do ranking
+sem retries (skip mobile intencional no desktop). Suíte geral: 263 aprovados e
+um flaky de foco na Comunidade, #2349, aprovado na terceira tentativa.
+Revisão visual encontrou uma captura integrada de retorno em 390 px inteiramente
+preta; outras nove imagens continham conteúdo. Causa inconclusiva e reprodução
+local bloqueada no socket do Chromium. QA mobile reforçada com foco/visibilidade
+inteira de título, primeiro item e barra, frames de pintura e recusa de imagem
+canônica uniforme; conserva captura imediata e JSON só de geometria/booleanos.
+Sem alteração de aplicação, timeouts ou retries. Local do ajuste: sintaxe Node 22,
+Lint focado, 19/19 testes e auditoria estática 199/199 aprovados.
+Nova CI/capturas pendentes.
+Plano, fontes e limites em
+[Ranking Geral — validação conjunta](../ranking-geral-validacao-conjunta.md).
+Sem merge na main, migration remota, deploy ou ativação.
+
+### Ranking Geral — PR corretiva paginada de desempenho (17/11/2026, DRAFT)
+
+- A CI [#44062900816](https://github.com/HistorietasFlow/Historietas/actions/runs/44062900816) passou no head `ab2523b`: pgTAP 1.368 (26 assercoes corretivas), Data API e equivalencia global em 951/950/4.756 obras; RPC sintetica 72,54 ms/90,43 ms em 4k/20k. Playwright terminou 263 aprovados e 1 flaky no segundo login de `editorial-status` desktop; causa nao comprovada. Nao e homologacao de producao.
+- Reforco apos revisao final da #2354: selo usa nove assinaturas exatas, incluindo os nucleos privados de perfil/bloqueios e dependencias admin/JWT; captura definicao completa, owner e ACL. pgTAP corretivo passa a 26 assercoes, com alteracao do corpo de cada nucleo privado e restauracao exata. O check `Tests`, ja exigido pela main, usa `needs` + `always()` e recusa qualquer resultado da equivalencia diferente de `success`, inclusive cancelamento/skip. Sete testes focados, Lint, 199/199 verificacoes estaticas e parse SQL passaram localmente em Node 22.23.5; execucao pgTAP/Data API/global confirmada na CI acima para `ab2523b`. Sem alteracao das regras de protecao do repositorio, merge, remoto, deploy ou flag.
+- Diagnostico de login habilitado nos dois contextos do cenario de conflito editorial, reutilizando `diagnosticoLogin: device`. Somente codigos HTTP, categorias de endpoints, estados fechados e contagens; sem credenciais/identidades. Mudanca de observabilidade, nao correcao do flaky. Timeouts, retries e assercoes preservados. Local: 15/15 unitarios de sanitizacao/coletor, Lint focado, sintaxe Node 22.23.5 e diff check aprovados; execucao E2E depende da nova CI.
+- Stacked sobre a PR #2348, sem modificar a #2348 nem a #2352.
+- Variante para reduzir repeticao da helper de privacidade por voto: nucleo paginado interno `historietas_privado.listar_ranking_geral_nucleo`, `SECURITY DEFINER`, apenas `anon` sem identidade, `search_path` vazio e owner `postgres`. A RPC publica permanece `SECURITY INVOKER`; RLS e grants das tabelas nao mudam.
+- O nucleo privado e executavel diretamente pelo papel SQL `anon`: sua propria autorizacao, a pagina maxima 50, o cursor e o retorno sem IDs de avaliadores sao controles obrigatorios; a RLS das tabelas nao protege a execucao privilegiada. Qualquer mudanca em policy de obras/capitulos/avaliacoes/privacidade exige revisao de equivalencia.
+- QA anterior [#44047977166](https://github.com/HistorietasFlow/Historietas/actions/runs/44047977166) validou equivalencia global em 4k/20k e paginas, com RPC candidata 82,59 ms/102,02 ms no Supabase descartavel; nao e desempenho de producao. A PR corretiva exige sua propria CI, teste SQL e auditoria antes de qualquer integracao.
+- **Nao aplicar migration remota, merge, deploy ou ativar o gate** sem autorizacao especifica. Issue: #2353.
+
+### Histórico da #2352 — interface preparada independentemente
+
+Seção aditiva de `/em-alta` e loader server-only anônimo preparados originalmente
+em branch independente da #2348; integração atual descrita acima. Gate
+`NEXT_PUBLIC_RANKING_GERAL_PREVIEW` desligado por padrão, sem aplicação remota
+ou autorização de publicação.
+Paginação por cursor/assinatura, estados explícitos e nota pública sem fallback
+pessoal. Homologação Supabase/Playwright/visual pendente; ver
+[contratos e plano de testes](../ranking-geral-interface-etapa3.md).
+
 Atualizado em: 2026-11-13
 
 ### Capas privadas — integração de código para validação, sem ativação
