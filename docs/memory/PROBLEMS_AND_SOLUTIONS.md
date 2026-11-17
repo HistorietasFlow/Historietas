@@ -1,5 +1,25 @@
 # Problemas conhecidos e soluções
 
+## Ranking Geral — cookies do gateway e consulta anônima (17/11/2026)
+
+Após ativação autorizada na #2355, o build foi READY e a API respondeu 200/ok/vazio,
+mas a seção no navegador protegido exibiu erro, inclusive após retry manual.
+Navegar diretamente para a API no mesmo navegador retornou o JSON esperado.
+O fetch da seção usava `credentials: omit`, que também omite o cookie de acesso
+exigido pelo gateway Vercel Authentication. A evidência não é falha SQL ou
+ausência de avaliações; anonimato Supabase não exige suprimir cookies até o Next.
+
+Correção em validação: usar `same-origin` apenas na chamada relativa ao endpoint
+Next. Preservar cliente público server-only, no-store, descarte de cookies/JWT de
+entrada e RPC anon-only. Nunca resolver o problema desabilitando a proteção do
+site, usando service_role ou encaminhando sessão para o banco.
+Regressão real de navegador: cookie HttpOnly sintético local, gateway 401 sem
+cookie e 200 com cookie; permanece o ensaio SQL/endpoint que ignora sessão.
+
+Recuperação executada: flag production false e promoção do deployment anterior;
+domínio principal voltou a 404/desativado/no-store. Banco e autenticação não
+mudaram. A nova correção precisa de CI e revisão; ativação não está concluída.
+
 ## QA editorial — segundo login sem diagnostico (17/11/2026)
 
 Na [CI #44062900816](https://github.com/HistorietasFlow/Historietas/actions/runs/44062900816), `editorial-status.spec.mjs:239` desktop falhou no segundo `loginAsAuthor`, antes da edicao/conflito: `waitForURL` nao saiu de `/login` em 30 s. Primeira tentativa 34.332 ms; retry passou em 6.937 ms. O artefato sanitizado continha somente `summary.json`, com `safeFlow: []` nas duas tentativas. Screenshots/videos da falha e trace do retry eram apenas contagens; nao havia evidencia suficiente para atribuir a causa a Auth, aplicacao ou CI.

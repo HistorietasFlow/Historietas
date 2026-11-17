@@ -15,6 +15,31 @@ test("endpoint real anônimo e sem cache (requer migration #2348 somente no desc
   expect((await request.get("/api/ranking-geral?obra=invalida")).status()).toBe(400);
 });
 
+test("UI envia cookie de acesso ao deploy somente à rota da mesma origem", async ({ page, baseURL }) => {
+  expect(["127.0.0.1", "localhost"]).toContain(new URL(baseURL).hostname);
+  await page.context().addCookies([{
+    name: "qa-deployment-access", value: "permitido", url: baseURL,
+    httpOnly: true, sameSite: "Lax",
+  }]);
+  let recebeuCookie = false;
+  await page.route("**/api/ranking-geral*", async route => {
+    const cookie = await route.request().headerValue("cookie");
+    recebeuCookie = (cookie ?? "").split(";").some(item => item.trim() === "qa-deployment-access=permitido");
+    // Simula a proteção HTTP do deploy, sem credenciais reais nem sessão Supabase.
+    if (!recebeuCookie) return route.fulfill({
+      status: 401, contentType: "text/html", body: "<p>Proteção de implantação de QA</p>",
+    });
+    return route.fulfill({ json: { estado: "ok", itens: [], proximo: null } });
+  });
+  const resposta = page.waitForResponse(response => new URL(response.url()).pathname === "/api/ranking-geral");
+  await page.goto("/em-alta");
+  expect((await resposta).status()).toBe(200);
+  expect(recebeuCookie, "Cookie sintético HttpOnly precisa chegar somente à rota local").toBe(true);
+  const section = page.getByRole("region", { name: "Ranking Geral de Histórias" });
+  await expect(section.getByRole("status")).toHaveText("Nenhuma história com avaliações públicas disponível.");
+  await expect(section.getByRole("alert")).toHaveCount(0);
+});
+
 test("UI controlada: carregamento, paginação, cursor revogado, vazio, erro e teclado", async ({ page }) => {
   let release;
   const hold = new Promise(resolve => { release = resolve; });

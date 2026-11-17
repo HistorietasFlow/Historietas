@@ -1,6 +1,17 @@
 # Estado atual
 
-### Ranking Geral — validação conjunta em branch isolada (17/11/2026)
+### Ranking Geral — SQL aplicado, ativação revertida e correção de transporte (17/11/2026)
+
+- #2355 mesclada na main `758e3fd82d66f5d765a663368dcd0ea1b785cad6`; sua árvore é a mesma do head aprovado `9ab0baa`. #2348/#2352 foram marcadas como mescladas pelo GitHub; #2354 continua aberta sobre a branch SQL, sem merge separado.
+- Migrações remotas autorizadas aplicadas no Supabase `drqqgfxrchnymetmpabd`, confirmado no JS do deploy: arquivo `20261116230000` registrado como `20261117131102` (`listar_ranking_geral`); arquivo `20261117084500` como `20261117131111` (`ranking_geral_nucleo_paginado`). Nenhuma outra migration nem repair de histórico. Três corpos SQL idênticos aos revisados; ACLs, owner, search_path e selo conferidos. Comparação READ ONLY/REPEATABLE READ sob anon coincidiu com RLS; conjunto público atual vazio, sem fixture remota.
+- CI da main [#44090979100](https://github.com/HistorietasFlow/Historietas/actions/runs/44090979100) aprovada: 17 cenários do ranking sem retries. Playwright geral: 262 aprovados + dois flakies de login/redirecionamento em author-workflow; coletor marcou três instáveis por incluir um desktop reexecutado/skipped no grupo serial, sem falha própria. Causas gerais inconclusivas. Os 12 PNGs do ranking eram idênticos aos já revisados.
+- Ativação posterior foi autorizada: flag true somente production e deployment `dpl_DTuuGqNvixkr1Y5vPQBoL4QNR64o`, mesmo commit, READY. API retornou 200/ok/vazio/no-store e cursor inválido 400. No navegador protegido, a seção exibiu erro, inclusive após Tentar novamente; abrir diretamente a API no mesmo navegador retornou ok/vazio.
+- **Estado operacional após recuperação:** deployment anterior `dpl_zHrc1SneSka5YjGHoPeiLsRPon5P` promovido novamente; domínio principal confirmou 404/desativado/no-store. Flag production agora **false**; Authentication continua all. O campo latestDeployment identifica o build mais recente, não comprova qual versão recebe os domínios depois de uma promoção. Nenhum dado/policy/SQL foi alterado na recuperação.
+- A interface usava `credentials: omit`, removendo também o cookie de acesso ao deploy privado. Correção em branch dedicada: `same-origin` somente no fetch relativo para o Next; o loader server-only continua criando cliente Supabase anônimo e ignorando cookies/Authorization recebidos. Regressão Playwright com cookie HttpOnly sintético exige passagem pelo gateway simulado em 1440/390/320, mantendo o teste real de sessão ignorada.
+- Correção ainda depende de CI e revisão antes de novo merge/reativação. Não considerar a ativação concluída. Evidências operacionais detalhadas na [#2355](https://github.com/HistorietasFlow/Historietas/pull/2355); sem abertura pública autorizada.
+- Validação local da correção: 19/19 testes focados, sintaxe QA, ESLint, Typecheck, auditoria estática 199/199 e Build Node 22.23.5 com a flag ligada, DSN/token vazios e Supabase não configurado aprovados. O novo cenário de navegador e a integração SQL permanecem para a CI descartável; não foi repetida a tentativa de Chromium local bloqueada por socket.
+
+### Histórico — Ranking Geral, validação conjunta em branch isolada (17/11/2026)
 
 Reunidas #2348 (`5aac2c3`), #2354 (`1d01b56`) e #2352 (`420cf82d`), sem modificar
 as PRs de origem/main. QA real reutilizada, em Supabase descartável exclusivo,

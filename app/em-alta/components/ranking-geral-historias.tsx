@@ -14,8 +14,9 @@ export function RankingGeralHistorias({ isDesktop }: { isDesktop: boolean }) {
   useEffect(() => {
     const controller = new AbortController();
     const query = pedido.cursor ? `?${new URLSearchParams(pedido.cursor)}` : "";
+    // O cookie do deploy privado precisa chegar ao Next; a rota mantém o Supabase anônimo.
     void fetch(`/api/ranking-geral${query}`, {
-      cache: "no-store", credentials: "omit", signal: controller.signal,
+      cache: "no-store", credentials: "same-origin", signal: controller.signal,
     }).then(async response => {
       if (!response.ok) throw new Error("indisponivel");
       const result: unknown = await response.json();
