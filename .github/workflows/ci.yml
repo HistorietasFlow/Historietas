@@ -229,6 +229,9 @@ jobs:
       - name: Validar Histórias em Comum com Auth e Data API locais
         run: npm run test:historias-em-comum:integration
 
+      - name: Validar Ranking Geral anon, paginação e benchmark em Supabase local
+        run: npm run test:ranking-geral:integration
+
       - name: Preparar autenticação e conteúdo E2E locais
         run: npm run test:e2e:prepare:local -- --github-env "$GITHUB_ENV"
 

@@ -29,6 +29,16 @@
 
 ## Backend e dados
 
+### Ranking Geral — consulta pública separada de Em Alta
+
+- `public.listar_ranking_geral(uuid,text,integer)` (migration da Etapa 2) retorna ID, posição global, média pública elegível, quantidade de votos e pontuação bayesiana, além de assinatura de classificação e estado de cursor.
+- É `SECURITY INVOKER` com GRANT apenas a `anon` e proteção explícita contra execução por contexto autenticado. Somente avaliações visíveis à RLS anônima, inclusive `parcial` autorizada, entram na soma. Nenhum ID de avaliador é exposto. Dados privados podem continuar diferentes na página individual de obra, cujo contrato não muda.
+- Fórmula temporária: `(sum(nota)+30)/(count+10)`, computada com `numeric`. Elegibilidade de obra igual ao catálogo público atual, sem 18+, enquanto esse bloqueio permanecer. Uma avaliação elegível basta. Empate: pontuação DESC, votos DESC, UUID ASC.
+- Paginação por UUID da última obra + assinatura de classificação; se uma votação, publicação ou visibilidade alterar o conjunto, a RPC retorna `cursor_desatualizado` em vez de página incerta. Assinatura por `md5(string_agg(...))` é hipótese sujeita a medição contra keyset simples e carga RLS em Supabase descartável, **não homologada** antes do benchmark.
+- O cliente `lib/supabase/public.ts` é server-only. Etapa 2 não conecta UI, não toca em Em Alta nem altera tabelas, policies ou chamadas existentes. Etapa 3 fará o consumo sem cookie de sessão.
+- Os testes SQL `supabase/tests/database/ranking_geral.test.sql` usam pgTAP e rollback. `qa/integration/ranking-geral-supabase-real.test.mjs` usa Data API local, JWT real e compara `EXPLAIN ANALYZE` com 1.003 obras e 4.012 votos sintéticos. CI só adiciona o gate focado.
+
+
 ### Agendamento de capítulos — contratos e executor administrativo privado
 
 - `20261108132533_infraestrutura_agendamento_capitulos.sql` mantém um registro por
