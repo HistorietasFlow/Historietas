@@ -56,7 +56,7 @@ function verify() {
   assert.ok(oldHash && newHash, "Funcoes nao encontradas");
   assert.notEqual(oldHash, newHash,
     "Migration nao alterou o corpo da funcao de privacidade");
-  const metadata = psql("SELECT prosecdef::text||'|'||provolatile||'|'||" +
+  const metadata = psql("SELECT prosecdef::text||'|'||provolatile::text||'|'||" +
     "coalesce(array_to_string(proconfig,','),'') FROM pg_proc WHERE oid=" +
     quote(original + "(uuid,text,text)") + "::regprocedure;");
   assert.ok(metadata.startsWith("true|s|") || metadata.startsWith("t|s|"),
