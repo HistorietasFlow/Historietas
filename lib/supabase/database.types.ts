@@ -1945,6 +1945,20 @@ export type Database = {
       }
     }
     Functions: {
+      listar_historias_em_comum: {
+        Args: {
+          p_outro_usuario: string
+          p_apos_obra?: string | null
+          p_limite?: number
+        }
+        Returns: {
+          obra_id: string
+          slug: string
+          titulo: string
+          autor: string | null
+          capa_url: string | null
+        }[]
+      }
       registrar_diario_edicao_capitulo: { Args: { p_capitulo_id: string; p_versao: string }; Returns: string | null }
       autorizar_consumidor_cache_capitulos: { Args: Record<PropertyKey, never>; Returns: boolean }
       operar_cache_capitulos: { Args: { p_id: string | null; p_acao: string }; Returns: Json }

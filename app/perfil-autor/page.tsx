@@ -121,6 +121,7 @@ import { ProfileMenu } from "./components/profile-menu";
 import { LoadingSpinner } from "./components/loading-spinner";
 import { ProfilePageState } from "./components/profile-page-state";
 import { ProfileRatingsPanel } from "./components/profile-ratings-panel";
+import { ProfileCommonStoriesSection } from "./components/profile-common-stories-section";
 import { ProfileNavigationPanel } from "./components/profile-navigation-panel";
 import { ProfileHero } from "./components/profile-hero";
 import { ProfileHighlightsLikeButton } from "./components/profile-highlights-like-button";
@@ -1248,6 +1249,19 @@ function PerfilAutorPageContent() {
           onAvaliarAutor={avaliarAutor}
           onAvaliarDiarioPerfil={avaliarDiarioPerfil}
         />
+
+        {carregamentoAtual && autenticacaoCarregada && privacidadeAtual === true &&
+          !privacidadePerfilCarregando && !perfilPertenceAoUsuario &&
+          bibliotecaPerfilVisivel && !existeBloqueioPerfil &&
+          !perfilBloqueadoEntreUsuarios && usuarioIdLogado && perfilAutorId && (
+            <ProfileCommonStoriesSection
+              key={`${versaoIdentidade}:${usuarioIdLogado}:${perfilAutorId}`}
+              usuarioLogadoId={usuarioIdLogado}
+              usuarioVisitadoId={perfilAutorId}
+              language={language}
+              isDesktop={isDesktop}
+            />
+          )}
 
         <ProfileNavigationPanel
           abaAtiva={abaPerfil}

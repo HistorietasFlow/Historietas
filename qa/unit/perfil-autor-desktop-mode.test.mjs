@@ -104,7 +104,7 @@ test("Perfil de Autor delega somente o modo desktop e mantém suas fronteiras", 
   assert.doesNotMatch(pagina, /window\.innerWidth >= 1024/);
   assert.doesNotMatch(pagina, /addEventListener\("resize"/);
   assert.doesNotMatch(pagina, /removeEventListener\("resize"/);
-  assert.equal((pagina.match(/\bisDesktop\b/g) || []).length, 26);
+  assert.equal((pagina.match(/\bisDesktop\b/g) || []).length, 28);
   assert.match(
     pagina,
     /import \{ ProfileHero \} from "\.\/components\/profile-hero";/,
@@ -113,6 +113,10 @@ test("Perfil de Autor delega somente o modo desktop e mantém suas fronteiras", 
   assert.match(
     pagina,
     /<ProfileRatingsPanel[\s\S]*?isDesktop=\{isDesktop\}/,
+  );
+  assert.match(
+    pagina,
+    /<ProfileCommonStoriesSection[\s\S]*?isDesktop=\{isDesktop\}/,
   );
   assert.match(heroSource, /<ProfileHeroIdentity[\s\S]*?isDesktop=\{isDesktop\}/);
   assert.match(heroIdentitySource, /<ProfileAvatar[\s\S]*?isDesktop=\{isDesktop\}/);
