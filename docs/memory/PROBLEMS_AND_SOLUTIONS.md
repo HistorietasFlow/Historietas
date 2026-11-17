@@ -659,3 +659,9 @@ Não substituir a regra autenticada pela variante anônima, não tornar a funç�
 privada uma RPC e não elevar timeouts. A regressão deve cobrir, no mínimo,
 comentário público e privado para `anon`, bloqueio entre contas autenticadas e o
 acesso do autor ao próprio post privado.
+
+## Ajuda — dois campos de título na primeira tentativa do Playwright
+
+Na [CI da PR #2357](https://github.com/HistorietasFlow/Historietas/actions/runs/44149893235/job/134277745131), o teste de envio incerto parou antes do primeiro envio no desktop. O seletor de título encontrou dois inputs. A repetição e o mobile passaram.
+
+No cenário afetado, uma falha aciona uma leitura do DOM antes de relançar o erro. O resumo da tentativa guarda os totais de formulários de suporte e de controles encontrados pelo mesmo seletor de título, com a quantidade visível de cada grupo. Uma leitura indisponível produz `counts: null`. A amostra descreve o DOM logo após a falha. Se a duplicidade já desapareceu, sua origem e visibilidade no instante do erro continuam indeterminadas.

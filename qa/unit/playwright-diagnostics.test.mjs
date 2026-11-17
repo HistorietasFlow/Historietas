@@ -198,3 +198,22 @@ test("missing report produces a safe non-throwing diagnostic for failed earlier 
   assert.equal(summary.shouldUpload, false);
   assert.equal(summary.unavailableReason, "report_missing");
 });
+
+test("Ajuda conserva apenas as quatro contagens válidas da tentativa que falhou", () => {
+  const counts = { forms: 2, visibleForms: 1, titles: 2, visibleTitles: 2 };
+  const scenario = "ajuda-support-form";
+  const device = "desktop";
+  const stdout = [
+    { ...counts, text: "fixture-password" }, null,
+    { ...counts, visibleForms: 3 }, { ...counts, titles: "2" },
+  ].map(sample => SAFE_FLOW_MARKER + JSON.stringify({ scenario, device, counts: sample, html: "fixture-password" }));
+  const summary = buildSafeSummary(reportWith({
+    status: "flaky",
+    results: [{ status: "failed", stdout }, { status: "passed", retry: 1 }],
+  }));
+  const [failure, retry] = summary.tests[0].attempts;
+  assert.deepEqual(failure.safeFlow.map(entry => entry.counts), [counts, null, null, null]);
+  assert.deepEqual(failure.safeFlow[0], { schemaVersion: 1, scenario, device, counts });
+  assert.deepEqual(retry.safeFlow, []);
+  assert.ok(!JSON.stringify(summary).includes("fixture-password"));
+});
