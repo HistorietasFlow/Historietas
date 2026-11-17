@@ -32,6 +32,20 @@ function allowed(value, values, fallback) {
 }
 
 export function sanitizeSafeFlowDiagnostic(input) {
+  if (input?.scenario === "ajuda-support-form") {
+    const { device, counts } = input;
+    if (device !== "desktop" && device !== "mobile") return null;
+    const keys = ["forms", "visibleForms", "titles", "visibleTitles"];
+    const valid = keys.every(key => Number.isSafeInteger(counts?.[key]) &&
+      counts[key] >= 0 && counts[key] <= 10_000) &&
+      counts.visibleForms <= counts.forms && counts.visibleTitles <= counts.titles;
+    return {
+      schemaVersion: 1,
+      scenario: "ajuda-support-form",
+      device,
+      counts: valid ? Object.fromEntries(keys.map(key => [key, counts[key]])) : null,
+    };
+  }
   const scenario = allowed(input?.scenario, SCENARIOS, "unknown");
   if (scenario === "unknown") return null;
 
