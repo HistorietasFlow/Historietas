@@ -55,6 +55,14 @@ function addProfiles(){
   "'QA '||i,CASE WHEN i=1 THEN 'autor' ELSE 'leitor' END "+
   "FROM (SELECT i,('f8400000-0000-4000-8000-'||lpad(i::text,12,'0'))::uuid AS id "+
   "FROM generate_series(1,256) i) x;");
+ sql("INSERT INTO public.preferencias_privacidade("+
+  "user_id,visibilidade_biblioteca,mostrar_avaliacoes,perfil_privado) "+
+  "SELECT "+uid+",CASE WHEN i%13=0 THEN 'somente_eu' "+
+  "WHEN i%13=1 THEN 'seguidores' WHEN i%13=2 THEN 'seguindo' "+
+  "ELSE 'publico' END,(i%9<>0),false "+
+  "FROM generate_series(1,256) i WHERE i%17<>0;");
+ console.log("QA_FIXTURE_PRIVACY_OK synthetic_users=256 "+
+  "preferences_inserted=true public_partial_private_variants=true");
 }
 function insertRange(start,end){
  const work="('f8500000-0000-4000-8000-'||lpad(i::text,12,'0'))::uuid";
@@ -236,6 +244,13 @@ function allPages(){
 }
 function global(label){
  const actual=allPages(),expected=baselineAggregates();
+ assert.ok(expected.rows.length>0,
+  "Fixture inválida: nenhuma avaliação pública; comparar ranking vazio não prova equivalência");
+ console.log("QA_GLOBAL_DIAGNOSTIC "+JSON.stringify({
+  stage:label,expected_works:expected.rows.length,
+  returned_works:actual.items.length,
+  expected_signature:expected.signature,actual_signature:actual.signature
+ }));
  assert.equal(actual.signature,expected.signature,"Signature mismatch "+label);
  assert.equal(actual.items.length,expected.rows.length,"Global rows mismatch "+label);
  for(let i=0;i<expected.rows.length;i++){
