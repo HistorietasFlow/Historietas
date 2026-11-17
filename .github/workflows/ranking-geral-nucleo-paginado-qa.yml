@@ -1,0 +1,91 @@
+name: Ranking Geral - corretiva pagina segura (QA isolada)
+
+on:
+  push:
+    branches:
+      - fix/ranking-geral-nucleo-paginado-2353
+
+permissions:
+  contents: read
+
+concurrency:
+  group: qa-ranking-geral-nucleo-paginado-2353
+  cancel-in-progress: true
+
+jobs:
+  db-and-privacy:
+    name: Supabase descartavel, pgTAP, Data API, equivalencia global
+    runs-on: ubuntu-24.04
+    timeout-minutes: 50
+    env:
+      CI: "true"
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - name: Checkout sem credenciais persistidas
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Node 22
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            qa/package-lock.json
+
+      - name: Dependencias travadas e verificacao estatica da QA
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci
+          npm --prefix qa ci
+          node --check qa/benchmarks/ranking-geral-nucleo-migrado.test.mjs
+          test -f supabase/migrations/20261117084500_ranking_geral_nucleo_paginado.sql
+          test -f supabase/tests/database/ranking_geral_nucleo_paginado.test.sql
+
+      - name: Supabase CLI fixa
+        uses: supabase/setup-cli@689adcfb80d947100a1eab127289b97d1fb07b13 # v3.2.0
+        with:
+          version: 2.116.0
+
+      - name: Preparar Supabase 100% local e migracoes reais da branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          supabase init
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import {readFileSync,writeFileSync} from 'node:fs';
+          const file='supabase/config.toml',raw=readFileSync(file,'utf8');
+          const section=raw.match(/\[db\.pooler\][\s\S]*?(?=\n\[|$)/)?.[0];
+          assert.ok(section,'Pooler local ausente');
+          const updated=section.replace(/^enabled = false$/m,'enabled = true')
+            .replace(/^pool_mode = "transaction"$/m,'pool_mode = "session"');
+          assert.match(updated,/^enabled = true$/m);
+          writeFileSync(file,raw.replace(section,updated));
+          NODE
+          cp qa/integration/supabase/20260826000637_normalizar_acl_baseline_local.sql \
+             supabase/migrations/20260826000637_normalizar_acl_baseline_local.sql
+          supabase start > /tmp/qa-supabase-start.log 2>&1 || {
+            echo "::error::Supabase descartavel nao iniciou; nao rodar SQL remoto."
+            exit 1
+          }
+
+      - name: Regressao completa pgTAP com migration de corretiva aplicada localmente
+        run: supabase test db
+
+      - name: Data API autentica/RPC em Supabase local
+        run: node --test --test-concurrency=1 qa/integration/ranking-geral-supabase-real.test.mjs
+
+      - name: Todas as obras, cursor, revogacoes e chamadas diretas sob anon
+        run: node qa/benchmarks/ranking-geral-nucleo-migrado.test.mjs
+
+      - name: Destruir Supabase QA sem backup
+        if: always()
+        shell: bash
+        run: |
+          if command -v supabase >/dev/null && supabase status >/dev/null 2>&1; then
+            supabase stop --no-backup
+          fi

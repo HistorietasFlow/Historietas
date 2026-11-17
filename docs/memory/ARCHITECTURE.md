@@ -1,5 +1,12 @@
 # Arquitetura e infraestrutura
 
+### Ranking Geral — corretiva de escala em DRAFT (#2353)
+
+- Nova migration **proposta**, em branch corretiva stacked na #2348. A funcao exposta `public.listar_ranking_geral(uuid,text,integer)` permanece `SECURITY INVOKER` e apenas `anon`; delega a mesma pagina publica ao `historietas_privado.listar_ranking_geral_nucleo(uuid,text,integer)`, `SECURITY DEFINER` com owner `postgres`, `search_path` fixo e EXECUTE apenas `anon`.
+- O nucleo privado efetua filtragem explicita de avaliacao `publico/parcial`, preferencia permitida pela helper de Biblioteca existente, obra publica e capitulo com autoria consistente. Nao agrega votos privados, exclui autoavaliacoes, mantem formula bayesiana e cursor. Nao divulga votos individuais nem soma bruta no retorno.
+- **Trust boundary:** a funcao privada ignora RLS porque executa com privilegio de proprietario. A pagina maxima (50), cursor, papeis e identidade sao checados nela propria, inclusive em chamada SQL direta. A RLS de `public.obra_avaliacoes` nao muda e continua regendo consultas convencionais.
+- Trata-se de proposta em PR DRAFT sujeita a auditoria e CI local. Alteracoes futuras nas policies de visibilidade exigem teste de equivalencia global; proibido aplicar migration ou liberar UI enquanto nao houver autorizacao.
+
 ## Aplicação
 
 - Framework: Next.js 16.3.4

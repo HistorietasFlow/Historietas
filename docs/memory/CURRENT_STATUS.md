@@ -1,5 +1,13 @@
 # Estado atual
 
+### Ranking Geral — PR corretiva paginada de desempenho (17/11/2026, DRAFT)
+
+- Stacked sobre a PR #2348, sem modificar a #2348 nem a #2352.
+- Variante para reduzir repeticao da helper de privacidade por voto: nucleo paginado interno `historietas_privado.listar_ranking_geral_nucleo`, `SECURITY DEFINER`, apenas `anon` sem identidade, `search_path` vazio e owner `postgres`. A RPC publica permanece `SECURITY INVOKER`; RLS e grants das tabelas nao mudam.
+- O nucleo privado e executavel diretamente pelo papel SQL `anon`: sua propria autorizacao, a pagina maxima 50, o cursor e o retorno sem IDs de avaliadores sao controles obrigatorios; a RLS das tabelas nao protege a execucao privilegiada. Qualquer mudanca em policy de obras/capitulos/avaliacoes/privacidade exige revisao de equivalencia.
+- QA anterior [#44047977166](https://github.com/HistorietasFlow/Historietas/actions/runs/44047977166) validou equivalencia global em 4k/20k e paginas, com RPC candidata 82,59 ms/102,02 ms no Supabase descartavel; nao e desempenho de producao. A PR corretiva exige sua propria CI, teste SQL e auditoria antes de qualquer integracao.
+- **Nao aplicar migration remota, merge, deploy ou ativar o gate** sem autorizacao especifica. Issue: #2353.
+
 Atualizado em: 2026-11-13
 
 ### Capas privadas — integração de código para validação, sem ativação
