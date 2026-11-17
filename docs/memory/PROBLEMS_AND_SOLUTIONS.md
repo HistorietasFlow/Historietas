@@ -1,15 +1,29 @@
 # Problemas conhecidos e soluções
 
-## Biblioteca: candidata de leitura unica, ainda nao homologada
+## Biblioteca: uma leitura de preferencias — validação isolada concluida
 
-Sobre main `77beb0e4`, a candidata `20261117035853` reune as duas leituras de
-preferencias da helper compartilhada sem mudar policies, ACL ou retorno NULL.
-Guard de pg_proc aborta mudancas em propriedades diferentes do corpo SQL.
-Validacao estatica 4/4 e unitarios relacionados 19/19; pgTAP, Data API e benchmark
-pendentes: Docker Engine indisponivel e somente 883 MiB livres no notebook.
-Nao reutilizar o ganho do experimento como homologacao desta migration.
-Escopo, consumidores, limites do experimento e plano de retomada em
-[Otimizacao da privacidade da Biblioteca](../biblioteca-privacidade-otimizacao.md).
+Na branch `perf/biblioteca-privacy-single-read`, a migration
+`20261117035853` substitui duas consultas escalares de preferencias por
+um unico `LEFT JOIN`, mantendo a funcao compartilhada, a RLS e o tratamento
+de retorno `NULL`. O guard da migration conserva as propriedades de
+`pg_proc`, incluindo owner, ACL, OID, SECURITY DEFINER e search_path.
+
+A execução isolada [#44017527508](https://github.com/HistorietasFlow/Historietas/actions/runs/44017527508)
+passou com pgTAP **1.378**, integracoes **8/8 Historias em Comum**,
+**22/22 Paginacao** e **5/5 Ranking Geral**. Os 36 testes pgTAP novos
+realizam 12.600 comparacoes de equivalencia no banco local. O notebook
+permaneceu sem Supabase/Docker ativo, por indisponibilidade de recursos.
+
+O benchmark sob RLS `anon` mostrou queda de `Shared Hit Blocks` de
+aproximadamente 47%-48%, mas apenas **0,52%-0,83% de melhora na mediana**
+(4 mil/20 mil avaliacoes), com pequena piora do p95 amostral. O experimento
+anterior com ganho de 13%-14% nao e diretamente comparavel e nao deve
+fundamentar decisao de desempenho. Nao foram medidos caminhos autenticados
+ou do proprietario; testes da Data API nao cobrem toda matriz de colecoes.
+
+**Parecer: APTO COM RESSALVAS para PR draft, NAO homologado para merge.**
+Sem migration remota, deploy ou alteracao da PR #2348. Evidencias, metodo e
+riscos em [Otimizacao da privacidade da Biblioteca](../biblioteca-privacidade-otimizacao.md).
 
 ## Favoritos: referencias a obras nao divulgaveis
 
