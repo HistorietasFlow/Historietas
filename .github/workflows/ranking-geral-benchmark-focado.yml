@@ -1,0 +1,66 @@
+name: Benchmark focado - Ranking Geral (somente branch isolada)
+
+on:
+  push:
+    branches:
+      - bench/ranking-geral-2348-supabase
+
+permissions:
+  contents: read
+
+jobs:
+  benchmark-rpc:
+    name: SQL equivalente em Supabase local descartavel
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      CI: "true"
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - name: Checkout do commit de benchmark
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Node 22 para script isolado
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+
+      - name: Verificar sintaxe do benchmark
+        run: node --check qa/benchmarks/ranking-geral-supabase-focado.mjs
+
+      - name: Instalar Supabase CLI
+        uses: supabase/setup-cli@689adcfb80d947100a1eab127289b97d1fb07b13 # v3.2.0
+        with:
+          version: 2.116.0
+
+      - name: Inicializar Supabase local com migrations reais
+        shell: bash
+        run: |
+          set -euo pipefail
+          supabase init
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import {readFileSync, writeFileSync} from 'node:fs';
+          const path='supabase/config.toml';
+          const text=readFileSync(path,'utf8');
+          const section=text.match(/\[db\.pooler\][\s\S]*?(?=\n\[|$)/)?.[0];
+          assert.ok(section,'Pooler ausente');
+          const session=section.replace(/^enabled = false$/m,'enabled = true')
+            .replace(/^pool_mode = "transaction"$/m,'pool_mode = "session"');
+          writeFileSync(path,text.replace(section,session));
+          NODE
+          cp qa/integration/supabase/20260826000637_normalizar_acl_baseline_local.sql \
+            supabase/migrations/20260826000637_normalizar_acl_baseline_local.sql
+          supabase start
+
+      - name: Medir 2 variantes equivalentes com anon RLS
+        run: node qa/benchmarks/ranking-geral-supabase-focado.mjs
+
+      - name: Encerrar ambiente descartavel
+        if: always()
+        run: |
+          if supabase status >/dev/null 2>&1; then
+            supabase stop --no-backup
+          fi
