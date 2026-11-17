@@ -63,9 +63,6 @@ function verify() {
     "A funcao perdeu SECURITY DEFINER ou STABLE");
   console.log("PRIVACY_MIGRATION_VERIFIED");
 }
-function uuid(n) {
-  return "f9100000-0000-4000-8000-" + String(n).padStart(12, "0");
-}
 function setup() {
   const gen = "('f9100000-0000-4000-8000-'||lpad(i::text,12,'0'))::uuid";
   psql([
