@@ -10,6 +10,8 @@ O diagnóstico agora conta somente os alertas do form. Em falha, uma leitura DOM
 
 Regressões determinísticas cobrem contaminação por alerta externo, campos apagados/divergentes/inválidos, idiomas, DOM indisponível, navegação de documento versus iframe/RSC, descarte de dados livres e passagem pelo coletor final. Node 22.23.5: 21/21 testes, ESLint, sintaxe e diff check aprovados. Execução browser efetiva pendente da CI; Chromium local continua indisponível por restrição de socket, sem nova tentativa idêntica. Nenhum timeout/retry, asserção, fluxo de autenticação, dado remoto ou gate foi alterado. **Causa do flaky ainda inconclusiva; não declarar corrigido nem repetir CI apenas para provocar recorrência.** Relacionado à #2346, sem fechar o issue.
 
+Na [CI da #2357](https://github.com/HistorietasFlow/Historietas/actions/runs/44142509361), o login do cenário de rascunho mobile passou de primeira. O cenário editorial de edição confirmada parou em /login no desktop e passou na repetição. Esse cenário agora também ativa o observador de formulário em desktop e mobile. A causa do timeout segue inconclusiva.
+
 ## Ranking Geral — cookies do gateway e consulta anônima (17/11/2026)
 
 Estado posterior: #2356 mesclada, reativação privada autorizada e API/interface real no estado vazio confirmadas; CI da main aprovada. Os parágrafos abaixo descrevem a falha e a recuperação anteriores, não o estado atual da flag. Histórico operacional na #2356.
