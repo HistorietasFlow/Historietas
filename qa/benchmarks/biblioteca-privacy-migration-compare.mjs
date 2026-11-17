@@ -42,7 +42,8 @@ function capture() {
   assert.ok(definition.includes(oldName), "Definicao original nao localizada");
   const clone = definition.replace(oldName, "FUNCTION " + baseline + "(");
   assert.notEqual(clone, definition);
-  psql(clone + "\nREVOKE ALL ON FUNCTION " + baseline +
+  const terminatedClone = clone.trimEnd().endsWith(";") ? clone : clone.trimEnd() + ";";
+  psql(terminatedClone + "\nREVOKE ALL ON FUNCTION " + baseline +
     "(uuid,text,text) FROM PUBLIC;\nGRANT EXECUTE ON FUNCTION " + baseline +
     "(uuid,text,text) TO anon,authenticated;");
   assert.equal(fingerprint(original), fingerprint(baseline),
