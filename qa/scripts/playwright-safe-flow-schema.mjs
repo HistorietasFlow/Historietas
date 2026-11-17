@@ -1,13 +1,18 @@
 export const SAFE_FLOW_MARKER = "HISTORIETAS_QA_SAFE_FLOW ";
 
 const SCENARIOS = new Set(["editorial-status", "listas-identity", "canonical-reader-progress", "reading-progress-cross-device", "login-flaky"]);
-const ENDPOINTS = new Set(["auth-token", "auth-user", "works", "chapters", "profiles", "favorites", "permissions", "public-reader", "content-metrics", "reading-progress"]);
+const ENDPOINTS = new Set(["auth-token", "auth-user", "works", "chapters", "profiles", "favorites", "permissions", "public-reader", "content-metrics", "reading-progress", "login-document"]);
 const METHODS = new Set(["GET", "POST", "PATCH", "DELETE"]);
 const ROUTES = new Set(["login", "editor", "lists", "public-work", "reader", "home", "library", "other"]);
 const READY_STATES = new Set(["loading", "interactive", "complete", "unavailable"]);
 const AUTH_STATES = new Set(["unknown", "transition", "authenticated", "anonymous"]);
 const RENDERED_STATES = new Set([
   "loading", "editor-enabled", "updated", "public-confirmed", "private", "target", "previous", "organizing", "error", "continue",
+]);
+const LOGIN_FORM_STATES = new Set([
+  "login-form-readable", "login-fields-readable", "login-email-empty", "login-email-expected",
+  "login-password-empty", "login-password-expected", "login-email-invalid", "login-password-invalid",
+  "login-email-required", "login-password-min", "login-other-error",
 ]);
 const READER_PHASES = new Set(["start", "navigation", "identity-ready", "mark-read", "sync-read", "home", "library", "unmark-read", "sync-unread", "final"]);
 const PHASES = {
@@ -49,6 +54,7 @@ export function sanitizeSafeFlowDiagnostic(input) {
     const endpoint = allowed(entry?.endpoint, ENDPOINTS, "unknown");
     const method = allowed(entry?.method, METHODS, "unknown");
     if (endpoint === "unknown" || method === "unknown") continue;
+    if (endpoint === "login-document" && scenario !== "login-flaky") continue;
     const statuses = [];
     for (const status of Array.isArray(entry?.statuses) ? entry.statuses.slice(0, 16) : []) {
       const code = boundedInteger(status?.code, 599);
@@ -71,7 +77,8 @@ export function sanitizeSafeFlowDiagnostic(input) {
     if (phase === "unknown") continue;
     const rendered = [];
     for (const state of Array.isArray(snapshot?.rendered) ? snapshot.rendered.slice(0, 16) : []) {
-      const name = allowed(state?.state, RENDERED_STATES, "unknown");
+      const name = RENDERED_STATES.has(state?.state) ||
+        (scenario === "login-flaky" && LOGIN_FORM_STATES.has(state?.state)) ? state.state : "unknown";
       if (name !== "unknown") rendered.push({ state: name, count: boundedInteger(state?.count, 10_000) });
     }
     snapshots.push({

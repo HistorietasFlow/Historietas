@@ -2,7 +2,9 @@ import assert from "node:assert/strict";
 import { EventEmitter } from "node:events";
 import { test } from "node:test";
 import { SAFE_FLOW_MARKER, sanitizeSafeFlowDiagnostic } from "../scripts/playwright-safe-flow-schema.mjs";
-import { observeSafeFlow, readerPayloadMatch } from "../tests/playwright-safe-flow-diagnostics.mjs";
+import { observeSafeFlow, readerPayloadMatch, readLoginFailureForm } from "../tests/playwright-safe-flow-diagnostics.mjs";
+import { buildSafeSummary } from "../scripts/collect-playwright-diagnostics.mjs";
+import { loadApplicationModule } from "../helpers/load-application-module.mjs";
 
 const secrets = [
   "fixture-password", "Bearer private-token", "session-cookie", "personal-id", "Person Name", "person@example.test", "Private list title",
@@ -175,4 +177,125 @@ test("flaky de login: guarda somente rede, estados fixos e contagens", () => {
   });
   assert.ok(!JSON.stringify(report).includes(segredo));
   assert.equal(sanitizeSafeFlowDiagnostic({ scenario: "login-private" }), null);
+});
+
+const loginCredentials = { email: secrets[5], password: secrets[0] };
+function loginForm({ email = loginCredentials.email, password = loginCredentials.password,
+  emailValid = true, passwordValid = true, messages = [], forms = 1 } = {}) {
+  const form = {
+    querySelector(selector) {
+      return selector === 'input[type="email"]' ? { value: email, validity: { valid: emailValid } }
+        : { value: password, validity: { valid: passwordValid } };
+    },
+    querySelectorAll(selector) {
+      assert.equal(selector, '[role="alert"]');
+      return messages.map(textContent => ({ textContent }));
+    },
+  };
+  return { evaluateAll: async (read, expected) => read(Array.from({ length: forms }, () => form), expected) };
+}
+
+test("login: o formulário sem erro não herda o alert externo do anunciador do Next", async () => {
+  const form = loginForm();
+  const page = { getByRole: () => ({ count: async () => 1 }), locator: () => form };
+  assert.equal(await page.getByRole("alert").count(), 1);
+  const states = await readLoginFailureForm(page.locator("form"), loginCredentials);
+  assert.equal(states.error, 0);
+  assert.equal(states["login-form-readable"], 1);
+  assert.equal(states["login-fields-readable"], 1);
+  assert.equal(states["login-email-expected"], 1);
+  assert.equal(states["login-password-expected"], 1);
+  assert.equal(states["login-other-error"], 0);
+  for (const secret of secrets) assert.ok(!JSON.stringify(states).includes(secret));
+});
+
+test("login: distingue campos apagados, divergentes e inválidos sem emitir seus valores", async () => {
+  const empty = await readLoginFailureForm(loginForm({ email: "", password: "", emailValid: false, passwordValid: false }), loginCredentials);
+  assert.equal(empty["login-email-empty"], 1);
+  assert.equal(empty["login-password-empty"], 1);
+  assert.equal(empty["login-email-expected"], 0);
+  assert.equal(empty["login-password-expected"], 0);
+  assert.equal(empty["login-email-invalid"], 1);
+  assert.equal(empty["login-password-invalid"], 1);
+  const different = await readLoginFailureForm(loginForm({ email: secrets[3], password: secrets[1] }), loginCredentials);
+  assert.equal(different["login-fields-readable"], 1);
+  assert.equal(different["login-email-empty"], 0);
+  assert.equal(different["login-password-empty"], 0);
+  assert.equal(different["login-email-expected"], 0);
+  assert.equal(different["login-password-expected"], 0);
+  assert.ok(Object.values(different).every(value => Number.isInteger(value)));
+  for (const secret of secrets) assert.ok(!JSON.stringify(different).includes(secret));
+});
+
+test("login: classifica apenas os dois erros locais conhecidos nos três idiomas", async () => {
+  const { LOGIN_TRANSLATIONS } = loadApplicationModule("app/login/lib/login-translations.ts");
+  for (const language of ["pt-BR", "en", "es"]) {
+    for (const [key, state] of [["emailRequired", "login-email-required"], ["passwordMin", "login-password-min"]]) {
+      const states = await readLoginFailureForm(loginForm({ messages: [LOGIN_TRANSLATIONS[language][key]] }), loginCredentials);
+      assert.equal(states.error, 1);
+      assert.equal(states[state], 1);
+      assert.equal(states["login-other-error"], 0);
+    }
+  }
+  const states = await readLoginFailureForm(loginForm({ messages: [secrets[1], secrets[5]] }), loginCredentials);
+  assert.equal(states.error, 2);
+  assert.equal(states["login-other-error"], 2);
+  for (const secret of secrets) assert.ok(!JSON.stringify(states).includes(secret));
+});
+
+test("login: diagnóstico indisponível não inventa campos ou erros nem propaga exceções", async () => {
+  for (const form of [loginForm({ forms: 0 }), loginForm({ forms: 2 }), {
+    evaluateAll: async () => { throw Error(secrets[0]); },
+  }]) {
+    assert.deepEqual(await readLoginFailureForm(form, loginCredentials), { "login-form-readable": 0 });
+  }
+});
+
+test("login: conta só documentos /login do frame principal, sem confundir RSC ou iframe", async () => {
+  const mainFrame = {};
+  class Page extends EventEmitter {
+    url() { return "http://127.0.0.1/login"; }
+    mainFrame() { return mainFrame; }
+    async evaluate() { return "complete"; }
+  }
+  const page = new Page();
+  const observer = observeSafeFlow(page, "login-flaky", { device: "mobile" });
+  const request = (navigation, frame = mainFrame) => ({
+    url: () => `http://127.0.0.1/login?private=${encodeURIComponent(secrets[1])}`,
+    method: () => "GET", isNavigationRequest: () => navigation, frame: () => frame,
+    headers: () => { throw Error("Não deve ler headers"); },
+    postData: () => { throw Error("Não deve ler body"); },
+  });
+  for (const req of [request(true), request(false), request(true, {}), request(true)]) {
+    page.emit("request", req);
+    page.emit("response", { request: () => req, status: () => 200 });
+  }
+  await observer.capture("failure", { rendered: await readLoginFailureForm(loginForm(), loginCredentials) });
+  let output = ""; const write = process.stdout.write;
+  process.stdout.write = chunk => { output += chunk; return true; };
+  try { observer.emit(); } finally { process.stdout.write = write; observer.dispose(); }
+  const payload = JSON.parse(output.slice(SAFE_FLOW_MARKER.length));
+  assert.deepEqual(payload.network, [{ endpoint: "login-document", method: "GET", requestCount: 2,
+    failedCount: 0, statuses: [{ code: 200, count: 2 }] }]);
+  assert.ok(payload.snapshots[0].rendered.some(state => state.state === "error" && state.count === 0));
+  assert.equal(page.listenerCount("request"), 0);
+  const summary = buildSafeSummary({ suites: [{ specs: [{ tests: [{ status: "flaky", expectedStatus: "passed",
+    results: [{ status: "failed", stdout: [{ text: output }] }, { status: "passed", retry: 1 }],
+  }] }] }] });
+  assert.deepEqual(summary.tests[0].attempts[0].safeFlow[0], payload);
+  for (const secret of secrets) assert.ok(!JSON.stringify(summary).includes(secret));
+});
+
+test("login: o sanitizador rejeita estados/documentos desse diagnóstico em outros cenários", () => {
+  const payload = { scenario: "editorial-status",
+    network: [{ endpoint: "login-document", method: "GET", requestCount: 2 }],
+    snapshots: [{ phase: "start", rendered: [{ state: "login-email-expected", count: 1 }] }],
+  };
+  const result = sanitizeSafeFlowDiagnostic(payload);
+  assert.deepEqual(result.network, []);
+  assert.deepEqual(result.snapshots[0].rendered, []);
+  const login = sanitizeSafeFlowDiagnostic({ ...payload, scenario: "login-flaky", snapshots: [{ phase: "failure",
+    rendered: [{ state: secrets[5], count: 1 }, { state: "login-password-expected", count: secrets[0] }],
+  }] });
+  assert.deepEqual(login.snapshots[0].rendered, [{ state: "login-password-expected", count: 0 }]);
 });
