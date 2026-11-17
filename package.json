@@ -6,6 +6,7 @@
     "node": "22.x"
   },
   "scripts": {
+    "posttest:static": "node --test --test-concurrency=1 qa/unit/ranking-geral-interface.test.mjs",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",

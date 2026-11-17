@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { RankingGeralHistorias } from "./components/ranking-geral-historias";
 import { useHistorietasTheme } from "../../lib/historietasTheme";
 import { useEmAltaAuthSession } from "./hooks/use-em-alta-auth-session";
 import { useEmAltaDesktopMode } from "./hooks/use-em-alta-desktop-mode";
@@ -123,6 +124,8 @@ export default function EmAltaPage() {
 
       <section style={isDesktop ? desktopContainerStyle : containerStyle}>
         <EmAltaHeader isDesktop={isDesktop} titulo={tituloCabecalho} />
+
+        {process.env.NEXT_PUBLIC_RANKING_GERAL_PREVIEW === "true" && <RankingGeralHistorias isDesktop={isDesktop} />}
 
         {erroRanking && <div role="alert">
           <p>Não foi possível atualizar todos os dados do Em Alta.</p>

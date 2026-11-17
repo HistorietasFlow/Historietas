@@ -1,5 +1,14 @@
 # Estado atual
 
+### Ranking Geral — interface Etapa 3 em preparação
+
+Seção aditiva de `/em-alta` e loader server-only anônimo preparados em branch
+independente da #2348. Gate `NEXT_PUBLIC_RANKING_GERAL_PREVIEW` desligado por
+padrão; sem migration incorporada, aplicação remota ou autorização de publicação.
+Paginação por cursor/assinatura, estados explícitos e nota pública sem fallback
+pessoal. Homologação Supabase/Playwright/visual pendente; ver
+[contratos e plano de testes](../ranking-geral-interface-etapa3.md).
+
 Atualizado em: 2026-11-13
 
 ### Capas privadas — integração de código para validação, sem ativação
