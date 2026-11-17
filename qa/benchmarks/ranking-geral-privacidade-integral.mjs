@@ -143,7 +143,7 @@ function switchToCandidate(){
   "Auth policy predicate changed");
  assert.equal(sql("SELECT has_function_privilege('anon','"+
   schema+".autores_visiveis_anon()','EXECUTE')::text||'|'"+
-  "|has_function_privilege('authenticated','"+
+  "||has_function_privilege('authenticated','"+
   schema+".autores_visiveis_anon()','EXECUTE')::text"),
   "true|false");
  console.log("AUTHENTICATED_SELECT_POLICY_UNCHANGED");
