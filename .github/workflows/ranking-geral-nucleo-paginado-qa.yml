@@ -7,7 +7,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: qa-ranking-geral-nucleo-paginado-2353
+  group: qa-ranking-geral-nucleo-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:

@@ -1,0 +1,144 @@
+name: Ranking Geral - interface e SQL integrados
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: qa-ranking-geral-interface-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  interface-real:
+    name: Supabase descartavel, ranking real e Playwright desktop/mobile
+    runs-on: ubuntu-24.04
+    timeout-minutes: 50
+    env:
+      CI: "true"
+      NEXT_TELEMETRY_DISABLED: "1"
+      SENTRY_AUTH_TOKEN: ""
+      NEXT_PUBLIC_SENTRY_DSN: ""
+      SENTRY_DSN: ""
+      NEXT_PUBLIC_RANKING_GERAL_PREVIEW: "true"
+      E2E_BASE_URL: http://127.0.0.1:3000
+      PW_TEST_CONNECT_WS_ENDPOINT: ws://127.0.0.1:3001/
+      PLAYWRIGHT_IMAGE: mcr.microsoft.com/playwright:v1.62.1-noble@sha256:dcc5531e97840b9b5e794f2814476b21571c5124a3fca2267d73041f56e7580e
+    steps:
+      - name: Checkout da branch integrada sem credenciais persistidas
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Node 22
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            qa/package-lock.json
+
+      - name: Instalar dependencias travadas
+        run: |
+          npm ci
+          npm --prefix qa ci
+
+      - name: Conferir migrations e QA do mesmo checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f supabase/migrations/20261116230000_listar_ranking_geral.sql
+          test -f supabase/migrations/20261117084500_ranking_geral_nucleo_paginado.sql
+          test -f supabase/tests/database/ranking_geral_nucleo_paginado.test.sql
+          node --check qa/feature-tests/ranking-geral/zz-real-fixture.spec.mjs
+          node --check qa/feature-tests/ranking-geral/zz-nav-integrated.spec.mjs
+          node --check qa/scripts/ranking-geral-etapa3-local-env.mjs
+
+      - name: Instalar Supabase CLI fixa
+        uses: supabase/setup-cli@689adcfb80d947100a1eab127289b97d1fb07b13 # v3.2.0
+        with:
+          version: 2.116.0
+
+      - name: Inicializar Supabase local com migrations e ACL do projeto
+        shell: bash
+        run: |
+          set -euo pipefail
+          supabase init
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import { readFileSync, writeFileSync } from 'node:fs';
+          const config='supabase/config.toml';
+          const source=readFileSync(config,'utf8');
+          const section=source.match(/\[db\.pooler\][\s\S]*?(?=\n\[|$)/)?.[0];
+          assert.ok(section,'Pooler local nao encontrado');
+          const updated=section.replace(/^enabled = false$/m,'enabled = true')
+            .replace(/^pool_mode = "transaction"$/m,'pool_mode = "session"');
+          assert.match(updated,/^enabled = true$/m);
+          writeFileSync(config,source.replace(section,updated));
+          NODE
+          cp qa/integration/supabase/20260826000637_normalizar_acl_baseline_local.sql \
+             supabase/migrations/20260826000637_normalizar_acl_baseline_local.sql
+          supabase start
+
+      # pgTAP/Data API/4k/20k permanecem no job RLS obrigatorio e na suite Tests.
+      # Este banco exclusivo recebe somente a fixture da interface real.
+
+      - name: Configurar somente URL e chave anon locais para o Next
+        run: node qa/scripts/ranking-geral-etapa3-local-env.mjs
+
+      - name: Criar 25 obras validas e 4 excluidas no PostgreSQL descartavel
+        shell: bash
+        run: |
+          set -euo pipefail
+          DB="$(docker ps --format '{{.Names}}' | grep '^supabase_db_')"
+          test "$(printf '%s\n' "$DB" | wc -l)" -eq 1
+          docker exec -i "$DB" psql -U postgres -d postgres -X -v ON_ERROR_STOP=1 \
+            < qa/fixtures/ranking-geral-etapa3-local.sql
+
+      - name: Build com gate de teste ativado somente no runner
+        run: npm run build
+
+      - name: Chromium oficial em container sem segredos
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker pull "$PLAYWRIGHT_IMAGE"
+          docker run --detach --interactive --init \
+            --name "historietas-ranking-e2e-$GITHUB_RUN_ID" \
+            --network host --ipc=host --user pwuser \
+            --cap-drop=ALL --security-opt=no-new-privileges \
+            --mount "type=bind,src=$PWD/qa/node_modules,dst=/opt/qa/node_modules,readonly" \
+            "$PLAYWRIGHT_IMAGE" \
+            node /opt/qa/node_modules/playwright/cli.js run-server --host 127.0.0.1 --port 3001
+          node qa/scripts/check-playwright-server.mjs
+
+      - name: Playwright real desktop/mobile, axe, revogacao e capturas
+        run: node qa/scripts/run-playwright-local.mjs --config=playwright.ranking-geral.config.mjs --workers=1 --retries=0
+
+      - name: Disponibilizar somente imagens sinteticas da secao (sem credenciais)
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ranking-geral-validacao-conjunta-visual
+          path: qa/reports/ranking-geral-etapa3-visual/*.png
+          if-no-files-found: ignore
+          retention-days: 3
+
+      - name: Encerrar Chromium descartavel
+        if: always()
+        shell: bash
+        run: |
+          container="historietas-ranking-e2e-$GITHUB_RUN_ID"
+          if docker ps -a --format '{{.Names}}' | grep -Fxq "$container"; then
+            docker rm --force "$container"
+          fi
+
+      - name: Encerrar Supabase local sem backup
+        if: always()
+        shell: bash
+        run: |
+          if command -v supabase >/dev/null && supabase status >/dev/null 2>&1; then
+            supabase stop --no-backup
+          fi

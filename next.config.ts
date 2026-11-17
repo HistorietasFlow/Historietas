@@ -82,6 +82,9 @@ const nextConfig: NextConfig = {
 };
 
 export default withSentryConfig(nextConfig, {
+  // Build validation must not send plugin usage/project metadata to Sentry.
+  // Runtime error monitoring and production source-map uploads stay configured.
+  telemetry: false,
   // For all available options, see:
   // https://docs.sentry.io/platforms/javascript/guides/nextjs/sourcemaps/uploading/bundler-plugin-options/
 

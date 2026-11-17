@@ -1,5 +1,20 @@
 # Estado atual
 
+### Ranking Geral — validação conjunta em branch isolada (17/11/2026)
+
+Reunidas #2348 (`5aac2c3`), #2354 (`1d01b56`) e #2352 (`420cf82d`), sem modificar
+as PRs de origem/main. QA real reutilizada, em Supabase descartável exclusivo,
+com UI em 1440/390/320 px, fixture 25+4 e flag ligada apenas no job local.
+`Tests` exige sucesso tanto da equivalência RLS quanto da interface integrada.
+Hook npm da interface unificado ao posttest existente, sem chave duplicada ou
+perda de testes. Local: 25/25 focados, Typecheck, Lint, auditoria 199/199, Build e HTTP 404
+com flag ausente aprovados. Telemetria do plugin Sentry desativada e DSN/token
+vazios nos jobs de QA, apos bloqueio inicial do Build pela revisao automatica;
+monitoramento da aplicacao e configuracao Vercel preservados. CI real da
+combinacao pendente. Plano, fontes e limites em
+[Ranking Geral — validação conjunta](../ranking-geral-validacao-conjunta.md).
+Sem merge na main, migration remota, deploy ou ativação.
+
 ### Ranking Geral — PR corretiva paginada de desempenho (17/11/2026, DRAFT)
 
 - A CI [#44062900816](https://github.com/HistorietasFlow/Historietas/actions/runs/44062900816) passou no head `ab2523b`: pgTAP 1.368 (26 assercoes corretivas), Data API e equivalencia global em 951/950/4.756 obras; RPC sintetica 72,54 ms/90,43 ms em 4k/20k. Playwright terminou 263 aprovados e 1 flaky no segundo login de `editorial-status` desktop; causa nao comprovada. Nao e homologacao de producao.
@@ -10,6 +25,16 @@
 - O nucleo privado e executavel diretamente pelo papel SQL `anon`: sua propria autorizacao, a pagina maxima 50, o cursor e o retorno sem IDs de avaliadores sao controles obrigatorios; a RLS das tabelas nao protege a execucao privilegiada. Qualquer mudanca em policy de obras/capitulos/avaliacoes/privacidade exige revisao de equivalencia.
 - QA anterior [#44047977166](https://github.com/HistorietasFlow/Historietas/actions/runs/44047977166) validou equivalencia global em 4k/20k e paginas, com RPC candidata 82,59 ms/102,02 ms no Supabase descartavel; nao e desempenho de producao. A PR corretiva exige sua propria CI, teste SQL e auditoria antes de qualquer integracao.
 - **Nao aplicar migration remota, merge, deploy ou ativar o gate** sem autorizacao especifica. Issue: #2353.
+
+### Histórico da #2352 — interface preparada independentemente
+
+Seção aditiva de `/em-alta` e loader server-only anônimo preparados originalmente
+em branch independente da #2348; integração atual descrita acima. Gate
+`NEXT_PUBLIC_RANKING_GERAL_PREVIEW` desligado por padrão, sem aplicação remota
+ou autorização de publicação.
+Paginação por cursor/assinatura, estados explícitos e nota pública sem fallback
+pessoal. Homologação Supabase/Playwright/visual pendente; ver
+[contratos e plano de testes](../ranking-geral-interface-etapa3.md).
 
 Atualizado em: 2026-11-13
 
