@@ -237,10 +237,10 @@ for(const [device,viewport] of [["desktop",{width:1440,height:900}],["mobile",{w
   });
 
   test(`duas sessões reais, conflito visível e reconciliação explícita — ${device}`,async({page,browser,baseURL})=>{
-    await reset();await page.setViewportSize(viewport);await loginAsAuthor(page);await editor(page);
+    await reset();await page.setViewportSize(viewport);await loginAsAuthor(page,{diagnosticoLogin:device});await editor(page);
     const secondContext=await browser.newContext({viewport,baseURL});
     try {
-      const second=await secondContext.newPage();await loginAsAuthor(second);await editor(second);
+      const second=await secondContext.newPage();await loginAsAuthor(second,{diagnosticoLogin:device});await editor(second);
       await select(page).selectOption("concluida");await save(page).click();
       await expect(page.getByRole("button",{name:"Atualizada",exact:true})).toBeVisible();
       const patches=[];second.on("request",r=>{if(r.method()==="PATCH"&&new URL(r.url()).pathname==="/rest/v1/obras")patches.push(r);});

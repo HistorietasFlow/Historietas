@@ -1,5 +1,13 @@
 # Problemas conhecidos e soluções
 
+## QA editorial — segundo login sem diagnostico (17/11/2026)
+
+Na [CI #44062900816](https://github.com/HistorietasFlow/Historietas/actions/runs/44062900816), `editorial-status.spec.mjs:239` desktop falhou no segundo `loginAsAuthor`, antes da edicao/conflito: `waitForURL` nao saiu de `/login` em 30 s. Primeira tentativa 34.332 ms; retry passou em 6.937 ms. O artefato sanitizado continha somente `summary.json`, com `safeFlow: []` nas duas tentativas. Screenshots/videos da falha e trace do retry eram apenas contagens; nao havia evidencia suficiente para atribuir a causa a Auth, aplicacao ou CI.
+
+Os dois logins desse cenario agora ativam o observador existente `diagnosticoLogin: device` em desktop/mobile. Em falha, o coletor recebe apenas endpoints categorizados, codigos HTTP, estados fixos e contagens, sem formulario, identidade, tokens ou cookies. Nenhum timeout/retry, assercao, fluxo de login, SQL ou regra de privacidade mudou. Instrumentacao nao comprova correcao nem garante reproduzir a falha; nao repetir CIs somente para forcar recorrencia. Relacionado ao sintoma registrado em #2346, sem presumir causa identica.
+
+Validacao local: 15/15 unitarios existentes de sanitizacao/coleta, ESLint focado e sintaxe Node 22.23.5 aprovados. Sem Docker/Supabase/browser local preparado, E2E e captura real pendentes da nova CI.
+
 ## Ranking Geral — gargalo RLS e fronteira privilegiada (PR corretiva DRAFT, 17/11/2026)
 
 - Protecao contra divergencia posterior: fingerprint privado de `pg_policy`, flags de RLS, ACLs e funcoes de autorizacao comparado a cada chamada do nucleo `SECURITY DEFINER`. O teste pgTAP cria policy de leitura adicional e altera temporariamente a volatilidade de uma helper; ambos os cenarios devem falhar fechados, restaurando a configuracao no banco local. Regressao de equivalencia integral promovida ao workflow principal de CI. E uma defesa para mudancas acidentais nas regras, nao substitui revisao independente nem constitui autorizacao de producao.
