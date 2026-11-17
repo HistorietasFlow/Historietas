@@ -1,5 +1,6 @@
 "use client";
 
+import HistorietasLogoMark from "../components/HistorietasLogoMark";
 import Link from "next/link";
 import { useEffect, type CSSProperties } from "react";
 
@@ -22,7 +23,7 @@ export default function ErrorPage({ error, reset }: ErrorPageProps) {
       >
         <Link href="/" aria-label="Voltar para a Home" style={logoStyle}>
           <span style={logoMarkStyle} aria-hidden="true">
-            H
+            <HistorietasLogoMark />
           </span>
           <span>istorietas</span>
         </Link>

@@ -1,5 +1,5 @@
 const CACHE_PREFIX = "historietas-pwa-";
-const CACHE_NAME = `${CACHE_PREFIX}v2`;
+const CACHE_NAME = `${CACHE_PREFIX}v3`;
 
 const STATIC_ASSETS = [
   "/icon-192.png",
@@ -12,7 +12,9 @@ self.addEventListener("install", (event) => {
   event.waitUntil(
     caches
       .open(CACHE_NAME)
-      .then((cache) => cache.addAll(STATIC_ASSETS))
+      .then((cache) =>
+        cache.addAll(STATIC_ASSETS.map((path) => new Request(path, { cache: "reload" }))),
+      )
       .then(() => self.skipWaiting()),
   );
 });

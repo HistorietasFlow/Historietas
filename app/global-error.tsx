@@ -1,5 +1,6 @@
 "use client";
 
+import HistorietasLogoMark from "../components/HistorietasLogoMark";
 import * as Sentry from "@sentry/nextjs";
 
 import { useEffect, type CSSProperties } from "react";
@@ -24,7 +25,7 @@ export default function GlobalError({ error, reset }: GlobalErrorProps) {
         <main role="alert" aria-labelledby="global-error-title" style={cardStyle}>
           <div style={logoStyle} aria-label="Historietas">
             <span style={logoMarkStyle} aria-hidden="true">
-              H
+              <HistorietasLogoMark />
             </span>
             istorietas
           </div>

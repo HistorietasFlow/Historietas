@@ -1,10 +1,12 @@
+import HistorietasLogoMark from "../components/HistorietasLogoMark";
+
 export default function Loading() {
   return (
     <main className="historietas-loading-page" aria-busy="true">
       <style>{loadingCss}</style>
       <section role="status" aria-live="polite" aria-label="Carregando página">
         <span className="historietas-loading-logo" aria-hidden="true">
-          H
+          <HistorietasLogoMark />
         </span>
         <span className="historietas-loading-label">Carregando…</span>
         <div className="historietas-loading-line historietas-loading-line-title" />

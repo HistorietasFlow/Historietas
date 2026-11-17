@@ -1,5 +1,6 @@
 "use client";
 
+import HistorietasLogoMark from "./HistorietasLogoMark";
 import Link from "next/link";
 import type { Dispatch, SetStateAction } from "react";
 import {
@@ -59,7 +60,7 @@ export default function HomeHeader({
             style={desktopLogoStyle}
             aria-label="Historietas"
           >
-            <span className="historietas-home-logo-mark" style={desktopLogoMarkStyle}>H</span>
+            <span className="historietas-home-logo-mark" style={desktopLogoMarkStyle}><HistorietasLogoMark /></span>
             <span className="historietas-home-logo-text" style={desktopLogoTextStyle}>istorietas</span>
           </Link>
 
@@ -205,7 +206,7 @@ export default function HomeHeader({
         <div style={navInnerStyle}>
           <div style={navTopRowStyle}>
             <Link href="/" className="historietas-home-logo" style={logoStyle} aria-label="Historietas">
-              <span className="historietas-home-logo-mark" style={logoMarkStyle}>H</span>
+              <span className="historietas-home-logo-mark" style={logoMarkStyle}><HistorietasLogoMark /></span>
               <span className="historietas-home-logo-text" style={logoTextStyle}>istorietas</span>
             </Link>
 

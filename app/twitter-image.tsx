@@ -1,4 +1,5 @@
 import { ImageResponse } from "next/og";
+import { SocialLogoMark } from "./lib/social-logo-mark";
 
 export const alt =
   "Historietas — Leia, descubra e publique histórias originais";
@@ -69,24 +70,7 @@ export default function Image() {
               gap: 24,
             }}
           >
-            <div
-              style={{
-                width: 92,
-                height: 92,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                borderRadius: 24,
-                background: "#090311",
-                border: "2px solid rgba(167, 139, 250, 0.48)",
-                fontSize: 58,
-                lineHeight: 1,
-                fontWeight: 900,
-                letterSpacing: "-0.08em",
-              }}
-            >
-              H
-            </div>
+            <SocialLogoMark />
 
             <div
               style={{

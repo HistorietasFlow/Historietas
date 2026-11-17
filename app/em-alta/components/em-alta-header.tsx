@@ -1,3 +1,4 @@
+import HistorietasLogoMark from "../../../components/HistorietasLogoMark";
 import Link from "next/link";
 import {
   desktopHeaderTitleLinkStyle,
@@ -32,7 +33,7 @@ export function EmAltaHeader({
             isDesktop ? desktopHeaderTitleMarkStyle : headerTitleMarkStyle
           }
         >
-          H
+          <HistorietasLogoMark />
         </span>
         <span
           className="historietas-em-alta-hero-title"
