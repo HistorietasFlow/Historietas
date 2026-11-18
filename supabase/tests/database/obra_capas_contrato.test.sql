@@ -30,6 +30,8 @@ insert into public.obras(id,user_id,titulo,autor,genero,formato,classificacao_in
  ('ca130000-0000-4000-8000-000000000001','ca110000-0000-4000-8000-000000000001','Privada','QA','Fantasia','HQ','Livre','qa-capa-privada',''),
  ('ca130000-0000-4000-8000-000000000002','ca110000-0000-4000-8000-000000000001','Publica','QA','Fantasia','HQ','Livre','qa-capa-publica','https://example.invalid/publica.png');
 -- Simula tupla anterior a migration: nenhum backfill ou regravacao da obra.
+-- Processa as estreias antes do ALTER TABLE e mantém o gatilho ativo durante o ensaio.
+set constraints public.certificar_estreia_por_obra immediate;
 alter table public.obras disable trigger obras_contrato_capa;
 insert into public.obras(id,user_id,titulo,autor,genero,formato,classificacao_indicativa,slug)
  values('ca130000-0000-4000-8000-000000000003','ca110000-0000-4000-8000-000000000001','Legado','QA','Fantasia','HQ','Livre','qa-capa-legado');
