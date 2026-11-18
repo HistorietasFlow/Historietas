@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { criarMetadataPagina } from "../../lib/seo";
 
 import { urlSupabaseDoEnsaio } from "../../lib/server/previa-abertura-local";
-import { origemPreviaVercel } from "../../lib/server/origem-previa-vercel.mjs";
+import { configuracaoPreviaVercel } from "../../lib/server/origem-previa-vercel.mjs";
 import { HabilitarPreviaLocal } from "./components/explorar-previa";
 
 export const metadata = criarMetadataPagina({
@@ -13,6 +13,6 @@ export const metadata = criarMetadataPagina({
 
 export default function ExplorarLayout({ children }: { children: ReactNode }) {
   const mostrarPrevia = urlSupabaseDoEnsaio() ||
-    (process.env.HISTORIETAS_PREVIA_INTERFACE === "1" && origemPreviaVercel(process.env));
+    configuracaoPreviaVercel(process.env)?.mostrarInterface;
   return mostrarPrevia ? <HabilitarPreviaLocal>{children}</HabilitarPreviaLocal> : children;
 }

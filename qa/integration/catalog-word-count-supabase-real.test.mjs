@@ -51,7 +51,7 @@ test("palavras: contratos reais, Data API, concorrencia e backfill somente local
   });
 
   await t.test("upgrade sem backfill, rewrite, perda de dados ou mudanca das seis RPCs", () => {
-    const source = readFileSync(new URL("../../supabase/migrations/20261113053819_contar_palavras_catalogo.sql", import.meta.url), "utf8");
+    const source = readFileSync(new URL("../../supabase/migrations/20261113063207_contar_palavras_catalogo.sql", import.meta.url), "utf8");
     const body = source.replace(/^begin;\s*/, "").replace(/commit;\s*$/, "");
     sql(`begin;
       drop function public.listar_obras_catalogo(${signature});

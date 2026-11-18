@@ -4,7 +4,7 @@ import test from "node:test";
 
 const migration = readFileSync(
   new URL(
-    "../../supabase/migrations/20261106222208_permitir_autor_gerenciar_comentarios.sql",
+    "../../supabase/migrations/20261107055640_permitir_autor_gerenciar_comentarios.sql",
     import.meta.url,
   ),
   "utf8",

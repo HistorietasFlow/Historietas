@@ -1,8 +1,12 @@
 # Estado atual
 
-### Prévia de abertura no Explorar · proposta integrada local
+### Prévia de abertura no Explorar
 
-A proposta reúne a migration assinada inativa, as operações de pausa e reversão, a rota e os cards. A habilitação da aplicação exige desenvolvimento, Supabase HTTP em loopback e a flag local. A RPC conserva a identidade do leitor e a RLS, verifica sessão ativa e limita o trecho no PostgreSQL. O Vault guarda a chave e a referência privada contém somente seu UUID. A CI proposta exercita o conjunto em job descartável próprio, incluindo expiração real e rotação. O conjunto foi preparado localmente para revisão em PR draft. A execução dos workflows no GitHub permanece pendente. Aplicação remota e ativação permanecem pendentes.
+A PR #2364 integrou a rota, os cards e a RPC assinada. As duas migrations
+foram aplicadas no Supabase hospedado com versões 20261118063821 e
+20261118063908. Os arquivos do repositório usam essas versões e preservam
+os hashes do SQL aplicado. Instalação e ativação são etapas distintas.
+A rota e o botão admitem homologação e produção privada com configurações independentes. A habilitação no banco é explícita. Consulte os scripts em `docs/sql/previa-assinatura/`.
 
 ### Ranking Geral ativo; diagnóstico do login mobile ainda aberto (17/11/2026)
 
@@ -11,6 +15,16 @@ A proposta reúne a migration assinada inativa, as operações de pausa e revers
 - Investigação vinculada à #2346: artefato sanitizado `14352192623` registrou rota login, documento complete, network vazio para os endpoints categorizados, error count 1, loading/continue 0. **A contagem antiga era global, não comprova erro do formulário:** o anunciador do App Router também usa role alert fora do form. Não atribuir a causa a validação, hidratação, Auth ou CI sem novas evidências.
 - Branch `qa/login-mobile-diagnostico-formulario`: diagnóstico lê somente o formulário em caso de falha, distinguindo campos vazios/iguais ao esperado, validade HTML e os dois erros locais conhecidos em pt/en/es. Valores e textos são comparados somente em memória; apenas categorias/contagens passam pelo sanitizador. Inclui documentos /login do frame principal para distinguir recarga de documento de RSC/iframe, sem inferir sua causa. Fluxo de login, tempo de espera, retries, asserções e gates preservados.
 - Local Node 22.23.5: 21/21 testes de diagnóstico/coleta, ESLint focado, sintaxe e diff check aprovados. O cenário de browser real permanece para CI descartável; não repetida a tentativa local bloqueada pelo socket do Chromium. Instrumentação não é correção do flaky; a causa permanece aberta. Sem novo merge, deploy ou alteração no banco nesta investigação.
+
+### Histórico de migrations do Supabase
+
+A revisão de 18/11 parte da PR #2365 e alinha mais 39 versões pelo Git.
+No conjunto das duas propostas, todos os 95 registros hospedados correspondem a
+um arquivo. O PH-1 de notificações (`20261112013209`) é a única versão só
+local. O catálogo confirma que seu efeito ainda está pendente em produção.
+Os 96 arquivos conservaram o conteúdo e a ordem. Ver a
+[correspondência e o ensaio](../operacao/historico-migrations-20261118.md)
+antes de decidir sobre a aplicação do PH-1.
 
 ### Histórico — SQL aplicado, ativação revertida e correção de transporte (17/11/2026)
 

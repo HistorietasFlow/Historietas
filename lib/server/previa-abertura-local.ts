@@ -1,7 +1,7 @@
 import "server-only";
 import { stringFromBase64URL } from "@supabase/ssr";
 import { obterChaveSessaoSupabase } from "../supabase/session-recovery.mjs";
-import { origemPreviaVercel } from "./origem-previa-vercel.mjs";
+import { configuracaoPreviaVercel } from "./origem-previa-vercel.mjs";
 
 export function urlSupabaseDoEnsaio() {
   if (process.env.NODE_ENV !== "development" || process.env.VERCEL ||
@@ -17,8 +17,7 @@ export function urlSupabaseDoEnsaio() {
 export function configuracaoRotaPrevia() {
   const local = urlSupabaseDoEnsaio();
   if (local) return { origem: local, chaveProva: process.env.HISTORIETAS_PREVIA_CHAVE_ENSAIO };
-  const origem = origemPreviaVercel(process.env);
-  return origem ? { origem, chaveProva: process.env.HISTORIETAS_PREVIA_CHAVE_PREVIEW } : null;
+  return configuracaoPreviaVercel(process.env);
 }
 
 type Credencial = { tipo: "visitante" } | { tipo: "invalida" } | { tipo: "sessao"; token: string };

@@ -33,7 +33,7 @@ test("versao editorial local: migracao incremental, CAS real, ABA, recriacao e r
   sql(`begin; delete from public.obras where id::text like 'ea200000-%'; delete from auth.users where id in ('${uid(1)}','${uid(2)}'); commit;`);
 
   await t.test("upgrade da #2282 com registros existentes nao reescreve tuplas nem contratos", () => {
-    const source = readFileSync(new URL("../../supabase/migrations/20261113013249_proteger_versao_status_editorial.sql", import.meta.url), "utf8");
+    const source = readFileSync(new URL("../../supabase/migrations/20261113051232_proteger_versao_status_editorial.sql", import.meta.url), "utf8");
     assert.match(source, /^begin;\s/); assert.match(source, /commit;\s*$/);
     const body = source.replace(/^begin;\s*/, "").replace(/commit;\s*$/, "");
     // Reconstitui SOMENTE o delta novo, em transacao revertida no descartavel.

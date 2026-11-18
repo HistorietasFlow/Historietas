@@ -153,7 +153,7 @@ test("limites de dimensoes e pixels sao os da migration, sem resize silencioso",
     const result = await validarImagemPagina(await imagem("png", w, h));
     assert.equal(result.largura, w); assert.equal(result.altura, h);
   }
-  const migration = readFileSync(new URL("../../supabase/migrations/20261107223400_infraestrutura_capitulos_ilustrados.sql", import.meta.url), "utf8");
+  const migration = readFileSync(new URL("../../supabase/migrations/20261107231314_infraestrutura_capitulos_ilustrados.sql", import.meta.url), "utf8");
   for (const limit of [2097152, 2048, 4096, 8000000]) assert.ok(migration.includes(String(limit)));
 });
 

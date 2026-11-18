@@ -111,7 +111,7 @@ testemunha ou um novo servico nesta preparacao.
 | Destino GitHub | `AGENDAMENTO_ALERT_ISSUE`: issue aberta aprovada com marcador `<!-- historietas-agendamento-monitor:v1 -->`; token pode comentar, nao precisa PAT extra. |
 | Monitor SQL | Gate independente `AGENDAMENTO_MONITOR_AUTORIZADO=true`, `main`, `psql` disponivel; secrets `AGENDAMENTO_MONITOR_PGHOST` e `AGENDAMENTO_MONITOR_PGPASSWORD`, variable `AGENDAMENTO_MONITOR_PROJECT_REF`. Shared Session pooler, porta 5432, banco postgres, usuario `historietas_agendamento_monitor_login.PROJECT_REF`; TLS `verify-full` e CA oficial versionada/preflight, sem novo secret de CA. |
 | Papel SQL | Grupo permanece NOLOGIN; LOGIN separado NOINHERIT com SET explicito para o snapshot. Conexao real v2 aprovada no run #43089501994; migration nao contem senha. Ver [requisitos](monitor-sql-login.md); nunca usar postgres/service_role como runtime. |
-| Snapshot | Atualizacoes `20261110062820` e `20261110174613` acrescentam recursos e operacoesCache mantendo ACL. Leitura em REPEATABLE READ/READ ONLY com rollback, timeouts 5 s/500 ms/5 s e limite externo 12 s. Nao executa runner, observador mutante, retomada, ACK ou purga. |
+| Snapshot | Atualizacoes `20261110111504` e `20261110182951` acrescentam recursos e operacoesCache mantendo ACL. Leitura em REPEATABLE READ/READ ONLY com rollback, timeouts 5 s/500 ms/5 s e limite externo 12 s. Nao executa runner, observador mutante, retomada, ACK ou purga. |
 
 A prova real v2 substitui a pendencia anterior de conexao SQL, nao certifica
 periodicidade ou o painel Sentry. Os gates/variaveis/secrets remotos nao foram

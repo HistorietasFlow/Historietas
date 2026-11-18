@@ -1,12 +1,12 @@
 # Refatoração da Comunidade
 
-## Ensaio da rota de prévia na Vercel
+## Prévia do Explorar na Vercel privada
 
 No ambiente Preview da Vercel, a rota aceita somente a origem HTTPS do projeto
 Supabase identificado por `HISTORIETAS_PREVIA_PROJETO_PREVIEW`. Configure essa
 referência e o segredo de assinatura `HISTORIETAS_PREVIA_CHAVE_PREVIEW` apenas
 na branch de homologação protegida. O botão também pode ser testado nessa branch com `HISTORIETAS_PREVIA_INTERFACE=1`.
-O deployment de produção responde 404 mesmo quando recebe essas variáveis.
+Em produção, configure separadamente HISTORIETAS_PREVIA_PROJETO_PRODUCAO, HISTORIETAS_PREVIA_CHAVE_PRODUCAO e HISTORIETAS_PREVIA_INTERFACE_PRODUCAO=1. A rota exige a origem exata e a chave de assinatura do ambiente. A ativação da RPC usa o script habilitar-referencia.sql. Para interromper o acesso no banco, use pausar.sql.
 
 
 ## Explorar · prévia de abertura desativada
@@ -3203,6 +3203,14 @@ UPDATE confirmado, recuperação por intenção e compatibilidade antes da migra
 Sem alteração das branches de origem, migration ou ativação. Contrato e implantação
 em [Integração do Diário](../app/editar-capitulo/INTEGRACAO_DIARIO_RPC.md).
 
+## Reconciliação das demais versões do Supabase
+
+Foram alinhados outros 39 nomes ao histórico hospedado e atualizados os
+caminhos usados pela QA e pelos workflows do Ranking. A única migration ainda
+pendente é o PH-1, que evita a escrita de saldo em um plano vazio de notificações.
+A [relação completa](operacao/historico-migrations-20261118.md) registra as
+diferenças exatas, os testes e o resultado do plano do CLI em banco descartável.
+
 ## Homologação conjunta do editor e Diário — 15/11/2026
 
 Integração isolada sobre `main deeb839b`, #2316 → #2307 → #2321, sem duplicar a
@@ -3211,3 +3219,15 @@ da aplicação/SQL ou das branches originais. Aprovados 244 unitários, 52 pgTAP
 cinco cenários focados reais de Data API/Auth/Playwright, desktop/mobile, concorrência
 1 e zero retries. Evidências, correções do harness e limites em
 [Homologação integrada](integracao-editor-diario-20261115.md). Sem merge ou produção.
+
+## Prévia do Explorar — versões das migrations
+
+As migrations de instalação inativa e da RPC assinada passam a usar os timestamps
+registrados na produção, respectivamente 20261118063821 e 20261118063908.
+Os dois arquivos SQL preservam o conteúdo homologado e a ordem de aplicação.
+Os ensaios locais apontam para os novos caminhos. Esse alinhamento dispensa
+reaplicação de SQL ou reparo do histórico remoto para essas duas versões.
+
+Em 18/11/2026, após alinhar esse par, a comparação de todos os timestamps ainda
+mostrava 40 exclusivos do Git e 39 exclusivos do histórico de produção.
+O próximo `db push` geral depende de uma reconciliação separada.
