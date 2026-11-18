@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
 import {
   consumirLimiteRequisicao,
@@ -8,9 +9,10 @@ import {
   supabaseAdminConfigurado,
 } from "@/lib/supabase/admin";
 import {
-  criarSupabaseServerClient,
   supabaseServerConfigurado,
 } from "@/lib/supabase/server";
+
+import { autorizarLeitorArquivo, resolverLeitorArquivo } from "@/lib/server/autorizacao-arquivo-obra";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -53,6 +55,10 @@ function resposta(
       ...headers,
     },
   });
+}
+
+function respostaSessaoInvalida() {
+  return resposta(401, { ok: false, codigo: "sessao_invalida", mensagem: "Sessão inválida." });
 }
 
 function origemPermitida(request: NextRequest) {
@@ -271,17 +277,20 @@ export async function POST(request: NextRequest) {
     });
   }
 
-  const supabaseServer = await criarSupabaseServerClient();
-  let usuarioId = "";
-
+  let leitor: Awaited<ReturnType<typeof resolverLeitorArquivo>>;
   try {
-    const { data, error } = await supabaseServer.auth.getUser();
-
-    if (!error && data.user?.id) {
-      usuarioId = data.user.id;
-    }
+    leitor = await resolverLeitorArquivo(request.headers);
   } catch {
-    // Visitantes públicos continuam pelo identificador de rede.
+    return resposta(503, {
+      ok: false,
+      codigo: "identidade_indisponivel",
+      mensagem: "Não foi possível validar o acesso ao arquivo agora.",
+    });
+  }
+
+  const usuarioId = leitor?.usuarioId ?? "";
+  if (!leitor) {
+    return respostaSessaoInvalida();
   }
 
   const ip = obterIpConfiavel(request);
@@ -396,6 +405,27 @@ export async function POST(request: NextRequest) {
       ok: false,
       codigo: "arquivo_nao_encontrado",
       mensagem: "Arquivo não encontrado.",
+    });
+  }
+
+  // Esta consulta usa a credencial original, não a chave de serviço da assinatura.
+  // O banco reavalia a sessão e as regras no momento da solicitação de download.
+  try {
+    const referenciaSha256 = createHash("sha256").update(data.arquivo_url, "utf8").digest("hex");
+    const autorizado = await autorizarLeitorArquivo(leitor, obraId, data.user_id, referenciaSha256);
+    if (autorizado === "sessao_invalida") return respostaSessaoInvalida();
+    if (!autorizado) {
+      return resposta(404, {
+        ok: false,
+        codigo: "arquivo_nao_encontrado",
+        mensagem: "Arquivo não encontrado.",
+      });
+    }
+  } catch {
+    return resposta(503, {
+      ok: false,
+      codigo: "consulta_indisponivel",
+      mensagem: "O arquivo está temporariamente indisponível.",
     });
   }
 

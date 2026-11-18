@@ -98,6 +98,18 @@ export default function ArquivoObraPublico({
     };
   }, [arquivo.categoria, caminhoStorageArquivo, obraId]);
 
+  useEffect(() => {
+    if (!arquivoAssinado.url) return;
+
+    const timer = window.setTimeout(() => {
+      setArquivoAssinado((atual) =>
+        atual === arquivoAssinado ? { ...atual, url: "", expiraEm: 0 } : atual,
+      );
+    }, Math.max(0, arquivoAssinado.expiraEm - Date.now()));
+
+    return () => window.clearTimeout(timer);
+  }, [arquivoAssinado]);
+
   const assinaturaAtual =
     arquivoAssinado.caminho === caminhoStorageArquivo;
   const arquivoHref = caminhoStorageArquivo
@@ -121,19 +133,11 @@ export default function ArquivoObraPublico({
     !arquivoHref && !podeTentarNovamente,
   );
   const arquivoHrefInterativo =
-    arquivoHref || (podeTentarNovamente ? "#" : undefined);
+    caminhoStorageArquivo ? (arquivoIndisponivel ? undefined : "#") : arquivoHref || undefined;
 
   async function obterUrlArquivoAtual() {
     if (!caminhoStorageArquivo) {
       return arquivoConteudo;
-    }
-
-    if (
-      assinaturaAtual &&
-      arquivoAssinado.url &&
-      arquivoAssinado.expiraEm > Date.now()
-    ) {
-      return arquivoAssinado.url;
     }
 
     try {
@@ -165,16 +169,6 @@ export default function ArquivoObraPublico({
         event.preventDefault();
       }
 
-      return;
-    }
-
-    const assinaturaAindaValida = Boolean(
-      assinaturaAtual &&
-        arquivoAssinado.url &&
-        arquivoAssinado.expiraEm > Date.now(),
-    );
-
-    if (assinaturaAindaValida) {
       return;
     }
 

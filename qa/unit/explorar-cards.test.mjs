@@ -23,7 +23,7 @@ const estiloCodigo = ler("../../app/explorar/lib/explorar-content-styles.ts");
 const rotaCodigo = ler("../../app/explorar/lib/explorar-author-route-utils.ts");
 const hash = (valor) => createHash("sha256").update(valor).digest("hex");
 
-function compilar(codigo, dependencias = {}) {
+function compilar(codigo, dependencias = {}, env = process.env) {
   const js = typescript.transpileModule(codigo, {
     compilerOptions: {
       module: typescript.ModuleKind.CommonJS,
@@ -36,8 +36,8 @@ function compilar(codigo, dependencias = {}) {
     assert.ok(Object.hasOwn(dependencias, nome), `dependência inesperada: ${nome}`);
     return dependencias[nome];
   };
-  new Function("require", "module", "exports", "React", js)(
-    carregar, modulo, modulo.exports, React,
+  new Function("require", "module", "exports", "React", "process", js)(
+    carregar, modulo, modulo.exports, React, { env },
   );
   return modulo.exports;
 }
@@ -173,7 +173,7 @@ test("corpos dos cards, rota e capa preservam literalmente a base", () => {
   assert.equal(hash(funcao(autorCodigo, "function AutorExplorarCard(", null)),
     "8e7cc547db96aff0b09f04635e4744cde2351fb49bb3ecaa405e8a87a6cb2ede");
   assert.equal(hash(funcao(obraCodigo, "function ObraPublicadaCard(", null)),
-    "1437ddaf41bb8f6aebb3483cc054895995d96f8890c5afdd199440f9dc5f4f50");
+    "99f911d38c1bc8e05ec9f7ac29ae974dd6d09dbeb6f16752ef2095ddc69b92fb");
   assert.equal(hash(funcao(rotaCodigo, "function criarPerfilAutorHrefExplorar(", null)),
     "7306b91d6f610228f3024fa05f88475cafd251f6f260aeb6b1c32e79f94a6845");
   assert.equal(hash(funcao(estiloCodigo, "function criarPublishedCoverStyle(", "\n\nexport function criarDesktopPublishedCoverStyle(")),
@@ -340,6 +340,42 @@ test("obra preserva fallback de capa, arquivo, rascunho e traduções", () => {
   const espanhol = html(ObraCard, { obra: dados });
   assert.match(espanhol, /Obra sin título/);
   assert.match(espanhol, /Borrador/);
+});
+
+test("Novas vozes exibe apenas visualizações para obras em capítulos ou arquivo e nomeia a seção pelo título traduzido", () => {
+  const leitor = "leitor";
+  const obras = [
+    { ...obra, id: "a", titulo: "Dois capítulos", capitulos: [{ comentario: "" }, { comentario: "" }], visualizacoes: 8 },
+    { ...obra, id: "b", titulo: "Conto em arquivo", arquivoObra: { nome: "conto.pdf" }, visualizacoes: 0 },
+  ];
+  const { ExplorarNovasVozes } = compilar(
+    ler("../../app/explorar/components/explorar-novas-vozes.tsx"),
+    {
+      ...comuns,
+      react: { useState: () => [{ leitor, obras }], useEffect() {} },
+      "../../../lib/supabase/client": {},
+      "./explorar-obra-publicada-card": { default: ObraCard },
+      "./explorar-section-components": { SectionHeader, ExplorarCarouselRow },
+      "../lib/explorar-work-normalizers": normalizadores,
+    },
+    { NEXT_PUBLIC_HISTORIETAS_NOVAS_VOZES_LOCAL: "1" },
+  );
+  for (const [idioma, titulo] of [["pt-BR", "Novas vozes"], ["en", "New voices"], ["es", "Nuevas voces"]]) {
+    language = idioma;
+    for (const isDesktop of [false, true]) {
+      const saida = html(ExplorarNovasVozes, { leitor, tema: {}, isDesktop });
+      const idTitulo = saida.match(/<section aria-labelledby="([^"]+)"/)?.[1];
+      assert.ok(idTitulo);
+      assert.match(saida, new RegExp(`<h2 id="${idTitulo}"[^>]*>${titulo}</h2>`));
+      const cards = saida.match(/<article\b[\s\S]*?<\/article>/g) ?? [];
+      assert.equal(cards.length, obras.length);
+      for (const [i, card] of cards.entries()) {
+        assert.ok(card.includes(obras[i].titulo));
+        assert.ok(card.includes(`👁️</span>${obras[i].visualizacoes}`));
+        assert.doesNotMatch(card, /❤️|💬|📚|📄/);
+      }
+    }
+  }
 });
 
 test("rota de autor mantém trim, parâmetros e fallback", () => {

@@ -29,6 +29,7 @@ import { ExplorarCategoriesBar } from "./components/explorar-categories-bar";
 import { ExplorarActiveCatalogFilters } from "./components/explorar-active-catalog-filters";
 import { ExplorarDesktopHeader } from "./components/explorar-desktop-header";
 import { ExplorarMobileHeader } from "./components/explorar-mobile-header";
+import { ExplorarNovasVozes } from "./components/explorar-novas-vozes";
 import { ExplorarCreativeWorkSections } from "./components/explorar-creative-work-sections";
 import { ExplorarGenreWorkSections } from "./components/explorar-genre-work-sections";
 import { ExplorarFilteredWorksSection } from "./components/explorar-filtered-works-section";
@@ -944,11 +945,14 @@ export default function ExplorarPage() {
           !notaMinimaAtiva &&
           !ordenacaoPorCapitulosAtiva &&
           !filtroColecaoAtivo && (
-            <ExplorarCreativeWorkSections
-              secoes={secoesCriativasObras}
-              isDesktop={isDesktop}
-              tema={temaPagina}
-            />
+            <>
+              {!filtroConteudo18Ativo && <ExplorarNovasVozes key={usuarioIdExplorar} leitor={usuarioIdExplorar} isDesktop={isDesktop} tema={temaPagina} />}
+              <ExplorarCreativeWorkSections
+                secoes={secoesCriativasObras}
+                isDesktop={isDesktop}
+                tema={temaPagina}
+              />
+            </>
           )}
 
         {modoConteudo === "obras" &&

@@ -21,7 +21,6 @@ test("arquivo publico preserva props, preload de imagem privada e cancelamento",
     "arquivo: ArquivoObraLocal;",
     "tituloObra: string;",
     "isDesktop: boolean;",
-    "const DURACAO_UTIL_URL_ARQUIVO_OBRA_MS = 9 * 60 * 1000;",
     'if (!caminhoStorageArquivo || arquivo.categoria !== "imagem") {',
     "let cancelado = false;",
     "const controlador = new AbortController();",
@@ -31,26 +30,51 @@ test("arquivo publico preserva props, preload de imagem privada e cancelamento",
     "controlador.abort();",
     "}, [arquivo.categoria, caminhoStorageArquivo, obraId]);",
     "arquivoAssinado.caminho === caminhoStorageArquivo",
-    "arquivoAssinado.expiraEm > Date.now()",
-    "Date.now() + DURACAO_UTIL_URL_ARQUIVO_OBRA_MS",
     'erro: "Não foi possível liberar este arquivo agora.",',
   ]) {
     assert.ok(arquivoObraPublico.includes(trecho), trecho);
   }
 });
 
-test("arquivo publico preserva cache e renovacao da URL assinada", () => {
-  const indiceCache = arquivoObraPublico.indexOf(
-    "if (\n      assinaturaAtual &&\n      arquivoAssinado.url &&\n      arquivoAssinado.expiraEm > Date.now()",
-  );
-  const indiceRenovacao = arquivoObraPublico.indexOf(
-    "const url = await solicitarUrlTemporariaArquivoObra(obraId);",
-  );
-
-  assert.ok(indiceCache >= 0);
-  assert.ok(indiceRenovacao > indiceCache);
+test("ações explícitas renovam a URL e a prévia não é exposta como href do link", () => {
+  assert.doesNotMatch(arquivoObraPublico, /return arquivoAssinado\.url|assinaturaAindaValida/);
+  assert.ok(arquivoObraPublico.includes('arquivoIndisponivel ? undefined : "#"'));
+  assert.ok(arquivoObraPublico.includes("const url = await solicitarUrlTemporariaArquivoObra(obraId);"));
   assert.ok(arquivoObraPublico.includes("return arquivoConteudo;"));
   assert.ok(arquivoObraPublico.includes("throw error;"));
+});
+
+test("miniatura expira no efeito sem invalidar uma assinatura renovada", () => {
+  const efeito = arquivoObraPublico.match(
+    /useEffect\(\(\) => \{\n    if \(!arquivoAssinado\.url\) return;[\s\S]*?\}, \[arquivoAssinado\]\);/,
+  )?.[0];
+  assert.ok(efeito);
+  assert.doesNotMatch(arquivoObraPublico, /assinaturaAtual && arquivoAssinado\.expiraEm > Date\.now/);
+  const assinatura = { caminho: "imagem", url: "https://fixture.invalid/arquivo", erro: "", expiraEm: 2100 };
+  const renovada = { ...assinatura, url: "https://fixture.invalid/renovado", expiraEm: 3000 };
+  let atual = assinatura;
+  let finalizar, callback, espera, timerRemovido;
+  new Function(
+    "useEffect", "arquivoAssinado", "setArquivoAssinado", "window", "Date", efeito,
+  )(
+    (executar) => { finalizar = executar(); },
+    assinatura,
+    (atualizar) => { atual = atualizar(atual); },
+    {
+      setTimeout(fn, ms) { callback = fn; espera = ms; return 42; },
+      clearTimeout(id) { timerRemovido = id; },
+    },
+    { now: () => 2000 },
+  );
+  assert.equal(espera, 100);
+  assert.equal(atual.url, assinatura.url);
+  callback();
+  assert.deepEqual(atual, { ...assinatura, url: "", expiraEm: 0 });
+  atual = renovada;
+  callback();
+  assert.equal(atual, renovada);
+  finalizar();
+  assert.equal(timerRemovido, 42);
 });
 
 test("arquivo publico abre antes do await e preserva os fallbacks seguros", () => {

@@ -1945,6 +1945,19 @@ export type Database = {
       }
     }
     Functions: {
+      autorizar_leitura_arquivo_obra: {
+        Args: { p_obra_id: string; p_proprietario_id: string; p_referencia_sha256: string }
+        Returns: boolean
+      }
+      listar_novas_vozes: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string; user_id: string; titulo: string; autor: string; genero: string; formato: string
+          classificacao_indicativa: string; avisos_conteudo: string[]; sinopse: string; tags: string[]
+          capa_url: string; capa_nome: string; publicado: boolean; slug: string; criada_em: string
+          atualizado_em: string; visualizacoes: number; link: string; possui_previa: boolean
+        }[]
+      }
       listar_historias_em_comum: {
         Args: {
           p_outro_usuario: string

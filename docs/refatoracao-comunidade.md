@@ -1,5 +1,37 @@
 # Refatoração da Comunidade
 
+## Explorar · Novas vozes
+
+A seção mostra até 12 obras de autores distintos por dia, durante os 90 dias
+seguintes à primeira publicação pública e legível observada. O registro começa
+na instalação. Contas anteriores com histórico desconhecido ficam fora da seção.
+
+Em uma futura integração, instalar `20261118090000` e verificar a autorização
+na Data API antes de publicar a rota compartilhada de arquivos. Abrir e Baixar
+solicitam uma assinatura nova. A proteção dos arquivos independe da seção.
+Consultar a [reconciliação das migrations](operacao/historico-migrations-20261118.md)
+antes de planejar o envio, pois a PH-1 de notificações tem decisão própria.
+
+Instalar `20261118090500` inicia a captura de estreias nas alterações de obras,
+capítulos, arquivos e preferências. A listagem começa desligada no banco.
+Para homologar no ambiente descartável, habilitar `listagem_habilitada` na linha
+única de `novas_vozes_interno.config` e usar um build de teste com
+`NEXT_PUBLIC_HISTORIETAS_NOVAS_VOZES_LOCAL=1`.
+
+Para pausar a descoberta após a instalação, desligar primeiro a listagem no
+banco e retirar a opção no próximo build. A captura continua durante a pausa
+e preserva a data de cada autor. Se for preciso reverter também a captura,
+preservar a tabela de estreias e o marco de observação e revisar os quatro
+gatilhos separadamente. Um intervalo sem captura compromete a certificação
+de novas estreias nesse período. Manter a RPC de autorização e sua verificação
+de sessão enquanto houver versões da rota que as chamam.
+
+Os testes de banco estão em `supabase/tests/database/novas_vozes.test.sql`
+e `supabase/tests/database/arquivo_obra_autorizacao.test.sql`. Para conferir
+o download pelo proxy real, usar a stack descartável com JWT de 30 segundos
+do [workflow de QA](../.github/workflows/previa-explorar-qa.yml) e executar
+`supabase status -o env | node qa/integration/arquivo-obra-proxy-local.mjs`.
+
 ## Prévia do Explorar na Vercel privada
 
 No ambiente Preview da Vercel, a rota aceita somente a origem HTTPS do projeto

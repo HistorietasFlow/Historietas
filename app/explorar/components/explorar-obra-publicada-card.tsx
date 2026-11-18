@@ -42,9 +42,11 @@ import {
 export default function ObraPublicadaCard({
   obra,
   isDesktop,
+  somenteVisualizacoes = false,
 }: {
   obra: ObraLocal;
   isDesktop?: boolean;
+  somenteVisualizacoes?: boolean;
 }) {
   const { language } = useHistorietasLanguage();
   const totalCurtidas = totalCurtidasObra(obra);
@@ -124,26 +126,30 @@ export default function ObraPublicadaCard({
             {totalVisualizacoes}
           </span>
 
-          <span style={metricItemStyle}>
-            <span style={heartMetricIconStyle}>❤️</span>
-            {totalCurtidas}
-          </span>
+          {!somenteVisualizacoes && (
+            <>
+              <span style={metricItemStyle}>
+                <span style={heartMetricIconStyle}>❤️</span>
+                {totalCurtidas}
+              </span>
 
-          <span style={metricItemStyle}>
-            <span style={metricIconStyle}>💬</span>
-            {totalComentarios}
-          </span>
+              <span style={metricItemStyle}>
+                <span style={metricIconStyle}>💬</span>
+                {totalComentarios}
+              </span>
 
-          <span style={metricItemStyle}>
-            <span style={metricIconStyle}>
-              {obra.capitulos.length > 0 ? "📚" : obra.arquivoObra ? "📄" : "📚"}
-            </span>
-            {obra.capitulos.length > 0
-              ? `${obra.capitulos.length}`
-              : obra.arquivoObra
-                ? "1"
-                : "0"}
-          </span>
+              <span style={metricItemStyle}>
+                <span style={metricIconStyle}>
+                  {obra.capitulos.length > 0 ? "📚" : obra.arquivoObra ? "📄" : "📚"}
+                </span>
+                {obra.capitulos.length > 0
+                  ? `${obra.capitulos.length}`
+                  : obra.arquivoObra
+                    ? "1"
+                    : "0"}
+              </span>
+            </>
+          )}
         </div>
 
         {progressoLeitura > 0 && (
