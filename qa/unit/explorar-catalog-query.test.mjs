@@ -13,7 +13,7 @@ const pagina = ler("../../app/explorar/page.tsx");
 const botaoCarregarMais = ler("../../app/explorar/components/explorar-load-more-button.tsx");
 const codigo = ler("../../app/explorar/hooks/use-explorar-catalog-query.ts");
 const migrationBuscaAutores = ler(
-  "../../supabase/migrations/20261106175534_corrigir_busca_autores_catalogo.sql",
+  "../../supabase/migrations/20261106200355_corrigir_busca_autores_catalogo.sql",
 );
 const codigoExecutavel = codigo.replace(/^import[\s\S]*?from "[^"]+";\n/gm, "");
 const injecao = `

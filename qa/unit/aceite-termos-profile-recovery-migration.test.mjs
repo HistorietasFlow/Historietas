@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 const migration = readFileSync(
-  "supabase/migrations/20261105203938_corrigir_aceite_termos_profile_ausente.sql",
+  "supabase/migrations/20261105212108_20261105203938_corrigir_aceite_termos_profile_ausente.sql",
   "utf8",
 );
 

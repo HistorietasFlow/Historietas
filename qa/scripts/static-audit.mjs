@@ -2864,7 +2864,7 @@ const sitemapSource = fs.existsSync(sitemapPath)
   ? fs.readFileSync(sitemapPath, "utf8")
   : "";
 const sitemapProjection = fs.readFileSync(path.join(ROOT_DIR, "lib/cache/sitemap-projecao-publica.ts"), "utf8");
-const sitemapProjectionSql = fs.readFileSync(path.join(ROOT_DIR, "supabase/migrations/20261108205505_barreira_revisao_cache_publico.sql"), "utf8");
+const sitemapProjectionSql = fs.readFileSync(path.join(ROOT_DIR, "supabase/migrations/20261109004343_barreira_revisao_cache_publico.sql"), "utf8");
 const smokeRoutesPath = path.join(ROOT_DIR, "qa/tests/smoke-routes.spec.mjs");
 const smokeRoutesSource = fs.existsSync(smokeRoutesPath)
   ? fs.readFileSync(smokeRoutesPath, "utf8")

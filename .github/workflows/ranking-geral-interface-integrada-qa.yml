@@ -49,8 +49,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test -f supabase/migrations/20261116230000_listar_ranking_geral.sql
-          test -f supabase/migrations/20261117084500_ranking_geral_nucleo_paginado.sql
+          test -f supabase/migrations/20261117131102_listar_ranking_geral.sql
+          test -f supabase/migrations/20261117131111_ranking_geral_nucleo_paginado.sql
           test -f supabase/tests/database/ranking_geral_nucleo_paginado.test.sql
           node --check qa/feature-tests/ranking-geral/zz-real-fixture.spec.mjs
           node --check qa/feature-tests/ranking-geral/zz-nav-integrated.spec.mjs
