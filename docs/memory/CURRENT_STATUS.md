@@ -1,5 +1,9 @@
 # Estado atual
 
+### Prévia de abertura no Explorar · revisão da migration
+
+A PR prepara somente o contrato de banco da melhoria nº 8. As funções privadas ficam desativadas para leitura pela API. A RPC de QA é temporária no Supabase descartável. A integração de interface e a aplicação remota dependem de decisões posteriores.
+
 ### Ranking Geral ativo; diagnóstico do login mobile ainda aberto (17/11/2026)
 
 - #2356 mesclada na main `a93e4efc92e561329647c36139c6cc6f8e599f0c`, com árvore idêntica ao head revisado. Reativação autorizada: deployment `dpl_4uwqZyPtpU6PtZMG9V5cmmykJV3Q` READY, Node 22, aliases de produção e Vercel Authentication all. Flag true somente production. API principal 200/ok/vazio/no-store; cursor inválido 400. Interface real desktop renderizou o estado vazio esperado, sem reproduzir o erro do gateway. Sem novas migrations ou dados remotos; conjunto público vazio, portanto sem paginação populada em produção.
