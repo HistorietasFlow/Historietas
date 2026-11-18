@@ -58,6 +58,7 @@ export type ObraLocal = {
   totalFavoritos?: number;
   totalConcluidas?: number;
   slug: string;
+  slugPrevia?: string;
   link: string;
 };
 
@@ -539,6 +540,10 @@ export function normalizarObraSupabase(
     totalFavoritos: normalizarContadorExplorar(obraLocal?.totalFavoritos),
     totalConcluidas: normalizarContadorExplorar(obraLocal?.totalConcluidas),
     slug: slugObra,
+    slugPrevia: obra.publicado && obra.slug?.trim() &&
+      ["Livre", "10+", "12+", "14+", "16+"].includes(obra.classificacao_indicativa || "") &&
+      capitulosSupabase.some(c => c.ordem === 1 && c.publicado && c.user_id === obra.user_id)
+      ? obra.slug.trim() : undefined,
     link: `/obra/${slugObra}`,
   };
 }

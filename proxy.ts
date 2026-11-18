@@ -12,6 +12,7 @@ import {
   erroExigeLimpezaSessaoLocal,
   obterNomesCookiesSessaoSupabase,
 } from "@/lib/supabase/session-recovery.mjs";
+import { reconhecerRotaPrevia } from "@/lib/rota-previa-abertura";
 import { recusarFonteLocalDinamica } from "@/lib/server/capas/proteger-otimizador";
 
 const rotasProtegidas = [
@@ -261,6 +262,10 @@ function criarCookiesAuthExpirados(request: NextRequest, supabaseUrl: string) {
 
 export async function proxy(request: NextRequest) {
   const pathname = normalizarPathname(request.nextUrl.pathname);
+  // A prévia valida a sessão original. Renovar ou limpar o cookie aqui perderia essa distinção.
+  if (reconhecerRotaPrevia(request.nextUrl.pathname)) {
+    return NextResponse.next();
+  }
   if (pathname === "/_next/image") {
     return recusarFonteLocalDinamica(request) ?? criarRespostaContinuar(request);
   }

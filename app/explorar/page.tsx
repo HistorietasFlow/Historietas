@@ -1,5 +1,7 @@
 "use client";
 
+import { LeitorDaPrevia } from "./components/explorar-previa";
+
 import { useRouter } from "next/navigation";
 import { lazy, Suspense, useEffect, useMemo, useRef } from "react";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
@@ -795,6 +797,7 @@ export default function ExplorarPage() {
   }
 
   return (
+    <LeitorDaPrevia.Provider value={usuarioIdExplorar}>
     <main style={criarExplorarPageStyle(pageThemeStyle)}>
       <style>{`${themePageCss}${historietasThemeCss}`}</style>
       <style>{explorarBuscaToggleCss}</style>
@@ -1084,5 +1087,6 @@ export default function ExplorarPage() {
         )}
       </section>
     </main>
+    </LeitorDaPrevia.Provider>
   );
 }

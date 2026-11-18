@@ -1,8 +1,8 @@
 # Estado atual
 
-### Prévia de abertura no Explorar · revisão da migration
+### Prévia de abertura no Explorar · proposta integrada local
 
-A PR prepara somente o contrato de banco da melhoria nº 8. As funções privadas ficam desativadas para leitura pela API. A RPC de QA é temporária no Supabase descartável. A integração de interface e a aplicação remota dependem de decisões posteriores.
+A proposta reúne a migration assinada inativa, as operações de pausa e reversão, a rota e os cards. A habilitação da aplicação exige desenvolvimento, Supabase HTTP em loopback e a flag local. A RPC conserva a identidade do leitor e a RLS, verifica sessão ativa e limita o trecho no PostgreSQL. O Vault guarda a chave e a referência privada contém somente seu UUID. A CI proposta exercita o conjunto em job descartável próprio, incluindo expiração real e rotação. O conjunto foi preparado localmente para revisão em PR draft. A execução dos workflows no GitHub permanece pendente. Aplicação remota e ativação permanecem pendentes.
 
 ### Ranking Geral ativo; diagnóstico do login mobile ainda aberto (17/11/2026)
 

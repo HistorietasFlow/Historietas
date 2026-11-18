@@ -60,7 +60,7 @@ test("os modelos e corpos movidos preservam literalmente o original", () => {
     .trimEnd();
   assert.equal(
     createHash("sha256").update(original).digest("hex"),
-    "09bc0b83ef318ed23034e20a384c54c84d20b915c5f01f269b6e1f7ad606035c",
+    "4f5eebbf283e382370d1b17f0ba550eb174052ab156ae234f735d53d3a36ed4a",
   );
 });
 
@@ -221,4 +221,21 @@ test("a página injeta o backup e mantém storage e queries fora dos normalizado
   assert.match(pagina, /from "\.\/lib\/explorar-local-storage"/);
   assert.doesNotMatch(pagina, /function normalizarObraSupabase\(/);
   assert.doesNotMatch(modulo, /\b(?:supabase|localStorage|window|document|useEffect|useState)\b/i);
+});
+
+test("a prévia exige slug do catálogo e capítulo inicial publicado do mesmo autor", () => {
+  const obra = { id: "o", user_id: "a", titulo: "Outro título", publicado: true,
+    slug: "slug-do-catalogo", classificacao_indicativa: "Livre" };
+  const capitulo = { id: "c", user_id: "a", obra_id: "o", publicado: true, ordem: 1 };
+  const slug = (alteracoes = {}, capitulos = [capitulo]) =>
+    normalizarObraSupabase({ ...obra, ...alteracoes }, capitulos, undefined, 0).slugPrevia;
+  assert.equal(slug(), "slug-do-catalogo");
+  assert.equal(slug({ slug: null }), undefined);
+  assert.equal(slug({ publicado: false }), undefined);
+  assert.equal(slug({ classificacao_indicativa: "18+" }), undefined);
+  assert.equal(slug({}, []), undefined);
+  for (const mudanca of [{ publicado: false }, { ordem: 2 }, { user_id: "outro" }]) {
+    assert.equal(slug({}, [{ ...capitulo, ...mudanca }]), undefined);
+  }
+  assert.equal(criarObraLocal({ slug: obra.slug, slugPrevia: obra.slug }).slugPrevia, undefined);
 });

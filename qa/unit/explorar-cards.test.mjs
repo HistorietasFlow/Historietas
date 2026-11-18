@@ -87,6 +87,7 @@ const AutorCard = compilar(autorCodigo, {
 }).default;
 const ObraCard = compilar(obraCodigo, {
   ...comuns,
+  "./explorar-previa": { AcoesComPrevia: ({ children }) => children },
   "../../../lib/utils": utils,
   "../lib/explorar-work-normalizers": normalizadores,
   "../lib/explorar-author-route-utils": rotas,
@@ -172,7 +173,7 @@ test("corpos dos cards, rota e capa preservam literalmente a base", () => {
   assert.equal(hash(funcao(autorCodigo, "function AutorExplorarCard(", null)),
     "8e7cc547db96aff0b09f04635e4744cde2351fb49bb3ecaa405e8a87a6cb2ede");
   assert.equal(hash(funcao(obraCodigo, "function ObraPublicadaCard(", null)),
-    "d1bf1a4f8f135dd675f49b61a7a391e678de82cfe0190e5b278a8b64b46b8a93");
+    "1437ddaf41bb8f6aebb3483cc054895995d96f8890c5afdd199440f9dc5f4f50");
   assert.equal(hash(funcao(rotaCodigo, "function criarPerfilAutorHrefExplorar(", null)),
     "7306b91d6f610228f3024fa05f88475cafd251f6f260aeb6b1c32e79f94a6845");
   assert.equal(hash(funcao(estiloCodigo, "function criarPublishedCoverStyle(", "\n\nexport function criarDesktopPublishedCoverStyle(")),
