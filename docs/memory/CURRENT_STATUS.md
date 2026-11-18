@@ -6,7 +6,7 @@ A PR #2364 integrou a rota, os cards e a RPC assinada. As duas migrations
 foram aplicadas no Supabase hospedado com versões 20261118063821 e
 20261118063908. Os arquivos do repositório usam essas versões e preservam
 os hashes do SQL aplicado. Instalação e ativação são etapas distintas.
-O botão no Explorar continua restrito ao ensaio local.
+A rota e o botão admitem homologação e produção privada com configurações independentes. A habilitação no banco é explícita. Consulte os scripts em `docs/sql/previa-assinatura/`.
 
 ### Ranking Geral ativo; diagnóstico do login mobile ainda aberto (17/11/2026)
 

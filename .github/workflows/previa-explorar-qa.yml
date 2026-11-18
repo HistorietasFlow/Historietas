@@ -31,6 +31,9 @@ jobs:
           npm ci
           npm --prefix qa ci
 
+      - name: Conferir isolamento do destino na Vercel
+        run: node --test qa/unit/origem-previa-vercel.test.mjs
+
       - name: Preparar Chromium e dependências oficiais
         id: playwright-server
         shell: bash

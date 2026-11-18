@@ -1,5 +1,14 @@
 # Refatoração da Comunidade
 
+## Prévia do Explorar na Vercel privada
+
+No ambiente Preview da Vercel, a rota aceita somente a origem HTTPS do projeto
+Supabase identificado por `HISTORIETAS_PREVIA_PROJETO_PREVIEW`. Configure essa
+referência e o segredo de assinatura `HISTORIETAS_PREVIA_CHAVE_PREVIEW` apenas
+na branch de homologação protegida. O botão também pode ser testado nessa branch com `HISTORIETAS_PREVIA_INTERFACE=1`.
+Em produção, configure separadamente HISTORIETAS_PREVIA_PROJETO_PRODUCAO, HISTORIETAS_PREVIA_CHAVE_PRODUCAO e HISTORIETAS_PREVIA_INTERFACE_PRODUCAO=1. A rota exige a origem exata e a chave de assinatura do ambiente. A ativação da RPC usa o script habilitar-referencia.sql. Para interromper o acesso no banco, use pausar.sql.
+
+
 ## Explorar · prévia de abertura desativada
 
 A migration e a reversão preservam os bytes homologados. A CI confere os hashes, os privilégios no pgTAP e o acesso com Auth real. Para repetir a integração na raiz, use um Supabase local descartável inicializado como na CI, com `psql` instalado, e execute `supabase status -o env | node qa/integration/previa-abertura-local.test.mjs`. O teste remove o adaptador temporário, executa a reversão e restaura a instalação inativa.

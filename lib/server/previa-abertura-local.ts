@@ -1,6 +1,7 @@
 import "server-only";
 import { stringFromBase64URL } from "@supabase/ssr";
 import { obterChaveSessaoSupabase } from "../supabase/session-recovery.mjs";
+import { configuracaoPreviaVercel } from "./origem-previa-vercel.mjs";
 
 export function urlSupabaseDoEnsaio() {
   if (process.env.NODE_ENV !== "development" || process.env.VERCEL ||
@@ -11,6 +12,12 @@ export function urlSupabaseDoEnsaio() {
         && !url.username && !url.password && url.href === url.origin + "/") return url.origin;
   } catch { /* Configuração ausente ou inválida mantém a rota desligada. */ }
   return null;
+}
+
+export function configuracaoRotaPrevia() {
+  const local = urlSupabaseDoEnsaio();
+  if (local) return { origem: local, chaveProva: process.env.HISTORIETAS_PREVIA_CHAVE_ENSAIO };
+  return configuracaoPreviaVercel(process.env);
 }
 
 type Credencial = { tipo: "visitante" } | { tipo: "invalida" } | { tipo: "sessao"; token: string };
