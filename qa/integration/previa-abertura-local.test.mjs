@@ -41,14 +41,14 @@ function hash(file) {
   return createHash("sha256").update(readFileSync(file)).digest("hex");
 }
 
-async function request(url, {token, key = config.ANON_KEY, body, method, schema} = {}) {
+async function request(url, {token = config.ANON_KEY, key = config.ANON_KEY, body, method, schema} = {}) {
   const response = await fetch(url, {
     method: method || (body === undefined ? "GET" : "POST"),
     redirect: "error",
     headers: {
       apikey: key,
       "Content-Type": "application/json",
-      ...(token && {Authorization: "Bearer " + token}),
+      Authorization: "Bearer " + token,
       ...(schema && {"Content-Profile": schema}),
     },
     body: body === undefined ? undefined : JSON.stringify(body),
@@ -93,7 +93,11 @@ async function waitCatalog(present) {
     assert.equal(r.status, 200);
     if (Object.hasOwn(r.data.paths, "/rpc/" + adapter) === present) {
       const probe = await request(rest + "/rpc/" + adapter, {body: {p_slug: "qa-espera-catalogo"}});
-      if (present ? probe.status === 200 : probe.status === 404 && probe.data.code === "PGRST202") return;
+      const missing = probe.status === 404 && probe.data?.code === "PGRST202";
+      if (present ? probe.status === 200 : missing) return;
+      if (present && !missing) {
+        assert.fail(`A chamada de visitante à RPC de QA retornou HTTP ${probe.status} (${probe.data?.code ?? "sem código"}).`);
+      }
     }
     await delay(250);
   }
