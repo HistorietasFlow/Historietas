@@ -1,8 +1,12 @@
 # Estado atual
 
-### Prévia de abertura no Explorar · proposta integrada local
+### Prévia de abertura no Explorar
 
-A proposta reúne a migration assinada inativa, as operações de pausa e reversão, a rota e os cards. A habilitação da aplicação exige desenvolvimento, Supabase HTTP em loopback e a flag local. A RPC conserva a identidade do leitor e a RLS, verifica sessão ativa e limita o trecho no PostgreSQL. O Vault guarda a chave e a referência privada contém somente seu UUID. A CI proposta exercita o conjunto em job descartável próprio, incluindo expiração real e rotação. O conjunto foi preparado localmente para revisão em PR draft. A execução dos workflows no GitHub permanece pendente. Aplicação remota e ativação permanecem pendentes.
+A PR #2364 integrou a rota, os cards e a RPC assinada. As duas migrations
+foram aplicadas no Supabase hospedado com versões 20261118063821 e
+20261118063908. Os arquivos do repositório usam essas versões e preservam
+os hashes do SQL aplicado. Instalação e ativação são etapas distintas.
+O botão no Explorar continua restrito ao ensaio local.
 
 ### Ranking Geral ativo; diagnóstico do login mobile ainda aberto (17/11/2026)
 

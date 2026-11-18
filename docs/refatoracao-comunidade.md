@@ -3202,3 +3202,15 @@ da aplicação/SQL ou das branches originais. Aprovados 244 unitários, 52 pgTAP
 cinco cenários focados reais de Data API/Auth/Playwright, desktop/mobile, concorrência
 1 e zero retries. Evidências, correções do harness e limites em
 [Homologação integrada](integracao-editor-diario-20261115.md). Sem merge ou produção.
+
+## Prévia do Explorar — versões das migrations
+
+As migrations de instalação inativa e da RPC assinada passam a usar os timestamps
+registrados na produção, respectivamente 20261118063821 e 20261118063908.
+Os dois arquivos SQL preservam o conteúdo homologado e a ordem de aplicação.
+Os ensaios locais apontam para os novos caminhos. Esse alinhamento dispensa
+reaplicação de SQL ou reparo do histórico remoto para essas duas versões.
+
+Em 18/11/2026, após alinhar esse par, a comparação de todos os timestamps ainda
+mostrava 40 exclusivos do Git e 39 exclusivos do histórico de produção.
+O próximo `db push` geral depende de uma reconciliação separada.
