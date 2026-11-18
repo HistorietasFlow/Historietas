@@ -5,7 +5,7 @@
 No ambiente Preview da Vercel, a rota aceita somente a origem HTTPS do projeto
 Supabase identificado por `HISTORIETAS_PREVIA_PROJETO_PREVIEW`. Configure essa
 referência e o segredo de assinatura `HISTORIETAS_PREVIA_CHAVE_PREVIEW` apenas
-na branch de homologação protegida. O botão continua restrito ao ensaio local.
+na branch de homologação protegida. O botão também pode ser testado nessa branch com `HISTORIETAS_PREVIA_INTERFACE=1`.
 O deployment de produção responde 404 mesmo quando recebe essas variáveis.
 
 
