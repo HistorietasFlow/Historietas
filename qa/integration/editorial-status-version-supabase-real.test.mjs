@@ -46,6 +46,8 @@ test("versao editorial local: migracao incremental, CAS real, ABA, recriacao e r
       insert into public.obras(id,user_id,titulo,autor,genero,formato,classificacao_indicativa,publicado,slug,status_editorial)
       select ('ea200000-0000-4000-8000-'||lpad(n::text,12,'0'))::uuid,'${uid(1)}','Preexistente','QA','Fantasia','HQ','Livre',n%2=0,'qa-versao-pre-'||n,
         case n when 1 then null when 2 then 'em_andamento' when 3 then 'concluida' else 'pausada' end from generate_series(1,4) n;
+      -- Conclui os eventos das fixtures antes de medir os efeitos da migration histórica.
+      set constraints public.certificar_estreia_por_obra immediate;
       create temp table qa_antes as select id,to_jsonb(o) dados,xmin::text xmin_antes from public.obras o;
       create temp table qa_revisoes as select * from historietas_privado.obra_projecao_revisoes;
       create temp table qa_contratos as select oid,pg_get_functiondef(oid) def,proacl from pg_proc
@@ -94,6 +96,7 @@ test("versao editorial local: migracao incremental, CAS real, ABA, recriacao e r
   sql(`begin; alter table public.obras disable trigger obras_status_editorial_versao;
     insert into public.obras(id,user_id,titulo,autor,genero,formato,classificacao_indicativa,publicado,slug,status_editorial)
     values ('${wid(5)}','${uid(1)}','Legado','QA','Fantasia','HQ','Livre',false,'qa-versao-5','pausada');
+    set constraints public.certificar_estreia_por_obra immediate;
     alter table public.obras enable trigger obras_status_editorial_versao; commit;`);
   const read = async (n, client = author) => check(await client.from("obras").select(fields).eq("id", wid(n)).eq("user_id", uid(1)).single());
   // Exemplo executavel do contrato futuro: ZERO consultas de rebase/retry.

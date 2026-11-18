@@ -93,6 +93,7 @@ test("aplicação real: CAS, recuperação e Storage exclusivamente descartávei
   await t.test("legado NULL confirmado funciona; campo ausente não habilita a integração", async () => {
     sql(`begin; alter table public.obras disable trigger obras_status_editorial_versao;
       insert into public.obras(id,user_id,titulo,autor,genero,formato,classificacao_indicativa,slug) values ('${legacyId}','${userId}','Legado','QA','Fantasia','HQ','Livre','qa-app-legacy-${legacyId}');
+      set constraints public.certificar_estreia_por_obra immediate;
       alter table public.obras enable trigger obras_status_editorial_versao; commit;`);
     const before = await read(legacyId); assert.equal(before.status_editorial_versao,null);
     assert.equal(confirmarEditorialRemoto({...before, status_editorial_versao: undefined},legacyId,userId),null);
