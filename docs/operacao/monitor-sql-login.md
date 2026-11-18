@@ -2,7 +2,7 @@
 
 Base `main` `50dcd318`. O inventario autorizado anterior confirmou em producao
 o snapshot e sua ACL, mas o usuario fixo do workflow era NOLOGIN. A migration
-`20261111155517_identidade_login_monitor_agendamento.sql` prepara
+`20261111174800_identidade_login_monitor_agendamento.sql` prepara
 `historietas_agendamento_monitor_login` com LOGIN **sem senha**. Nao cria
 credencial utilizavel por autenticacao de senha nem configura GitHub/Supabase.
 O papel `historietas_agendamento_monitor` permanece NOLOGIN.

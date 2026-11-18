@@ -3194,6 +3194,14 @@ UPDATE confirmado, recuperação por intenção e compatibilidade antes da migra
 Sem alteração das branches de origem, migration ou ativação. Contrato e implantação
 em [Integração do Diário](../app/editar-capitulo/INTEGRACAO_DIARIO_RPC.md).
 
+## Reconciliação das demais versões do Supabase
+
+Foram alinhados outros 39 nomes ao histórico hospedado e atualizados os
+caminhos usados pela QA e pelos workflows do Ranking. A única migration ainda
+pendente é o PH-1, que evita a escrita de saldo em um plano vazio de notificações.
+A [relação completa](operacao/historico-migrations-20261118.md) registra as
+diferenças exatas, os testes e o resultado do plano do CLI em banco descartável.
+
 ## Homologação conjunta do editor e Diário — 15/11/2026
 
 Integração isolada sobre `main deeb839b`, #2316 → #2307 → #2321, sem duplicar a

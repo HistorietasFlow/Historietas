@@ -40,7 +40,7 @@ jobs:
           npm ci
           npm --prefix qa ci
           node --check qa/benchmarks/ranking-geral-nucleo-migrado.test.mjs
-          test -f supabase/migrations/20261117084500_ranking_geral_nucleo_paginado.sql
+          test -f supabase/migrations/20261117131111_ranking_geral_nucleo_paginado.sql
           test -f supabase/tests/database/ranking_geral_nucleo_paginado.test.sql
 
       - name: Supabase CLI fixa

@@ -16,6 +16,16 @@ O botão no Explorar continua restrito ao ensaio local.
 - Branch `qa/login-mobile-diagnostico-formulario`: diagnóstico lê somente o formulário em caso de falha, distinguindo campos vazios/iguais ao esperado, validade HTML e os dois erros locais conhecidos em pt/en/es. Valores e textos são comparados somente em memória; apenas categorias/contagens passam pelo sanitizador. Inclui documentos /login do frame principal para distinguir recarga de documento de RSC/iframe, sem inferir sua causa. Fluxo de login, tempo de espera, retries, asserções e gates preservados.
 - Local Node 22.23.5: 21/21 testes de diagnóstico/coleta, ESLint focado, sintaxe e diff check aprovados. O cenário de browser real permanece para CI descartável; não repetida a tentativa local bloqueada pelo socket do Chromium. Instrumentação não é correção do flaky; a causa permanece aberta. Sem novo merge, deploy ou alteração no banco nesta investigação.
 
+### Histórico de migrations do Supabase
+
+A revisão de 18/11 parte da PR #2365 e alinha mais 39 versões pelo Git.
+No conjunto das duas propostas, todos os 95 registros hospedados correspondem a
+um arquivo. O PH-1 de notificações (`20261112013209`) é a única versão só
+local. O catálogo confirma que seu efeito ainda está pendente em produção.
+Os 96 arquivos conservaram o conteúdo e a ordem. Ver a
+[correspondência e o ensaio](../operacao/historico-migrations-20261118.md)
+antes de decidir sobre a aplicação do PH-1.
+
 ### Histórico — SQL aplicado, ativação revertida e correção de transporte (17/11/2026)
 
 - #2355 mesclada na main `758e3fd82d66f5d765a663368dcd0ea1b785cad6`; sua árvore é a mesma do head aprovado `9ab0baa`. #2348/#2352 foram marcadas como mescladas pelo GitHub; #2354 continua aberta sobre a branch SQL, sem merge separado.
