@@ -80,7 +80,16 @@ test("prévia via Next.js, proxy real, Auth, RLS e prova de origem local", async
     sql(habilitar, { id_segredo_vault: id });
     return { id, material: sql("select decrypted_secret from vault.decrypted_secrets where id=:'id'::uuid;", { id }) };
   }
-  assert.equal(sql("select extversion from pg_extension where extname='supabase_vault';"), "0.3.2");
+  const versaoVault = sql("select extversion from pg_extension where extname='supabase_vault';");
+  assert.ok(["0.3.1", "0.3.2"].includes(versaoVault), "Versão do Vault fora das homologadas para QA: " + versaoVault);
+  t.diagnostic("Supabase Vault " + versaoVault);
+  // Confere a operação real e o armazenamento cifrado sem imprimir o segredo.
+  assert.equal(sql(`begin;
+    select encode(extensions.gen_random_bytes(32),'hex') as material \\gset
+    select vault.create_secret(:'material', :'nome') as id \\gset
+    select exists(select 1 from vault.secrets s join vault.decrypted_secrets d using (id)
+      where s.id = :'id'::uuid and s.secret <> :'material' and d.decrypted_secret = :'material');
+    rollback;`, { nome: "qa-vault-" + randomUUID() }), "t");
   try {
     for (let i = 0; i < 4; i++) {
       const credenciais = { email: prefixo + i + "@example.test", password: randomUUID() };
