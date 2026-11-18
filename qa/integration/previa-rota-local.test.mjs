@@ -40,7 +40,7 @@ function sqlRevisado(caminho, hash) {
   assert.equal(createHash("sha256").update(bytes).digest("hex"), hash, caminho);
   return bytes.toString("utf8");
 }
-const instalar = sqlRevisado("supabase/migrations/20261118044729_previa_abertura_assinada.sql", "768c389d8ac074162cf4f2ac424539a2d55c97ccc39c300a6de7a9f94870d093");
+const instalar = sqlRevisado("supabase/migrations/20261118063908_previa_abertura_assinada.sql", "768c389d8ac074162cf4f2ac424539a2d55c97ccc39c300a6de7a9f94870d093");
 const habilitar = sqlRevisado("docs/sql/previa-assinatura/habilitar-referencia.sql", "c909ce66b248a3b42b68a5333f190b6ad8fb88b33759b0c22fd3aab5fb25b0f4");
 const pausaOperacional = sqlRevisado("docs/sql/previa-assinatura/pausar.sql", "241836e85b291ad46bd60a4041d2b656c73845587c30f3ed42b5a8dc09c99693");
 const reverter = sqlRevisado("docs/sql/previa-assinatura/reverter.sql", "509ad5113e262a585d081f226243b41a2d6c26ee91e3e3f9c1339f63def177c1");

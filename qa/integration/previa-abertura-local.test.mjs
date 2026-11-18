@@ -24,7 +24,7 @@ const auth = local(config.AUTH_URL || config.API_URL + "/auth/v1", ["http:"]);
 const rest = local(config.REST_URL || config.API_URL + "/rest/v1", ["http:"]);
 const db = local(config.DB_URL, ["postgres:", "postgresql:"]);
 const dir = "qa/integration/previa-abertura/";
-const up = "supabase/migrations/20261118021209_previa_abertura_inativa.sql";
+const up = "supabase/migrations/20261118063821_previa_abertura_inativa.sql";
 const down = "docs/sql/rollback-previa-abertura.sql";
 
 function psqlArgs(variables = {}) {
