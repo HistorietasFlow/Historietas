@@ -296,6 +296,7 @@ const EXPLORAR_UI_TRANSLATIONS: Record<string, ExplorarTranslationEntry> = {
     en: "Authors of real lives",
     es: "Autores de vidas reales",
   },
+  "Novas vozes": { en: "New voices", es: "Nuevas voces" },
   "Novas vozes para descobrir": {
     en: "New voices to discover",
     es: "Nuevas voces por descubrir",

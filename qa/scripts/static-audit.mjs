@@ -1722,10 +1722,16 @@ const publicWorkFile = fs.readFileSync(
   "utf8"
 );
 
+const atualizacaoArquivoPrivado = publicWorkFile.match(
+  /async function obterUrlArquivoAtual\(\) \{([\s\S]*?)\n  \}/
+)?.[1] ?? "";
 if (
-  /arquivo\.categoria !== "imagem"[\s\S]*?arquivoAssinado\.expiraEm > Date\.now\(\)[\s\S]*?solicitarUrlTemporariaArquivoObra\(obraId\)[\s\S]*?onClick=\{abrirArquivo\}/i.test(
-    publicWorkFile
-  )
+  /arquivo\.categoria !== "imagem"[\s\S]*?void prepararArquivoPrivado\(\)/.test(publicWorkFile) &&
+  /const url = await solicitarUrlTemporariaArquivoObra\(obraId\);/.test(atualizacaoArquivoPrivado) &&
+  !/arquivoAssinado|arquivoHref/.test(atualizacaoArquivoPrivado) &&
+  /async function abrirArquivo\([\s\S]*?await obterUrlArquivoAtual\(\)/.test(publicWorkFile) &&
+  /async function baixarArquivo\([\s\S]*?await obterUrlArquivoAtual\(\)/.test(publicWorkFile) &&
+  /onClick=\{abrirArquivo\}/.test(publicWorkFile)
 ) {
   pass(
     "cliente assina documentos e renova URLs apenas sob demanda",

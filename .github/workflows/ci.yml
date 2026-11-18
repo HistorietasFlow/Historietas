@@ -106,6 +106,7 @@ jobs:
           fi
 
       - name: Baixar o código
+        id: checkout_tests
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
@@ -287,7 +288,7 @@ jobs:
 
       - name: Classificar diagnóstico seguro do Playwright
         id: playwright_diagnostics
-        if: ${{ always() }}
+        if: ${{ always() && steps.checkout_tests.outcome == 'success' }}
         run: node qa/scripts/collect-playwright-diagnostics.mjs
 
       - name: Instalar Lighthouse CI

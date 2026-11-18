@@ -76,11 +76,13 @@ export function EstadoVazioExplorar({
 
 export function SectionHeader({
   title,
+  titleId,
   tema,
   isDesktop,
   href,
 }: {
   title: string;
+  titleId?: string;
   tema: TemaCategoriaExplorar;
   isDesktop?: boolean;
   href?: string;
@@ -106,7 +108,7 @@ export function SectionHeader({
     <div style={isDesktop ? desktopSectionHeaderStyle : sectionHeaderStyle}>
       <span style={sectionHeaderSpacerStyle} aria-hidden="true" />
 
-      <h2 style={titleStyleTema}>{tituloTraduzido}</h2>
+      <h2 id={titleId} style={titleStyleTema}>{tituloTraduzido}</h2>
 
       {href ? (
         <Link

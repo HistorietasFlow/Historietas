@@ -58,7 +58,7 @@ export async function observarApi(destino) {
   };
 }
 
-export async function iniciarNext(api, chave, habilitado, chaveProva) {
+export async function iniciarNext(api, chave, habilitado, chaveProva, chaveServicoLocal) {
   const reserva = criarSocket();
   const porta = await escutar(reserva);
   await new Promise(resolve => reserva.close(resolve));
@@ -67,6 +67,7 @@ export async function iniciarNext(api, chave, habilitado, chaveProva) {
     env: {
       PATH: process.env.PATH, HOME: process.env.HOME, SystemRoot: process.env.SystemRoot,
       NEXT_TELEMETRY_DISABLED: "1", NEXT_PUBLIC_SUPABASE_URL: api, NEXT_PUBLIC_SUPABASE_ANON_KEY: chave,
+      SUPABASE_SERVICE_ROLE_KEY: chaveServicoLocal,
       HISTORIETAS_PREVIA_CHAVE_ENSAIO: chaveProva,
       HISTORIETAS_PREVIA_LOCAL: habilitado ? "1" : "0",
     },

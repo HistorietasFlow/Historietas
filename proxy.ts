@@ -262,8 +262,8 @@ function criarCookiesAuthExpirados(request: NextRequest, supabaseUrl: string) {
 
 export async function proxy(request: NextRequest) {
   const pathname = normalizarPathname(request.nextUrl.pathname);
-  // A prévia valida a sessão original. Renovar ou limpar o cookie aqui perderia essa distinção.
-  if (reconhecerRotaPrevia(request.nextUrl.pathname)) {
+  // Estas rotas validam a credencial original antes de entregar texto ou assinar um arquivo.
+  if (pathname === "/api/arquivos-obras/url" || reconhecerRotaPrevia(request.nextUrl.pathname)) {
     return NextResponse.next();
   }
   if (pathname === "/_next/image") {

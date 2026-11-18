@@ -1,5 +1,13 @@
 # Estado atual
 
+### Novas vozes em preparação local
+
+A seção do Explorar tem listagem desativada por padrão. As duas migrations
+propostas separam a autorização do download do registro e da seleção de autores.
+A instalação da segunda inicia a captura de estreias. Este registro descreve
+o patch local. A integração e a ativação no site privado dependem de autorização.
+Ver a [ordem de integração e pausa](../refatoracao-comunidade.md#explorar--novas-vozes).
+
 ### Prévia de abertura no Explorar
 
 A PR #2364 integrou a rota, os cards e a RPC assinada. As duas migrations

@@ -31,10 +31,15 @@ test("ExplorarCreativeWorkSections preserva seções criativas de obras", () => 
 
 test("Explorar mantém a condição das seções criativas na página", () => {
   assert.match(pagina, /import \{ ExplorarCreativeWorkSections \} from "\.\/components\/explorar-creative-work-sections";/);
-  assert.match(
-    pagina,
-    /modoConteudo === "obras" &&\s*!categoriaSelecionada &&\s*!termoBusca &&\s*!filtroFormatoAtivo &&\s*!filtroTagAtivo &&\s*!tagExcluidaAtiva &&\s*!notaMinimaAtiva &&\s*!ordenacaoPorCapitulosAtiva &&\s*!filtroColecaoAtivo && \(\s*<ExplorarCreativeWorkSections/,
-  );
+  const condicao = [
+    'modoConteudo === "obras"',
+    "!categoriaSelecionada", "!termoBusca", "!filtroFormatoAtivo", "!filtroTagAtivo",
+    "!tagExcluidaAtiva", "!generoExcluidoAtivo", "!statusEditorialAtivo", "!palavrasAtivas",
+    "!notaMinimaAtiva", "!ordenacaoPorCapitulosAtiva", "!filtroColecaoAtivo",
+  ].join(" && ");
+  const trecho = pagina.replace(/\s+/g, " ").split(condicao + " && (")[1];
+  assert.ok(trecho, "as seções de descoberta pertencem ao catálogo sem filtros");
+  assert.match(trecho, /^ <> \{!filtroConteudo18Ativo && <ExplorarNovasVozes[^>]*\/>\} <ExplorarCreativeWorkSections/);
   assert.match(pagina, /secoes=\{secoesCriativasObras\}/);
   assert.match(pagina, /tema=\{temaPagina\}/);
   assert.doesNotMatch(pagina, /secoesCriativasObras\.map/);

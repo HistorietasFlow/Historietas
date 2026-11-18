@@ -57,7 +57,10 @@ test("official image matches the locked Playwright and stays immutable/isolated 
   const e2e = job.steps.find((step) => step.run === "npm --prefix qa test");
   assert.equal(e2e.env.PW_TEST_CONNECT_WS_ENDPOINT, endpoint);
   const diagnostics = job.steps.find((step) => step.id === "playwright_diagnostics");
-  assert.equal(diagnostics.if, "${{ always() }}");
+  const checkout = job.steps.find((step) => step.id === "checkout_tests");
+  assert.match(checkout.uses, /^actions\/checkout@/);
+  assert.ok(job.steps.indexOf(checkout) < job.steps.indexOf(diagnostics));
+  assert.equal(diagnostics.if, "${{ always() && steps.checkout_tests.outcome == 'success' }}");
   assert.equal(diagnostics.run, "node qa/scripts/collect-playwright-diagnostics.mjs");
   const diagnosticsValidation = job.steps.find((step) => step.name === "Validar preparo seguro do Chromium");
   assert.match(diagnosticsValidation.run, /playwright-safe-flow-diagnostics\.test\.mjs/);

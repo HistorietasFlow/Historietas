@@ -82,6 +82,12 @@ jobs:
           set -euo pipefail
           supabase status -o env | node qa/integration/previa-rota-local.test.mjs --interface
 
+      - name: Conferir assinatura de arquivos pelo proxy real
+        shell: bash
+        run: |
+          set -euo pipefail
+          supabase status -o env | node qa/integration/arquivo-obra-proxy-local.mjs
+
       - name: Encerrar recursos descartaveis
         if: always()
         shell: bash
