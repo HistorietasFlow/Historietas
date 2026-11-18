@@ -1,6 +1,9 @@
 import type { ReactNode } from "react";
 import { criarMetadataPagina } from "../../lib/seo";
 
+import { urlSupabaseDoEnsaio } from "../../lib/server/previa-abertura-local";
+import { HabilitarPreviaLocal } from "./components/explorar-previa";
+
 export const metadata = criarMetadataPagina({
   titulo: "Explorar histórias",
   descricao: "Explore webnovels, fanfics, mangás, contos e histórias originais publicadas no Historietas.",
@@ -8,5 +11,5 @@ export const metadata = criarMetadataPagina({
 });
 
 export default function ExplorarLayout({ children }: { children: ReactNode }) {
-  return children;
+  return urlSupabaseDoEnsaio() ? <HabilitarPreviaLocal>{children}</HabilitarPreviaLocal> : children;
 }

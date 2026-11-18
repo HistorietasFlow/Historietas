@@ -1,0 +1,31 @@
+.acoes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+}
+.acoes > div { flex: 1 1 auto; }
+.botao {
+  min-height: 36px;
+  padding: 4px;
+  color: var(--historietas-text-primary, #fff);
+  background: transparent;
+  border: 0;
+  border-radius: 4px;
+  font: inherit;
+  font-size: 0.875rem;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.botao:focus-visible { outline: 2px solid currentColor; outline-offset: -2px; }
+.painel {
+  border-inline-start: 2px solid var(--historietas-text-secondary, #a1a1aa);
+  padding-inline-start: 10px;
+  font-size: 0.9rem;
+  font-weight: 400;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+@media (pointer: coarse) { .botao { min-height: 44px; } }

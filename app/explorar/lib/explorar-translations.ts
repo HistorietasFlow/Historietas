@@ -7,6 +7,12 @@ type ExplorarTranslationEntry = {
 };
 
 const EXPLORAR_UI_TRANSLATIONS: Record<string, ExplorarTranslationEntry> = {
+  "Ler o começo": { en: "Read the opening", es: "Leer el comienzo" },
+  "Fechar prévia": { en: "Close preview", es: "Cerrar vista previa" },
+  "Carregando trecho…": { en: "Loading excerpt…", es: "Cargando fragmento…" },
+  "Prévia indisponível.": { en: "Preview unavailable.", es: "Vista previa no disponible." },
+  "Entre novamente para ler a prévia.": { en: "Sign in again to read the preview.", es: "Vuelve a iniciar sesión para leer la vista previa." },
+  "Não foi possível carregar a prévia. Tente novamente.": { en: "Couldn’t load the preview. Try again.", es: "No se pudo cargar la vista previa. Inténtalo de nuevo." },
   "Carregando": { en: "Loading", es: "Cargando" },
   "Carregar mais": { en: "Load more", es: "Cargar más" },
   "Tentar novamente": { en: "Try again", es: "Intentar de nuevo" },

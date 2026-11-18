@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { AcoesComPrevia } from "./explorar-previa";
 import { useHistorietasLanguage } from "../../../components/HistorietasLanguageProvider";
 import { criarSlugBase } from "../../../lib/utils";
 import type { ObraLocal } from "../lib/explorar-work-normalizers";
@@ -160,19 +161,21 @@ export default function ObraPublicadaCard({
           </div>
         )}
 
-        <div style={isDesktop ? desktopCardActionRowStyle : cardActionRowStyle}>
-          <span style={isDesktop ? desktopCardGenreBadgeStyle : cardGenreBadgeStyle}>
-            {traduzirGeneroExplorar(obra.genero, language)}
-          </span>
+        <AcoesComPrevia slug={obra.slugPrevia}>
+          <div style={isDesktop ? desktopCardActionRowStyle : cardActionRowStyle}>
+            <span style={isDesktop ? desktopCardGenreBadgeStyle : cardGenreBadgeStyle}>
+              {traduzirGeneroExplorar(obra.genero, language)}
+            </span>
 
-          <Link
-            href={paginaPublicaHref}
-            data-historietas-page-background-action="true"
-            style={criarCardPrimaryActionStyle(isDesktop)}
-          >
-            {traduzirTextoExplorar("Ver obra", language)}
-          </Link>
-        </div>
+            <Link
+              href={paginaPublicaHref}
+              data-historietas-page-background-action="true"
+              style={criarCardPrimaryActionStyle(isDesktop)}
+            >
+              {traduzirTextoExplorar("Ver obra", language)}
+            </Link>
+          </div>
+        </AcoesComPrevia>
       </div>
     </article>
   );

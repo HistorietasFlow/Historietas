@@ -25,6 +25,10 @@ env:
   SENTRY_DSN: ""
 
 jobs:
+  previa_explorar_integrada:
+    name: Previa do Explorar - Vault, proxy e interface locais
+    uses: ./.github/workflows/previa-explorar-qa.yml
+
   ranking_rls_global:
     name: Ranking Geral - equivalencia RLS obrigatoria
     uses: ./.github/workflows/ranking-geral-nucleo-paginado-qa.yml
