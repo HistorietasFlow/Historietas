@@ -1,5 +1,9 @@
 # Refatoração da Comunidade
 
+## Explorar · prévia de abertura desativada
+
+A migration e a reversão preservam os bytes homologados. A CI confere os hashes, os privilégios no pgTAP e o acesso com Auth real. Para repetir a integração na raiz, use um Supabase local descartável inicializado como na CI, com `psql` instalado, e execute `supabase status -o env | node qa/integration/previa-abertura-local.test.mjs`. O teste remove o adaptador temporário, executa a reversão e restaura a instalação inativa.
+
 ## Capas privadas — preparação de integração
 
 - Módulos isolados e desativados preparam referências imutáveis, portas de
