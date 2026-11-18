@@ -2,7 +2,7 @@ import { createHmac } from "node:crypto";
 import type { NextRequest } from "next/server";
 import { decodificarSlugSeguro } from "@/app/obra/[slug]/capitulo/[numero]/lib/obra-chapter-canonical-route-utils";
 import { reconhecerRotaPrevia } from "@/lib/rota-previa-abertura";
-import { lerCredencialDaPrevia, urlSupabaseDoEnsaio } from "@/lib/server/previa-abertura-local";
+import { configuracaoRotaPrevia, lerCredencialDaPrevia } from "@/lib/server/previa-abertura-local";
 
 export const dynamic = "force-dynamic";
 
@@ -14,8 +14,9 @@ function responder(status: number, trecho?: string) {
 }
 
 export async function GET(request: NextRequest) {
-  const origem = urlSupabaseDoEnsaio();
-  if (!origem) return responder(404);
+  const configuracao = configuracaoRotaPrevia();
+  if (!configuracao) return responder(404);
+  const { origem, chaveProva } = configuracao;
   const caminho = reconhecerRotaPrevia(request.nextUrl.pathname);
   if (!caminho) return responder(404);
   const slug = decodificarSlugSeguro(caminho[1]);
@@ -24,7 +25,6 @@ export async function GET(request: NextRequest) {
   if (credencial.tipo === "invalida") return responder(401);
 
   const chave = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  const chaveProva = process.env.HISTORIETAS_PREVIA_CHAVE_ENSAIO;
   if (!chave || !chaveProva || !/^[a-f0-9]{64}$/.test(chaveProva)) return responder(503);
   const headers = new Headers({ apikey: chave });
   if (credencial.tipo === "sessao") headers.set("Authorization", "Bearer " + credencial.token);
