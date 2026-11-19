@@ -35,6 +35,20 @@ transformações do patch confirmou o teto de duas obras por autor e o prefixo
 comum em catálogos concentrado e diverso. Repetir a checagem visual no
 navegador para esta correção. O SQL do piloto é instalado somente para QA local.
 
+### Consulta de sinais instalada com acesso fechado
+
+A migration `20261119045900_recomendacoes_sinais_inativos.sql` instala a
+consulta de gêneros derivados de favoritos, obras seguidas e concluídas.
+A consulta usa a sessão atual e aplica RLS; a auxiliar privada verifica
+a visibilidade dos autores em lote. A instalação recusa privilégios
+inesperados e mantém as duas funções inacessíveis aos papéis da Data API.
+O catálogo experimental e a interface seguem na etapa de integração.
+
+Em Supabase local descartável, `supabase test db` cobre o proprietário e
+as permissões. `supabase status -o env | node qa/integration/recomendacoes-sinais-rollback.test.mjs`
+valida a reversão em `docs/sql/rollback-recomendacoes-sinais.sql`, verifica
+a recusa com dependência e reinstala a migration fechada ao terminar.
+
 ## Explorar · Novas vozes
 
 A seção mostra até 12 obras de autores distintos por dia, durante os 90 dias

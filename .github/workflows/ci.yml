@@ -231,6 +231,12 @@ jobs:
       - name: Executar testes de banco com pgTAP
         run: supabase test db
 
+      - name: Validar reversão da consulta de sinais de leitura
+        shell: bash
+        run: |
+          set -euo pipefail
+          supabase status -o env | node qa/integration/recomendacoes-sinais-rollback.test.mjs
+
       - name: Validar segurança e reversão da prévia no Supabase descartável
         shell: bash
         run: |

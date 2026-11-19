@@ -13,6 +13,15 @@ Gêneros de fixture, recurso desativado por padrão. Ver
 [roteiro local](../refatoracao-comunidade.md#explorar--piloto-local-de-recomendações).
 A revalidação desta correção no navegador e a integração seguem pendentes.
 
+### Consulta de sinais de leitura com instalação fechada
+
+A migration `20261119045900_recomendacoes_sinais_inativos.sql` registra a
+consulta de gêneros e a autorização de autores em lote. A consulta só pode
+ser executada pelos clientes após uma liberação explícita de permissões.
+A equivalência com as regras canônicas passou em 297 decisões no laboratório.
+A instalação com acesso fechado e a reversão foram homologadas localmente.
+Ver [testes e reversão](../refatoracao-comunidade.md#consulta-de-sinais-instalada-com-acesso-fechado).
+
 ### Novas vozes em preparação local
 
 A seção do Explorar tem listagem desativada por padrão. As duas migrations
