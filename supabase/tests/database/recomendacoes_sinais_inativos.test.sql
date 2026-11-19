@@ -30,8 +30,12 @@ select ok(not exists (
     or has_function_privilege(papel, 'qa5_sinais_interno.autores_visiveis(uuid[])', 'EXECUTE')
     or has_function_privilege(papel, 'public.qa5_generos_interacoes_autorizadas()', 'EXECUTE')
 ), 'papéis da API sem acesso efetivo após instalação');
-select ok(to_regprocedure('public.qa5_recomendar_obras_autorizadas(text,text,text,text,text,text,integer,numeric,timestamptz,uuid,text)') is null,
-  'consulta experimental de catálogo ausente desta instalação');
+select ok(not exists (
+  select from unnest(array['anon','authenticated','service_role','authenticator']) papel
+  where has_function_privilege(papel,
+    to_regprocedure('public.qa5_recomendar_obras_autorizadas(text,text,text,text,text,text,integer,numeric,timestamptz,uuid,text)'),
+    'EXECUTE')
+), 'consulta de catálogo permanece fechada quando instalada');
 
 set local role authenticated;
 select throws_ok('select public.qa5_generos_interacoes_autorizadas()', '42501', null,
