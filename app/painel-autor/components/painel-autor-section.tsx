@@ -1,5 +1,6 @@
 import type { ComponentType } from "react";
 import type { RascunhosCapitulosPainel } from "../lib/painel-autor-draft-chapters";
+import type { OrientacoesObraPainel } from "../lib/painel-autor-types";
 import {
   sectionStyle,
   worksGridStyle,
@@ -17,9 +18,11 @@ export function PainelSecao<T extends { id: string }>({
   onExcluirObra,
   Card,
   rascunhosConfirmados,
+  orientacoesPorObra,
 }: {
   obras: T[];
   rascunhosConfirmados?: ReadonlyMap<string, RascunhosCapitulosPainel>;
+  orientacoesPorObra?: ReadonlyMap<string, OrientacoesObraPainel>;
   isDesktop: boolean;
   onAbrirArquivo: (obra: T) => void | Promise<void>;
   onCompartilhar: (obra: T) => void | Promise<void>;
@@ -27,6 +30,7 @@ export function PainelSecao<T extends { id: string }>({
   Card: ComponentType<{
     obra: T;
     rascunhosConfirmados?: RascunhosCapitulosPainel;
+    orientacoes?: OrientacoesObraPainel;
     isDesktop: boolean;
     onAbrirArquivo: (obra: T) => void | Promise<void>;
     onCompartilhar: (obra: T) => void | Promise<void>;
@@ -41,7 +45,16 @@ export function PainelSecao<T extends { id: string }>({
     <section style={isDesktop ? desktopSectionStyle : sectionStyle}>
       <div style={isDesktop ? desktopWorksGridStyle : worksGridStyle}>
         {obras.map((obra) => (
-          <Card key={obra.id} obra={obra} isDesktop={isDesktop} onAbrirArquivo={onAbrirArquivo} onCompartilhar={onCompartilhar} onExcluirObra={onExcluirObra} rascunhosConfirmados={rascunhosConfirmados?.get(obra.id)} />
+          <Card
+            key={obra.id}
+            obra={obra}
+            isDesktop={isDesktop}
+            onAbrirArquivo={onAbrirArquivo}
+            onCompartilhar={onCompartilhar}
+            onExcluirObra={onExcluirObra}
+            rascunhosConfirmados={rascunhosConfirmados?.get(obra.id)}
+            orientacoes={orientacoesPorObra?.get(obra.id)}
+          />
         ))}
       </div>
     </section>

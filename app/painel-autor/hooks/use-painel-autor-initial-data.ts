@@ -10,7 +10,7 @@ import {
 import {
   carregarPainelAutorSupabase,
 } from "../lib/painel-autor-supabase-data-loader";
-import type { ObraLocal } from "../lib/painel-autor-types";
+import type { ObraLocal, OrientacoesObraPainel } from "../lib/painel-autor-types";
 import {
   filtrarObrasDoUsuarioPainel,
   marcarObrasComDonoPainel,
@@ -61,7 +61,8 @@ export function usePainelAutorInitialData({
   const contexto = useMemo(() => ({ usuarioIdLogado, verificandoUsuario }), [usuarioIdLogado, verificandoUsuario]);
   const [confirmacao, setConfirmacao] = useState<{
     contexto: typeof contexto;
-    dados: ConfirmacaoRascunhosPainel;
+    rascunhos: ConfirmacaoRascunhosPainel | null;
+    orientacoesPorObra?: ReadonlyMap<string, OrientacoesObraPainel>;
   } | null>(null);
   useEffect(() => {
     if (verificandoUsuario || !usuarioIdLogado) {
@@ -175,13 +176,18 @@ export function usePainelAutorInitialData({
         setObrasConcluidas(obrasConcluidasUsuario);
 
         let rascunhosRemotos: ConfirmacaoRascunhosPainel | null = null;
+        let orientacoesRemotas: ReadonlyMap<string, OrientacoesObraPainel> | undefined;
         let falhaRemota = false;
         const dadosSupabase = await carregarPainelAutorSupabase(
           obrasUsuarioLogado,
           obrasFavoritasUsuario,
           obrasConcluidasUsuario,
           (dados) => { rascunhosRemotos = dados; },
-          { usuarioIdEsperado: usuarioIdLogado, onFalha: () => { falhaRemota = true; } },
+          {
+            usuarioIdEsperado: usuarioIdLogado,
+            onFalha: () => { falhaRemota = true; },
+            onOrientacoes: (dados) => { orientacoesRemotas = dados; },
+          },
         );
 
         if (!componenteAtivo) {
@@ -236,7 +242,11 @@ export function usePainelAutorInitialData({
         }
 
         setObras(obrasFinais);
-        if (rascunhosRemotos) setConfirmacao({ contexto, dados: rascunhosRemotos });
+        setConfirmacao({
+          contexto,
+          rascunhos: rascunhosRemotos,
+          orientacoesPorObra: orientacoesRemotas,
+        });
         setObrasFavoritas(dadosSupabase.favoritas);
         setObrasConcluidas(dadosSupabase.concluidas);
       } catch (error) {
@@ -266,6 +276,12 @@ export function usePainelAutorInitialData({
     setObrasConcluidas,
     setCarregandoDados,
   ]);
-  return !verificandoUsuario && usuarioIdLogado && confirmacao?.contexto === contexto &&
-    confirmacao.dados.usuarioId === usuarioIdLogado ? confirmacao.dados.porObra : undefined;
+  const dadosAtuais = !verificandoUsuario && usuarioIdLogado &&
+    confirmacao?.contexto === contexto ? confirmacao : null;
+  const rascunhos = dadosAtuais?.rascunhos;
+
+  return {
+    rascunhosConfirmados: rascunhos?.usuarioId === usuarioIdLogado ? rascunhos.porObra : undefined,
+    orientacoesPorObra: dadosAtuais?.orientacoesPorObra,
+  };
 }

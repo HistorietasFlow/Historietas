@@ -140,7 +140,7 @@ function criarHook() {
     render(id = contexto?.id || "", verificando = false) {
       contexto = { id, verificando }; cursor = 0;
       atual = Reflect.apply(usePainelAutorInitialData, null, [{ usuarioIdLogado: id, verificandoUsuario: verificando, ...setters }]);
-      return atual;
+      return atual.rascunhosConfirmados;
     },
     async efeitos() {
       if (efeito) { cleanup?.(); cleanup = efeito(); efeito = null; }

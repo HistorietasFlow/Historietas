@@ -61,3 +61,14 @@ export type ObraLocal = {
 
 export type ObraComMetricas =
   ObraComMetricasPainel<ObraLocal>;
+
+export type OrientacoesObraPainel = Readonly<{
+  visualizacoes: number;
+  seguidores: number;
+  avaliacoes: number;
+  capitulos: readonly Readonly<{
+    id: string;
+    titulo: string;
+    visualizacoes: number | null;
+  }>[];
+}>;

@@ -25,7 +25,8 @@ function preparar(t, inicial = {}) {
   const warn = ambienteOriginal.warn; console.warn = () => {};
   t.after(() => { globalThis.window = antes.window; globalThis.localStorage = antes.localStorage; console.warn = warn; });
   const config = { usuario: "A", obras: new Map([["A", []], ["B", []]]), capitulos: [], falha: false,
-    gates: new Map(), profileGates: new Map(), capitulosFalham: false, metricasCarregadas: true };
+    gates: new Map(), profileGates: new Map(), capitulosFalham: false, metricasCarregadas: true,
+    metricasObras: new Map(), metricasCapitulos: new Map() };
   const slots = []; let posicao, efeito, cleanup, depsEfeito;
   const iguais = (a, b) => a && a.length === b.length && a.every((v, i) => Object.is(v, b[i]));
   const react = {
@@ -51,7 +52,9 @@ function preparar(t, inicial = {}) {
       chamadas.push(["capitulos", id]); if (config.capitulosFalham) return [];
       const lista = structuredClone(config.capitulos); confirmar(lista); return lista;
     } },
-    "../../../lib/metricas": { carregarMetricasConteudos: async () => ({ carregado: config.metricasCarregadas, obras: new Map(), capitulos: new Map() }) },
+    "../../../lib/metricas": { carregarMetricasConteudos: async () => ({
+      carregado: config.metricasCarregadas, obras: config.metricasObras, capitulos: config.metricasCapitulos,
+    }) },
     "./painel-autor-chapter-comments-loader": { carregarComentariosCapitulosUsuarioPainel: async () => new Map() },
   };
   const { usePainelAutorInitialData } = loadApplicationModule("app/painel-autor/hooks/use-painel-autor-initial-data.ts", mocks);
@@ -163,8 +166,46 @@ test("capítulos sem confirmação não autorizam regravar cache nem certificar 
   h.config.capitulosFalham = true; h.config.obras.set("A", [remota("local")]);
   h.render(); await tick();
   assert.equal(h.estado.Obras[0].capitulos[0].texto, "texto local");
-  assert.equal(h.render(), undefined);
+  assert.equal(h.render().rascunhosConfirmados, undefined);
   assert.deepEqual(h.gravacoes, []);
+});
+
+test("orientações usam somente métricas confirmadas da conta atual, sem enriquecer o cache de obras", async t => {
+  const h = preparar(t);
+  const metricaObra = {
+    visualizacoes: 42, avaliacao: { total: 3 }, usuario: {},
+    audiencia: { curtidoresUnicos: 0, comentaristasUnicos: 0, salvadoresUnicos: 0 },
+    interacoesDiretas: { seguidores: 8 },
+  };
+  h.config.obras.set("A", [
+    remota("publicada", "A", { publicado: true }),
+    remota("rascunho"),
+    remota("terceira", "B", { publicado: true }),
+  ]);
+  for (const id of ["publicada", "rascunho", "terceira"]) h.config.metricasObras.set(id, metricaObra);
+  h.config.capitulos = [
+    { id: "capitulo-publicado", obra_id: "publicada", user_id: "A", titulo: "Abertura", publicado: true },
+    { id: "capitulo-rascunho", obra_id: "publicada", user_id: "A", publicado: false },
+    { id: "capitulo-terceiro", obra_id: "publicada", user_id: "B", publicado: true },
+    { id: "capitulo-sem-metrica", obra_id: "publicada", user_id: "A", titulo: "Travessia", publicado: true },
+  ];
+  h.config.metricasCapitulos.set("capitulo-publicado", { obraId: "publicada", visualizacoes: 0, usuario: {} });
+  h.config.metricasCapitulos.set("capitulo-sem-metrica", { obraId: "terceira", visualizacoes: 90, usuario: {} });
+  h.render(); await tick();
+
+  assert.deepEqual([...h.render().orientacoesPorObra], [["publicada", {
+    visualizacoes: 42, seguidores: 8, avaliacoes: 3,
+    capitulos: [
+      { id: "capitulo-publicado", titulo: "Abertura", visualizacoes: 0 },
+      { id: "capitulo-sem-metrica", titulo: "Travessia", visualizacoes: null },
+    ],
+  }]]);
+  const cache = JSON.parse(h.storage.get("historietas-obras:A"));
+  assert.ok(cache.every(obra => !Object.hasOwn(obra, "avaliacoes") && !Object.hasOwn(obra, "orientacoes")));
+  assert.equal(h.render("B").orientacoesPorObra, undefined);
+  h.config.usuario = "A"; h.config.metricasCarregadas = false;
+  h.render("A"); await tick();
+  assert.equal(h.render("A").orientacoesPorObra.size, 0);
 });
 
 test("IDs distintos com mesmo slug não substituem obras ou cruzam rascunhos", async t => {

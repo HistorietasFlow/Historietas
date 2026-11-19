@@ -38,7 +38,7 @@ export const workActionSheetStyle: CSSProperties = {
   display: "grid",
   gap: 0,
   boxSizing: "border-box",
-  touchAction: "none",
+  touchAction: "pan-y",
 };
 
 export const workActionSheetHandleStyle: CSSProperties = {
