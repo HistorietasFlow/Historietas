@@ -1,5 +1,40 @@
 # Refatoração da Comunidade
 
+## Explorar · piloto local de recomendações
+
+O piloto conecta **Recomendações para você** e **Ver mais** ao mesmo carregador
+da RPC experimental `qa5_recomendar_obras_autorizadas`. As duas telas consultam
+com a sessão atual e usam a mesma ordenação determinística para o mesmo
+conjunto de obras. O Ver mais reconsulta ao abrir. Se o catálogo ou as
+permissões mudaram, ele reflete a autorização da consulta mais recente.
+Uma falha da RPC exibe erro com a seção vazia. O carregador usa apenas os
+metadados autorizados e não consulta o catálogo amplo para completar a resposta.
+
+O piloto funciona em `next dev` com Supabase em loopback e
+`NEXT_PUBLIC_HISTORIETAS_RECOMENDACOES_LOCAL=1`. Para ensaiar preferências
+fictícias, defina `NEXT_PUBLIC_HISTORIETAS_RECOMENDACOES_GENEROS=Fantasia`
+ou até três gêneros separados por vírgula. Sem gêneros, use descoberta geral.
+O piloto não carrega preferências salvas do leitor. Use apenas a chave pública
+do laboratório. Instale o SQL homologado do pacote QA5 no Supabase
+descartável antes de iniciar o site.
+
+No navegador local, compare até 12 obras iniciais com as primeiras do Ver mais,
+em desktop e mobile. A seleção compartilhada admite até duas obras de cada
+autor. Com poucos autores, as telas mostram menos sugestões. Confirme a
+ordem e o foco/legibilidade do link. Teste uma resposta 401 e uma
+falha de rede da RPC em cada tela. No Explorar, as outras seções ainda podem
+carregar pelo catálogo comum. A seção experimental deve exibir seu próprio
+erro com zero cards. No Ver mais de recomendações, confirme ausência de
+consulta ao catálogo amplo. Teste troca de conta, retorno à aba, capa padrão
+e lista vazia. Os cartões do piloto mostram os campos disponíveis na projeção,
+sem buscar capas, capítulos ou dados adicionais.
+
+O SQL otimizado passou nas 77 regressões, na escala de 4.000 obras e
+na checagem de expiração com Auth real. O ensaio dos carregadores e
+transformações do patch confirmou o teto de duas obras por autor e o prefixo
+comum em catálogos concentrado e diverso. Repetir a checagem visual no
+navegador para esta correção. O SQL do piloto é instalado somente para QA local.
+
 ## Explorar · Novas vozes
 
 A seção mostra até 12 obras de autores distintos por dia, durante os 90 dias

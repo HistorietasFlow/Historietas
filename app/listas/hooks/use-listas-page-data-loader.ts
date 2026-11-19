@@ -10,6 +10,8 @@ import {
   type PreferenciasPrivacidadeHistorietas,
 } from "../../../lib/historietasPrivacy";
 import { normalizarTexto } from "../../../lib/utils";
+import { carregarRecomendacoesLocais, usarRecomendacoesLocais } from "../../../lib/recomendacoes-locais";
+import { criarObraLista } from "../lib/listas-profile-state-utils";
 import type { UsuarioAutenticadoListas } from "./use-listas-session-scope";
 import {
   carregarAvaliacaoDiarioListas,
@@ -123,6 +125,38 @@ export function useListasPageDataLoader<
 }: UseListasPageDataLoaderParams<TCategoria, TItem>) {
   useEffect(() => {
     let cancelado = false;
+    const recomendacoesLocais = usarRecomendacoesLocais(modo, secao);
+    let consultaRecomendacoes: AbortController | undefined;
+
+    async function carregarPiloto(leitor: string) {
+      consultaRecomendacoes?.abort();
+      const controller = new AbortController();
+      consultaRecomendacoes = controller;
+      setObrasPublicas([]);
+      setCarregando(true);
+      setErro("");
+      try {
+        const obras = await carregarRecomendacoesLocais(leitor, controller.signal);
+        if (!cancelado && !controller.signal.aborted) setObrasPublicas(obras.map(criarObraLista));
+      } catch {
+        if (!cancelado && !controller.signal.aborted) {
+          setErro("Não foi possível carregar as recomendações agora.");
+        }
+      } finally {
+        if (!cancelado && !controller.signal.aborted) setCarregando(false);
+      }
+    }
+
+    let leitorDoPiloto: string | undefined;
+    function revalidarPiloto() {
+      if (leitorDoPiloto === undefined) return;
+      if (document.visibilityState === "visible") void carregarPiloto(leitorDoPiloto);
+      else {
+        consultaRecomendacoes?.abort();
+        setObrasPublicas([]);
+        setCarregando(true);
+      }
+    }
 
     async function iniciar() {
       setCarregando(true);
@@ -146,6 +180,11 @@ export function useListasPageDataLoader<
         if (authError && authError.name !== "AuthSessionMissingError") throw authError;
 
         setUsuarioAtualId(usuarioLogadoId);
+        if (recomendacoesLocais) {
+          leitorDoPiloto = usuarioLogadoId;
+          await carregarPiloto(leitorDoPiloto);
+          return;
+        }
 
         let perfilUsuarioAtualCarregado: PerfilListaLike | null = null;
 
@@ -330,16 +369,19 @@ export function useListasPageDataLoader<
           );
         }
       } finally {
-        if (!cancelado) {
+        if (!cancelado && leitorDoPiloto === undefined) {
           setCarregando(false);
         }
       }
     }
 
     void iniciar();
+    if (recomendacoesLocais) document.addEventListener("visibilitychange", revalidarPiloto);
 
     return () => {
       cancelado = true;
+      consultaRecomendacoes?.abort();
+      if (recomendacoesLocais) document.removeEventListener("visibilitychange", revalidarPiloto);
     };
   // Mantém a fronteira de dependências do efeito original da página.
   // eslint-disable-next-line react-hooks/exhaustive-deps
