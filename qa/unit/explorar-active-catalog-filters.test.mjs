@@ -27,12 +27,12 @@ function carregar(url) {
 }
 const { ExplorarActiveCatalogFilters } = carregar(sourceUrl);
 const padrao = {
-  language: "pt-BR", modoConteudo: "obras", filtroFormato: "todos", filtroTag: "",
+  language: "pt-BR", modoConteudo: "obras", categoriaSelecionada: "", filtroFormato: "todos", filtroTag: "",
   tagExcluida: "", generoExcluido: "", notaMinima: null,
 };
 function montar(opcoes = {}) {
   const chamadas = [];
-  const handlers = Object.fromEntries(["Formato", "Tag", "TagExcluida", "GeneroExcluido", "NotaMinima"].map(nome =>
+  const handlers = Object.fromEntries(["Categoria", "Formato", "Tag", "TagExcluida", "GeneroExcluido", "NotaMinima"].map(nome =>
     [`onSelecionar${nome}`, valor => chamadas.push([nome, valor])]));
   const tree = ExplorarActiveCatalogFilters({ ...padrao, ...opcoes, ...handlers, onFocarFiltros: () => chamadas.push(["foco"]) });
   const botoes = tree ? React.Children.toArray(tree.props.children).filter(child => child.type === "button") : [];
@@ -42,11 +42,12 @@ const todos = { filtroFormato: "HQ", filtroTag: "  AVENTÚRA  ", tagExcluida: "t
 
 test("não renderiza neutros, valores inválidos ou novas opções fora do escopo", () => {
   assert.equal(montar().tree, null);
-  assert.equal(montar({ filtroFormato: "inexistente", filtroTag: " \n ", tagExcluida: " ", generoExcluido: "Melodrama", notaMinima: 9 }).tree, null);
+  assert.equal(montar({ categoriaSelecionada: "inexistente", filtroFormato: "inexistente", filtroTag: " \n ", tagExcluida: " ", generoExcluido: "Melodrama", notaMinima: 9 }).tree, null);
 });
 
 test("cada indicador isolado identifica o filtro e remove só ele com seu valor neutro", () => {
   for (const [props, texto, handler, neutro] of [
+    [{ categoriaSelecionada: "Fantasia" }, "Gênero: Fantasia", "Categoria", ""],
     [{ filtroFormato: " hq " }, "Formato: HQ", "Formato", "todos"],
     [{ filtroTag: " AVENTÚRA " }, "Tag: aventura", "Tag", ""],
     [{ tagExcluida: " AVENTÚRA " }, "Excluir tag: aventura", "TagExcluida", ""],
@@ -61,18 +62,22 @@ test("cada indicador isolado identifica o filtro e remove só ele com seu valor 
   }
 });
 
-test("combina cinco filtros; Autores mantém apenas formato e tag incluída", () => {
-  assert.equal(montar(todos).botoes.length, 5);
-  const { botoes } = montar({ ...todos, modoConteudo: "autores" });
+test("combina gênero com os outros indicadores em Obras; Autores mantém formato e tag incluída", () => {
+  const opcoes = { ...todos, categoriaSelecionada: "Fantasia" };
+  assert.equal(montar(opcoes).botoes.length, 6);
+  const { botoes } = montar({ ...opcoes, modoConteudo: "autores" });
   assert.deepEqual(botoes.map(b => b.props["aria-label"]), ["Remover filtro: Formato: HQ", "Remover filtro: Tag: aventura"]);
 });
 
 test("traduções de controles e vocabulário não traduzem tags; conteúdo longo é escapado", () => {
-  for (const [language, prefixo, genero, tag] of [
-    ["pt-BR", "Remover filtro", "Ficção", "Tag"], ["en", "Remove filter", "Fiction", "Tag"], ["es", "Quitar filtro", "Ficción", "Etiqueta"],
+  for (const [language, prefixo, genero, tag, categoria] of [
+    ["pt-BR", "Remover filtro", "Ficção", "Tag", "Gênero: Fantasia"],
+    ["en", "Remove filter", "Fiction", "Tag", "Genre: Fantasy"],
+    ["es", "Quitar filtro", "Ficción", "Etiqueta", "Género: Fantasía"],
   ]) {
-    const { botoes } = montar({ ...todos, language });
+    const { botoes } = montar({ ...todos, language, categoriaSelecionada: "Fantasia" });
     assert.ok(botoes.every(b => b.props["aria-label"].startsWith(prefixo)));
+    assert.ok(botoes.some(b => b.props["aria-label"] === `${prefixo}: ${categoria}`));
     assert.ok(botoes.some(b => b.props["aria-label"].endsWith(genero)));
     assert.ok(botoes.some(b => b.props["aria-label"].endsWith(`${tag}: aventura`)));
   }
@@ -98,6 +103,7 @@ test("foco avança, volta ao anterior ou retorna ao controle externo antes da re
 
 test("integra handlers existentes sem painel avançado, rede, estado persistido ou sincronização paralela", () => {
   const page = readFileSync(new URL("../../app/explorar/page.tsx", import.meta.url), "utf8");
+  assert.match(page, /<ExplorarActiveCatalogFilters\s[^>]*categoriaSelecionada=\{categoriaSelecionada\}[^>]*onSelecionarCategoria=\{selecionarCategoria\}/);
   for (const nome of ["Formato", "Tag", "TagExcluida", "GeneroExcluido", "NotaMinima"]) {
     assert.ok(page.includes(`onSelecionar${nome}={selecionar${nome}Explorar}`));
   }

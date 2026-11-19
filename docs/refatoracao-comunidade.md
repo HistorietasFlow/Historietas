@@ -3338,6 +3338,10 @@ Qualquer manutenção futura deve executar as validações aplicáveis definidas
 
 - A composição visual dos filtros avançados de `/explorar` passou a ser carregada em um chunk sob demanda, preservando na página os estados, regras de negócio, body lock e callbacks existentes.
 
+## Explorar — gênero nos filtros selecionados
+
+- Na aba Obras, o indicador de gênero usa `ExplorarActiveCatalogFilters` e chama `selecionarCategoria("")` para remover apenas a categoria da URL. O foco segue para o indicador vizinho ou retorna ao botão de filtros quando o grupo fica vazio.
+
 ## Capas privadas — base HTTP desativada
 
 - Route Handler com autenticação SSR por requisição e callbacks internos para

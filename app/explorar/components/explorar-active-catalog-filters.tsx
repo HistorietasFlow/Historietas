@@ -15,6 +15,7 @@ import type { ModoConteudoExplorar } from "./explorar-section-components";
 type ExplorarActiveCatalogFiltersProps = {
   language: HistorietasLanguage;
   modoConteudo: ModoConteudoExplorar;
+  categoriaSelecionada: string;
   filtroFormato: string;
   filtroTag: string;
   tagExcluida: string;
@@ -24,6 +25,7 @@ type ExplorarActiveCatalogFiltersProps = {
   notaMinima: number | null;
   intervaloPalavras?: IntervaloPalavrasTexto;
   onAplicarPalavras?: (intervalo: IntervaloPalavrasTexto) => void;
+  onSelecionarCategoria: (valor: string) => void;
   onSelecionarFormato: (valor: string) => void;
   onSelecionarTag: (valor: string) => void;
   onSelecionarTagExcluida: (valor: string) => void;
@@ -33,7 +35,8 @@ type ExplorarActiveCatalogFiltersProps = {
 };
 
 export function ExplorarActiveCatalogFilters({
-  language, modoConteudo, filtroFormato, filtroTag, tagExcluida, generoExcluido, notaMinima,
+  language, modoConteudo, categoriaSelecionada, filtroFormato, filtroTag, tagExcluida, generoExcluido, notaMinima,
+  onSelecionarCategoria,
   onSelecionarFormato, onSelecionarTag, onSelecionarTagExcluida, onSelecionarGeneroExcluido,
   onSelecionarNotaMinima, onFocarFiltros, statusEditorial, onSelecionarStatusEditorial,
   intervaloPalavras = INTERVALO_PALAVRAS_VAZIO, onAplicarPalavras,
@@ -45,6 +48,9 @@ export function ExplorarActiveCatalogFilters({
   const exclusaoGenero = modoConteudo === "obras" ? normalizarGeneroExcluido(generoExcluido) : "";
   const nota = modoConteudo === "obras" ? normalizarNotaMinimaCatalogo(notaMinima) : null;
   const filtros: { id: string; rotulo: string; valor: string; remover: () => void }[] = [];
+  if (modoConteudo === "obras" && categorias.includes(categoriaSelecionada)) {
+    filtros.push({ id: "genero", rotulo: "Gênero", valor: traduzirGeneroExplorar(categoriaSelecionada, language), remover: () => onSelecionarCategoria("") });
+  }
   if (formato !== "todos") filtros.push({ id: "formato", rotulo: "Formato", valor: traduzirFormatoExplorar(formato, language), remover: () => onSelecionarFormato("todos") });
   if (tag) filtros.push({ id: "tag", rotulo: "Tag", valor: tag, remover: () => onSelecionarTag("") });
   if (exclusaoTag) filtros.push({ id: "tag-excluida", rotulo: "Excluir tag", valor: exclusaoTag, remover: () => onSelecionarTagExcluida("") });

@@ -23,7 +23,7 @@ async function abrirPainel(page) {
   return dialogo;
 }
 
-async function preparar(page, viewport) {
+async function preparar(page, viewport, obras = [obra]) {
   await page.setViewportSize(viewport);
   const consultas = [];
   let falhar = false;
@@ -34,11 +34,16 @@ async function preparar(page, viewport) {
     if (endpoint === "listar_obras_catalogo") {
       const p = route.request().postDataJSON(); consultas.push(p);
       if (falhar) return route.fulfill({ status: 503, json: { message: "Falha local controlada" } });
-      return route.fulfill({ json: [{ obra_id: obra.id, cursor_id: obra.id, cursor_valor: 0, cursor_data: obra.criada_em, tem_mais: false }] });
+      const selecionadas = obras.filter(registro => !p.p_genero || registro.genero === p.p_genero);
+      return route.fulfill({ json: selecionadas.map(registro => ({
+        obra_id: registro.id, cursor_id: registro.id, cursor_valor: 0, cursor_data: registro.criada_em, tem_mais: false,
+      })) });
     }
-    if (endpoint === "obras") return route.fulfill({ json: [obra] });
-    if (endpoint === "capitulos") return route.fulfill({ json: [{ id: "93000000-0000-4000-8000-000000000001",
-      obra_id: obra.id, user_id: obra.user_id, ordem: 1, titulo: "Abertura", publicado: true, criado_em: obra.criada_em }] });
+    if (endpoint === "obras") return route.fulfill({ json: obras });
+    if (endpoint === "capitulos") return route.fulfill({ json: obras.map(registro => ({
+      id: registro.id.replace(/^91/, "93"), obra_id: registro.id, user_id: registro.user_id,
+      ordem: 1, titulo: "Abertura", publicado: true, criado_em: registro.criada_em,
+    })) });
     return route.fulfill({ json: [] });
   });
   return { consultas, falhar: valor => { falhar = valor; } };
@@ -49,7 +54,7 @@ async function abrirCombinacao(page) {
     && r.request().postDataJSON()?.p_busca === "História" && r.request().postDataJSON()?.p_formato === "HQ");
   await page.goto(urlCompleta);
   expect((await resposta).ok()).toBe(true);
-  await expect(grupo(page).getByRole("button")).toHaveCount(5);
+  await expect(grupo(page).getByRole("button")).toHaveCount(6);
   await expect(page.getByRole("link", { name: obra.titulo, exact: true })).toBeVisible();
 }
 
@@ -69,6 +74,55 @@ const casos = [
 ];
 
 for (const [device, viewport] of [["desktop", { width: 1440, height: 900 }], ["mobile", { width: 390, height: 844 }]]) {
+  test(`remover gênero preserva os demais filtros e encaminha o foco — ${device}`, async ({ page }) => {
+    const fantasia = { ...obra, status_editorial: "concluida" };
+    const romance = { ...fantasia, id: "91000000-0000-4000-8000-000000000002", genero: "Romance",
+      titulo: "Romance dos indicadores", slug: "qa-indicadores-romance" };
+    const { consultas } = await preparar(page, viewport, [fantasia, romance]);
+    const avancados = { statusEditorial: "concluida", palavrasMinimas: "20000", palavrasMaximas: "80000",
+      notaMinima: "4", tagExcluida: "terror" };
+    const parametros = { p_status_editorial: "concluida", p_palavras_minimas: 20000,
+      p_palavras_maximas: 80000, p_nota_minima: 4, p_tag_excluida: "terror" };
+    const romanceCard = page.getByRole("link", { name: romance.titulo, exact: true });
+    const genero = remover(page, "Gênero: Fantasia");
+    const respostaComGenero = valor => page.waitForResponse(response => isCatalogo(response)
+      && response.request().postDataJSON()?.p_palavras_minimas === 20000
+      && response.request().postDataJSON()?.p_genero === valor);
+
+    const inicial = respostaComGenero("");
+    await page.goto(`/explorar?${new URLSearchParams(avancados)}`);
+    expect((await inicial).ok()).toBe(true);
+    await expect(romanceCard).toBeVisible();
+    const comGenero = respostaComGenero("Fantasia");
+    await page.getByRole("region", { name: "Categorias", exact: true })
+      .getByRole("button", { name: "Fantasia", exact: true }).click();
+    expect((await comGenero).ok()).toBe(true);
+    await expect(genero).toHaveText("Gênero: Fantasia×");
+    await expect(page.getByRole("link", { name: fantasia.titulo, exact: true })).toBeVisible();
+    await expect(romanceCard).toHaveCount(0);
+    expect(consultas.at(-1)).toMatchObject({ ...parametros, p_genero: "Fantasia" });
+
+    const semGenero = respostaComGenero("");
+    if (device === "desktop") await genero.press("Enter");
+    else await genero.click();
+    expect((await semGenero).ok()).toBe(true);
+    await expect(genero).toHaveCount(0);
+    await expect(remover(page, "Excluir tag: terror")).toBeFocused();
+    await expect(remover(page, "Avaliação mínima: 4")).toBeVisible();
+    await expect(remover(page, "Estado da história: Concluída")).toBeVisible();
+    await expect(remover(page, "Palavras: 20.000–80.000")).toBeVisible();
+    await expect(romanceCard).toBeVisible();
+    expect(Object.fromEntries(new URL(page.url()).searchParams)).toEqual(avancados);
+    expect(consultas.at(-1)).toMatchObject({ ...parametros, p_genero: "" });
+
+    await page.goto("/explorar?categoria=Fantasia");
+    await expect(grupo(page).getByRole("button")).toHaveCount(1);
+    await genero.press("Space");
+    await expect(grupo(page)).toHaveCount(0);
+    await expect(page).toHaveURL(/\/explorar$/);
+    await expect(page.getByRole("button", { name: "Abrir funções do Explorar", exact: true })).toBeFocused();
+  });
+
   test(`indicadores preservam histórico, foco, modos, traduções e falhas — ${device}`, async ({ page }) => {
     const fixture = await preparar(page, viewport);
     await abrirCombinacao(page);
@@ -83,13 +137,13 @@ for (const [device, viewport] of [["desktop", { width: 1440, height: 900 }], ["m
     await page.goForward();
     await expect(remover(page, "Formato: HQ")).toHaveCount(0);
     await page.reload();
-    await expect(grupo(page).getByRole("button")).toHaveCount(4);
+    await expect(grupo(page).getByRole("button")).toHaveCount(5);
     await remover(page, "Tag: aventura").click(); // tags usam replace, não um novo passo de histórico.
     await expect(remover(page, "Tag: aventura")).toHaveCount(0);
     await page.goBack();
-    await expect(grupo(page).getByRole("button")).toHaveCount(5);
+    await expect(grupo(page).getByRole("button")).toHaveCount(6);
     await page.goForward();
-    await expect(grupo(page).getByRole("button")).toHaveCount(3);
+    await expect(grupo(page).getByRole("button")).toHaveCount(4);
 
     await abrirCombinacao(page);
     await page.getByRole("button", { name: "Autores", exact: true }).click();
@@ -139,7 +193,7 @@ for (const [device, viewport] of [["desktop", { width: 1440, height: 900 }], ["m
         }
         expect((await resposta).ok()).toBe(true);
         await expect(page.getByRole("link", { name: obra.titulo, exact: true })).toBeVisible();
-        await expect(grupo(page).getByRole("button")).toHaveCount(4);
+        await expect(grupo(page).getByRole("button")).toHaveCount(5);
         conferirUrl(page, parametro);
         const novas = consultas.slice(antes);
         expect(novas).toHaveLength(1);

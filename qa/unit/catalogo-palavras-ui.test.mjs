@@ -80,7 +80,7 @@ test("controles e indicador: PT/EN/ES, zero, erros acessíveis, sem consultas", 
     assert.ok(html.includes(label)); assert.match(html,/inputMode="numeric"/); assert.match(html,/aria-describedby="explorar-palavras-ajuda"/);
     const error=renderToStaticMarkup(React.createElement(ExplorarWordRangeFilter,{language,intervalo:{minimo:"1e3",maximo:""},onAplicar(){}}));
     assert.match(error,/value="1e3"/); assert.match(error,/aria-invalid="true"/); assert.match(error,/role="alert"/);
-    const props={language,modoConteudo:"obras",filtroFormato:"todos",filtroTag:"",tagExcluida:"",generoExcluido:"",notaMinima:null,intervaloPalavras:{minimo:"0",maximo:"0"},onAplicarPalavras(){},onFocarFiltros(){}};
+    const props={language,modoConteudo:"obras",categoriaSelecionada:"",onSelecionarCategoria(){},filtroFormato:"todos",filtroTag:"",tagExcluida:"",generoExcluido:"",notaMinima:null,intervaloPalavras:{minimo:"0",maximo:"0"},onAplicarPalavras(){},onFocarFiltros(){}};
     assert.ok(renderToStaticMarkup(React.createElement(ExplorarActiveCatalogFilters,props)).includes(`${words}: 0–0`));
     assert.equal(renderToStaticMarkup(React.createElement(ExplorarActiveCatalogFilters,{...props,modoConteudo:"autores"})),"");
   }
