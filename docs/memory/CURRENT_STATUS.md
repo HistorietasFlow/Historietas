@@ -1,5 +1,18 @@
 # Estado atual
 
+### Recomendações personalizadas em integração local
+
+Piloto local em Explorar e Ver mais com a RPC autorizada, ordem compartilhada
+e limite de duas obras por autor na seleção inteira. A falha que preenchia
+a primeira lista com obras do mesmo autor foi reproduzida e corrigida no
+patch local. Com Auth real e o SQL otimizado, nove obras de um autor
+geraram duas sugestões em cada fluxo. Em 21 obras de sete autores, o
+Explorar apresentou a seleção de 12 e o Ver mais manteve o mesmo início
+com 14 no total. A revogação retornou 401 sem recorrer ao catálogo amplo.
+Gêneros de fixture, recurso desativado por padrão. Ver
+[roteiro local](../refatoracao-comunidade.md#explorar--piloto-local-de-recomendações).
+A revalidação desta correção no navegador e a integração seguem pendentes.
+
 ### Novas vozes em preparação local
 
 A seção do Explorar tem listagem desativada por padrão. As duas migrations

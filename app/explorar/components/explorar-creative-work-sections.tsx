@@ -1,4 +1,6 @@
 import { normalizarTexto } from "../../../lib/utils";
+import { recomendacoesLocaisAtivas } from "../../../lib/recomendacoes-locais";
+import { ExplorarRecomendacoesLocais } from "./explorar-recomendacoes-locais";
 import ObraPublicadaCard from "./explorar-obra-publicada-card";
 import {
   ExplorarCarouselRow,
@@ -23,14 +25,19 @@ type ExplorarCreativeWorkSectionsProps = {
   secoes: SecaoCriativaObrasExplorar[];
   isDesktop: boolean;
   tema: TemaCategoriaExplorar;
+  leitor?: string;
+  mostrarRecomendacoes?: boolean;
 };
 
 export function ExplorarCreativeWorkSections({
   secoes,
   isDesktop,
   tema,
+  leitor = "",
+  mostrarRecomendacoes = false,
 }: ExplorarCreativeWorkSectionsProps) {
-  return secoes.map((secao) => (
+  const usarPiloto = recomendacoesLocaisAtivas && mostrarRecomendacoes;
+  const secoesComuns = secoes.map((secao) => usarPiloto && secao.titulo === "Recomendações para você" ? null : (
     <section
       key={`obras-criativas-${normalizarTexto(secao.titulo)}`}
       style={isDesktop ? desktopSectionStyle : sectionStyle}
@@ -61,4 +68,11 @@ export function ExplorarCreativeWorkSections({
       </ExplorarCarouselRow>
     </section>
   ));
+
+  return (
+    <>
+      {usarPiloto && <ExplorarRecomendacoesLocais leitor={leitor} isDesktop={isDesktop} tema={tema} />}
+      {secoesComuns}
+    </>
+  );
 }

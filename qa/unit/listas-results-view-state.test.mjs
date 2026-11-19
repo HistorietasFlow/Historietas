@@ -37,7 +37,7 @@ test("estado derivado de Listas preserva memos, filtros, paginação e agrupamen
     hook,
     /\[busca, categoria, listasPerfil, ordenacao\]/,
   );
-  assert.match(hook, /\[busca, obrasPublicas, ordenacao, secao\]/);
+  assert.match(hook, /\[busca, modo, obrasPublicas, ordenacao, secao\]/);
   assert.match(hook, /\[autores, busca, ordenacao\]/);
   assert.match(hook, /\[itensPerfilVisiveis\]/);
   assert.match(hook, /\.slice\(0, quantidadeVisivel\)/);

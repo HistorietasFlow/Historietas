@@ -39,6 +39,14 @@ function prepararSource() {
       "const { normalizarTexto } = globalThis.__listasPageDataLoader;",
     )
     .replace(
+      'import { carregarRecomendacoesLocais, usarRecomendacoesLocais } from "../../../lib/recomendacoes-locais";',
+      "const usarRecomendacoesLocais = () => false; const carregarRecomendacoesLocais = () => { throw new Error('piloto desativado'); };",
+    )
+    .replace(
+      'import { criarObraLista } from "../lib/listas-profile-state-utils";',
+      "const criarObraLista = (obra) => obra;",
+    )
+    .replace(
       /import \{[\s\S]*?\} from "\.\.\/lib\/listas-profile-records-loader";/,
       "const { carregarAvaliacaoDiarioListas, carregarPerfil } = globalThis.__listasPageDataLoader;",
     )

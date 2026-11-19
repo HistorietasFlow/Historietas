@@ -17,10 +17,10 @@ function load(path, deps) {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
   }).outputText;
   const mod = { exports: {} };
-  new Function("require", "module", "exports", code)(name => {
+  new Function("require", "module", "exports", "document", code)(name => {
     assert.ok(name in deps, `unexpected dependency: ${name}`);
     return deps[name];
-  }, mod, mod.exports);
+  }, mod, mod.exports, { addEventListener() {}, removeEventListener() {} });
   return mod.exports;
 }
 function loaderHarness(overrides = {}) {
@@ -39,6 +39,8 @@ function loaderHarness(overrides = {}) {
       carregarEstadoRelacionamentoPerfil: async () => "nenhum",
     },
     "../../../lib/utils": { normalizarTexto: value => value.toLowerCase() },
+    "../../../lib/recomendacoes-locais": { usarRecomendacoesLocais: () => false },
+    "../lib/listas-profile-state-utils": { criarObraLista: obra => obra },
     "../lib/listas-profile-records-loader": { carregarPerfil: async id => perfil(id), carregarAvaliacaoDiarioListas: async () => ({ carregando: false }) },
     "../lib/listas-profile-loader": { carregarListasDoPerfil: async id => ({ tudo: [{ chave: id }] }) },
     "../lib/listas-published-works-loader": { carregarObrasPublicadas: async () => [{ id: "public", genero: "Fantasia", classificacaoIndicativa: "Livre" }] },
@@ -79,6 +81,53 @@ test("avaliação antiga após navegar não bloqueia nem apaga a lista atual", a
   assert.equal(h.state.listasPerfil.tudo[0].chave, B);
   assert.equal(h.state.carregando, false);
 });
+
+test("Ver mais do piloto usa somente a RPC autorizada e preserva a ordem", async () => {
+  const obras = [{ id: "segunda" }, { id: "primeira" }];
+  let chamadas = 0;
+  const h = loaderHarness({
+    "../../../lib/recomendacoes-locais": {
+      usarRecomendacoesLocais: (modo, secao) => modo === "obras" && secao === "recomendacoes",
+      carregarRecomendacoesLocais: async (leitor, signal) => {
+        assert.equal(leitor, A);
+        assert.equal(signal.aborted, false);
+        chamadas++;
+        return obras;
+      },
+    },
+    "../lib/listas-published-works-loader": {
+      carregarObrasPublicadas: async () => { chamadas += 100; return []; },
+    },
+  });
+  h.start({ modo: "obras", secao: "recomendacoes" });
+  await flush();
+  assert.deepEqual(h.state.obrasPublicas, obras);
+  assert.equal(h.state.carregando, false);
+  assert.equal(chamadas, 1);
+  h.stop();
+});
+
+for (const falha of [Error("Consulta recusada: 401"), new TypeError("Failed to fetch")]) {
+  test(`Ver mais mantém a lista vazia e apresenta erro em português (${falha.name})`, async () => {
+    let chamadasLegadas = 0;
+    const h = loaderHarness({
+      "../../../lib/recomendacoes-locais": {
+        usarRecomendacoesLocais: () => true,
+        carregarRecomendacoesLocais: async () => { throw falha; },
+      },
+      "../lib/listas-published-works-loader": {
+        carregarObrasPublicadas: async () => { chamadasLegadas++; return [{ id: "legado" }]; },
+      },
+    });
+    h.start({ modo: "obras", secao: "recomendacoes" });
+    await flush();
+    assert.deepEqual(h.state.obrasPublicas, []);
+    assert.equal(h.state.erro, "Não foi possível carregar as recomendações agora.");
+    assert.equal(h.state.carregando, false);
+    assert.equal(chamadasLegadas, 0);
+    h.stop();
+  });
+}
 
 test("recomendação antiga não substitui catálogo de outra rota", async () => {
   const pending = deferred();

@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { usarRecomendacoesLocais } from "../../../lib/recomendacoes-locais";
 import {
   filtrarOrdenarAutoresListas,
   filtrarOrdenarItensPerfilListas,
@@ -69,8 +70,9 @@ export function useListasResultsViewState({
         busca,
         ordenacao,
         secao,
+        usarRecomendacoesLocais(modo, secao),
       ),
-    [busca, obrasPublicas, ordenacao, secao],
+    [busca, modo, obrasPublicas, ordenacao, secao],
   );
 
   const autoresFiltrados = useMemo(

@@ -94,7 +94,7 @@ export function filtrarOrdenarItensPerfilListas<TItem extends ItemPerfilFiltroLi
 
 export function filtrarOrdenarObrasPublicasListas<
   TObra extends ObraPublicaFiltroListas,
->(obrasPublicas: TObra[], busca: string, ordenacao: string, secao: string) {
+>(obrasPublicas: TObra[], busca: string, ordenacao: string, secao: string, preservarOrdem = false) {
   const buscaNormalizada = normalizarTexto(busca);
   let obras = [...obrasPublicas];
 
@@ -105,6 +105,8 @@ export function filtrarOrdenarObrasPublicasListas<
       ).includes(buscaNormalizada),
     );
   }
+
+  if (preservarOrdem) return obras;
 
   obras.sort((a, b) => {
     if (ordenacao === "titulo") {

@@ -949,6 +949,8 @@ export default function ExplorarPage() {
               {!filtroConteudo18Ativo && <ExplorarNovasVozes key={usuarioIdExplorar} leitor={usuarioIdExplorar} isDesktop={isDesktop} tema={temaPagina} />}
               <ExplorarCreativeWorkSections
                 secoes={secoesCriativasObras}
+                leitor={usuarioIdExplorar}
+                mostrarRecomendacoes={!filtroConteudo18Ativo}
                 isDesktop={isDesktop}
                 tema={temaPagina}
               />
