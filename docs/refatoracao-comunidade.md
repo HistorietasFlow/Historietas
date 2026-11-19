@@ -1,5 +1,15 @@
 # Refatoração da Comunidade
 
+## Explorar · exclusões salvas
+
+Na aba Obras, o leitor autenticado pode salvar até um gênero e uma tag
+excluídos no navegador. A chave local inclui o identificador da conta.
+Abrir a página ou trocar de conta carrega apenas as preferências disponíveis
+para aquela identidade. A busca usa as exclusões da URL até uma ação explícita.
+Reaplicar substitui as duas exclusões juntas em um passo do histórico,
+preservando a busca e os demais filtros. Apagar remove as preferências
+guardadas e mantém as exclusões da busca em andamento.
+
 ## Explorar · piloto local de recomendações
 
 O piloto conecta **Recomendações para você** e **Ver mais** ao mesmo carregador

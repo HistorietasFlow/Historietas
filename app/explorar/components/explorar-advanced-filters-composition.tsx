@@ -16,6 +16,7 @@ import { ExplorarClearFiltersAction } from "./explorar-clear-filters-action";
 import { ExplorarCollectionFilterOptions } from "./explorar-collection-filter-options";
 import { ExplorarOrderingOptions } from "./explorar-ordering-options";
 import { ExplorarFormatFilterOptions } from "./explorar-format-filter-options";
+import { ExplorarSavedExclusions } from "./explorar-saved-exclusions";
 import type { ModoConteudoExplorar } from "./explorar-section-components";
 
 type ExplorarAdvancedFiltersCompositionProps = {
@@ -27,6 +28,7 @@ type ExplorarAdvancedFiltersCompositionProps = {
   filtroTag: string;
   tagExcluida: string;
   generoExcluido: string;
+  usuarioId: string;
   statusEditorial: string;
   onSelecionarStatusEditorial: (valor: string) => void;
   notaMinima: number | null;
@@ -44,6 +46,7 @@ type ExplorarAdvancedFiltersCompositionProps = {
   onSelecionarTag: (tag: string) => void;
   onSelecionarGeneroExcluido: (genero: string) => void;
   onSelecionarTagExcluida: (tag: string) => void;
+  onReaplicarExclusoes: (genero: string, tag: string) => void;
   onSelecionarNotaMinima: (valor: string) => void;
   onSelecionarClassificacao: (filtro: string) => void;
   onConfirmouIdadeChange: (confirmou: boolean) => void;
@@ -62,6 +65,7 @@ export default function ExplorarAdvancedFiltersComposition({
   filtroTag,
   tagExcluida,
   generoExcluido,
+  usuarioId,
   statusEditorial,
   onSelecionarStatusEditorial,
   notaMinima,
@@ -79,6 +83,7 @@ export default function ExplorarAdvancedFiltersComposition({
   onSelecionarTag,
   onSelecionarTagExcluida,
   onSelecionarGeneroExcluido,
+  onReaplicarExclusoes,
   onSelecionarNotaMinima,
   onSelecionarClassificacao,
   onConfirmouIdadeChange,
@@ -185,6 +190,17 @@ export default function ExplorarAdvancedFiltersComposition({
                 {traduzirTextoExplorar("Oculta obras que contenham este gênero, inclusive gêneros compostos.", language)}
               </span>
             </label>
+          )}
+
+          {modoConteudo === "obras" && usuarioId && (
+            <ExplorarSavedExclusions
+              key={usuarioId}
+              usuarioId={usuarioId}
+              language={language}
+              generoExcluido={generoExcluido}
+              tagExcluida={tagExcluida}
+              onReaplicar={onReaplicarExclusoes}
+            />
           )}
 
           {modoConteudo === "obras" && (
