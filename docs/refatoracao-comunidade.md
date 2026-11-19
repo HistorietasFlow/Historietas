@@ -11,12 +11,14 @@ Uma falha da RPC exibe erro com a seção vazia. O carregador usa apenas os
 metadados autorizados e não consulta o catálogo amplo para completar a resposta.
 
 O piloto funciona em `next dev` com Supabase em loopback e
-`NEXT_PUBLIC_HISTORIETAS_RECOMENDACOES_LOCAL=1`. Para ensaiar preferências
-fictícias, defina `NEXT_PUBLIC_HISTORIETAS_RECOMENDACOES_GENEROS=Fantasia`
-ou até três gêneros separados por vírgula. Sem gêneros, use descoberta geral.
-O piloto não carrega preferências salvas do leitor. Use apenas a chave pública
-do laboratório. Instale o SQL homologado do pacote QA5 no Supabase
-descartável antes de iniciar o site.
+`NEXT_PUBLIC_HISTORIETAS_RECOMENDACOES_LOCAL=1`. Para leitores autenticados,
+`qa5_generos_interacoes_autorizadas` obtém até três gêneros a partir de
+favoritos, obras seguidas e concluídas que o leitor pode acessar. A sessão
+atual autoriza as duas consultas. Um resultado vazio usa a descoberta geral
+do mesmo catálogo autorizado. Se a consulta de gêneros falhar, a seção
+mostra erro e encerra a busca. Visitantes consultam apenas o catálogo.
+Use a chave pública, as migrations da base e contas fictícias no Supabase
+descartável. Para exercitar preferências, prepare interações nessas contas.
 
 No navegador local, compare até 12 obras iniciais com as primeiras do Ver mais,
 em desktop e mobile. A seleção compartilhada admite até duas obras de cada
@@ -59,9 +61,34 @@ recusa privilégios que permitam execução pela Data API.
 `supabase test db` cobre o contrato e o bloqueio após a instalação. A reversão
 isolada está em `docs/sql/rollback-recomendacoes-catalogo.sql`.
 No ensaio descartável, a liberação para teste passou nas 384 decisões de
-privacidade e em 12 cenários de navegador. A etapa de homologação pelo site
-depende de adaptar o piloto, que hoje exige Next em desenvolvimento e Supabase
-em loopback.
+privacidade e em 12 cenários de navegador. A migration foi instalada no
+Supabase de homologação e as consultas de catálogo e de sinais seguem
+inacessíveis aos papéis da Data API.
+
+### Preview privado de recomendações
+
+Ao preparar a homologação na Vercel, use a branch
+`codex/recomendacoes-homologacao` e mantenha a autenticação da Vercel.
+Configure somente no ambiente **Preview** dessa branch:
+
+- `HISTORIETAS_RECOMENDACOES_PREVIEW=1`.
+- `NEXT_PUBLIC_SUPABASE_URL=https://rvmsnsltlhlnvbrlyoxh.supabase.co`.
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` com a chave pública desse projeto.
+
+O build exige as variáveis de sistema `VERCEL`, `VERCEL_ENV` e
+`VERCEL_GIT_COMMIT_REF`. A checagem da origem aceita apenas o projeto indicado
+acima. A produção continua com o piloto desligado. A configuração atual do
+repositório restringe o deploy automático à main. Gere um novo Preview na
+etapa de homologação, depois de conferir o escopo das variáveis.
+
+Com as consultas fechadas, a seção experimental mostra erro e zero cards.
+A liberação temporária das consultas de sinais e catálogo no Supabase de
+homologação exige uma etapa própria. Nesse ensaio, use contas fictícias com
+interesses diferentes e uma conta sem histórico. Compare a ordem e o limite
+por autor no Explorar e no Ver mais em desktop e mobile. Confirme que a
+recusa de sessão ou a falha de rede nos sinais encerra a busca. Ao terminar,
+confirme que o acesso temporário foi revogado e retire a variável de ativação
+do próximo build.
 
 ## Explorar · Novas vozes
 
