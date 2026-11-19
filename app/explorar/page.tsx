@@ -717,23 +717,22 @@ export default function ExplorarPage() {
     });
   }
 
-  function selecionarGeneroExcluidoExplorar(valor: string) {
-    const genero = normalizarGeneroExcluido(valor);
+  function atualizarExclusoesExplorar(genero: string, tag: string, historico: "push" | "replace" = "push") {
     setGeneroExcluido(genero);
-    atualizarUrlExplorar({
-      modoConteudo, categoriaSelecionada, busca, ordenacao, filtroFormato,
-      filtroTag, notaMinima, tagExcluida, statusEditorial, generoExcluido: genero,
-      ...palavrasCompartilhadas,
-    });
-  }
-
-  function selecionarTagExcluidaExplorar(tag: string) {
     setTagExcluida(tag);
     atualizarUrlExplorar({
       modoConteudo, categoriaSelecionada, busca, ordenacao, filtroFormato,
-      filtroTag, notaMinima, generoExcluido, statusEditorial, tagExcluida: tag,
+      filtroTag, notaMinima, statusEditorial, generoExcluido: genero, tagExcluida: tag,
       ...palavrasCompartilhadas,
-    }, "replace");
+    }, historico);
+  }
+
+  function selecionarGeneroExcluidoExplorar(valor: string) {
+    atualizarExclusoesExplorar(normalizarGeneroExcluido(valor), tagExcluida);
+  }
+
+  function selecionarTagExcluidaExplorar(tag: string) {
+    atualizarExclusoesExplorar(generoExcluido, tag, "replace");
   }
 
   function aplicarIntervaloPalavras(intervalo: IntervaloPalavrasTexto) {
@@ -897,6 +896,8 @@ export default function ExplorarPage() {
               onSelecionarTag={selecionarTagExplorar}
               tagExcluida={tagExcluida}
               generoExcluido={generoExcluido}
+              usuarioId={usuarioLogado ? usuarioIdExplorar : ""}
+              onReaplicarExclusoes={atualizarExclusoesExplorar}
               statusEditorial={statusEditorial}
               onSelecionarStatusEditorial={selecionarStatusEditorialExplorar}
               onSelecionarTagExcluida={selecionarTagExcluidaExplorar}
