@@ -136,7 +136,7 @@ export async function carregarPainelAutorSupabase(
             const metricaCapitulo = metricas.capitulos.get(capitulo.id);
             return {
               id: capitulo.id,
-              titulo: capitulo.titulo?.trim() || "Capítulo sem título",
+              titulo: capitulo.titulo?.trim() || "",
               visualizacoes: metricaCapitulo?.obraId === obraBanco.id
                 ? metricaCapitulo.visualizacoes
                 : null,

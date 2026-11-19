@@ -1,46 +1,104 @@
+import { useHistorietasLanguage } from "../../../components/HistorietasLanguageProvider";
 import type { OrientacoesObraPainel } from "../lib/painel-autor-types";
 
-const DADOS_INSUFICIENTES = "Dados insuficientes para esta análise";
-const METRICAS_INDISPONIVEIS = "Métricas indisponíveis nesta atualização.";
+const ROTULOS = {
+  "pt-BR": {
+    titulo: "Orientações",
+    totais: "Totais acumulados da obra",
+    visualizacoes: "Visualizações",
+    descricaoVisualizacoes: "Aberturas registradas da obra.",
+    seguidores: "Seguidores",
+    descricaoSeguidores: "Contas que seguem a obra.",
+    avaliacoes: "Avaliações",
+    descricaoAvaliacoes: "Quantidade de notas registradas.",
+    metricasIndisponiveis: "Métricas indisponíveis nesta atualização.",
+    visualizacoesCapitulo: "Visualizações por capítulo",
+    orientacaoCapitulos: "Compare capítulos com tempos de publicação parecidos.",
+    capituloSemTitulo: "Capítulo sem título",
+    indisponivel: "Indisponível",
+    continuidade: "Continuidade da leitura",
+    crescimento: "Crescimento por período",
+    dadosInsuficientes: "Dados insuficientes para esta análise",
+  },
+  en: {
+    titulo: "Insights",
+    totais: "Lifetime totals for this work",
+    visualizacoes: "Views",
+    descricaoVisualizacoes: "Recorded opens of this work.",
+    seguidores: "Followers",
+    descricaoSeguidores: "Accounts following the work.",
+    avaliacoes: "Ratings",
+    descricaoAvaliacoes: "Number of recorded ratings.",
+    metricasIndisponiveis: "Metrics are unavailable for this update.",
+    visualizacoesCapitulo: "Views by chapter",
+    orientacaoCapitulos: "Compare chapters that have been published for similar lengths of time.",
+    capituloSemTitulo: "Untitled chapter",
+    indisponivel: "Unavailable",
+    continuidade: "Reading continuity",
+    crescimento: "Growth over time",
+    dadosInsuficientes: "Insufficient data for this analysis",
+  },
+  es: {
+    titulo: "Orientaciones",
+    totais: "Totales acumulados de la obra",
+    visualizacoes: "Visualizaciones",
+    descricaoVisualizacoes: "Aperturas registradas de la obra.",
+    seguidores: "Seguidores",
+    descricaoSeguidores: "Cuentas que siguen la obra.",
+    avaliacoes: "Valoraciones",
+    descricaoAvaliacoes: "Cantidad de puntuaciones registradas.",
+    metricasIndisponiveis: "Las métricas no están disponibles en esta actualización.",
+    visualizacoesCapitulo: "Visualizaciones por capítulo",
+    orientacaoCapitulos: "Compara capítulos que llevan publicados tiempos similares.",
+    capituloSemTitulo: "Capítulo sin título",
+    indisponivel: "No disponible",
+    continuidade: "Continuidad de la lectura",
+    crescimento: "Crecimiento por período",
+    dadosInsuficientes: "Datos insuficientes para este análisis",
+  },
+} as const;
 
 export function PainelAutorOrientacoes({ dados }: { dados?: OrientacoesObraPainel }) {
+  const { language } = useHistorietasLanguage();
+  const rotulos = ROTULOS[language];
+
   return (
-    <details className="painel-autor-orientacoes">
-      <summary>Orientações</summary>
+    <details className="painel-autor-orientacoes" translate="no">
+      <summary>{rotulos.titulo}</summary>
 
       <div className="painel-autor-orientacoes-conteudo">
-        <h3>Totais acumulados da obra</h3>
+        <h3>{rotulos.totais}</h3>
         {dados ? (
           <dl className="painel-autor-orientacoes-totais">
             <div>
-              <dt>Visualizações</dt>
+              <dt>{rotulos.visualizacoes}</dt>
               <dd>{dados.visualizacoes}</dd>
-              <dd>Aberturas registradas da obra.</dd>
+              <dd>{rotulos.descricaoVisualizacoes}</dd>
             </div>
             <div>
-              <dt>Seguidores</dt>
+              <dt>{rotulos.seguidores}</dt>
               <dd>{dados.seguidores}</dd>
-              <dd>Contas que seguem a obra.</dd>
+              <dd>{rotulos.descricaoSeguidores}</dd>
             </div>
             <div>
-              <dt>Avaliações</dt>
+              <dt>{rotulos.avaliacoes}</dt>
               <dd>{dados.avaliacoes}</dd>
-              <dd>Quantidade de notas registradas.</dd>
+              <dd>{rotulos.descricaoAvaliacoes}</dd>
             </div>
           </dl>
         ) : (
-          <p>{METRICAS_INDISPONIVEIS}</p>
+          <p>{rotulos.metricasIndisponiveis}</p>
         )}
 
         {dados && dados.capitulos.length > 0 && (
           <div>
-            <h3>Visualizações por capítulo</h3>
-            <p>Compare capítulos com tempos de publicação parecidos.</p>
+            <h3>{rotulos.visualizacoesCapitulo}</h3>
+            <p>{rotulos.orientacaoCapitulos}</p>
             <dl className="painel-autor-orientacoes-capitulos">
               {dados.capitulos.map((capitulo) => (
                 <div key={capitulo.id}>
-                  <dt>{capitulo.titulo}</dt>
-                  <dd>{capitulo.visualizacoes ?? "Indisponível"}</dd>
+                  <dt>{capitulo.titulo || rotulos.capituloSemTitulo}</dt>
+                  <dd>{capitulo.visualizacoes ?? rotulos.indisponivel}</dd>
                 </div>
               ))}
             </dl>
@@ -49,12 +107,12 @@ export function PainelAutorOrientacoes({ dados }: { dados?: OrientacoesObraPaine
 
         <dl className="painel-autor-orientacoes-analises">
           <div>
-            <dt>Continuidade da leitura</dt>
-            <dd>{DADOS_INSUFICIENTES}</dd>
+            <dt>{rotulos.continuidade}</dt>
+            <dd>{rotulos.dadosInsuficientes}</dd>
           </div>
           <div>
-            <dt>Crescimento por período</dt>
-            <dd>{DADOS_INSUFICIENTES}</dd>
+            <dt>{rotulos.crescimento}</dt>
+            <dd>{rotulos.dadosInsuficientes}</dd>
           </div>
         </dl>
       </div>

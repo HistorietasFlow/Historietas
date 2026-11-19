@@ -23,6 +23,7 @@ const Link = ({ children, prefetch, ...props }) => {
   return React.createElement("a", props, children);
 };
 const styles = new Proxy({}, { get: () => ({}) });
+let idiomaOrientacoes = "pt-BR";
 const dependencies = {
   "next/link": { __esModule: true, default: Link },
   react: React,
@@ -53,6 +54,11 @@ const dependencies = {
   },
   "./painel-autor-orientacoes": loadApplicationModule(
     "app/painel-autor/components/painel-autor-orientacoes.tsx",
+    {
+      "../../../components/HistorietasLanguageProvider": {
+        useHistorietasLanguage: () => ({ language: idiomaOrientacoes }),
+      },
+    },
   ),
 };
 let acoesAbertasNoTeste = false;
@@ -141,6 +147,38 @@ test("Orientações distingue métricas indisponíveis de totais confirmados igu
     }
   } finally {
     acoesAbertasNoTeste = false;
+  }
+});
+
+test("Orientações localiza rótulos e o título ausente, preservando títulos escritos pelo autor", () => {
+  const { PainelAutorOrientacoes } = dependencies["./painel-autor-orientacoes"];
+  const dados = {
+    visualizacoes: 42,
+    seguidores: 8,
+    avaliacoes: 3,
+    capitulos: [
+      { id: "primeiro", titulo: "Avaliações", visualizacoes: 0 },
+      { id: "segundo", titulo: "Rascunho", visualizacoes: 1 },
+      { id: "terceiro", titulo: "", visualizacoes: 2 },
+    ],
+  };
+  try {
+    for (const [idioma, sumario, avaliacoes, semTitulo] of [
+      ["pt-BR", "Orientações", "Avaliações", "Capítulo sem título"],
+      ["en", "Insights", "Ratings", "Untitled chapter"],
+      ["es", "Orientaciones", "Valoraciones", "Capítulo sin título"],
+    ]) {
+      idiomaOrientacoes = idioma;
+      const html = renderToStaticMarkup(React.createElement(PainelAutorOrientacoes, { dados }));
+      assert.match(html, /<details[^>]*translate="no"/);
+      assert.ok(html.includes(`<summary>${sumario}</summary>`));
+      assert.ok(html.includes(`<dt>${avaliacoes}</dt><dd>3</dd>`));
+      assert.ok(html.includes(`<dt>${semTitulo}</dt><dd>2</dd>`));
+      assert.ok(html.includes("<dt>Avaliações</dt><dd>0</dd>"));
+      assert.ok(html.includes("<dt>Rascunho</dt><dd>1</dd>"));
+    }
+  } finally {
+    idiomaOrientacoes = "pt-BR";
   }
 });
 

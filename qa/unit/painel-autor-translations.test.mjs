@@ -68,6 +68,14 @@ test("traduz novo filtro e cobertura limitada em PT/EN/ES sem traduzir conteúdo
   }
 });
 
+test("tradução geral deixa intactos títulos iguais aos rótulos de Orientações", () => {
+  for (const idioma of ["en", "es"]) {
+    for (const titulo of ["Seguidores", "Avaliações", "Visualizações", "Orientações"]) {
+      assert.equal(traduzirTextoPainelAutor(titulo, idioma), titulo);
+    }
+  }
+});
+
 test("exporta a tabela integral e o helper de traduções do Painel do Autor", () => {
   assert.match(translations, /export type PainelAutorTranslationEntry = \{/);
   assert.match(translations, /export const PAINEL_AUTOR_UI_TRANSLATIONS/);

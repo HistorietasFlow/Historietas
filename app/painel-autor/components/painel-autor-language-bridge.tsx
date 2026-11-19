@@ -44,7 +44,8 @@ export function PainelAutorLanguageBridge() {
 
       const tag = elemento.tagName.toLowerCase();
 
-      return tag === "script" || tag === "style";
+      return tag === "script" || tag === "style" ||
+        elemento.closest('[translate="no"]') !== null;
     }
 
     function aplicarTexto(no: Text) {
