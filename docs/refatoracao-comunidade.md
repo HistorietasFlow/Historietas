@@ -49,6 +49,20 @@ as permissões. `supabase status -o env | node qa/integration/recomendacoes-sina
 valida a reversão em `docs/sql/rollback-recomendacoes-sinais.sql`, verifica
 a recusa com dependência e reinstala a migration fechada ao terminar.
 
+### Consulta de catálogo instalada com acesso fechado
+
+A migration `20261119064537_recomendacoes_catalogo_inativo.sql` instala a
+consulta de catálogo usada no piloto, com a assinatura, o corpo e a projeção
+de metadados já testados. A instalação valida a dependência de sessão e
+recusa privilégios que permitam execução pela Data API.
+
+`supabase test db` cobre o contrato e o bloqueio após a instalação. A reversão
+isolada está em `docs/sql/rollback-recomendacoes-catalogo.sql`.
+No ensaio descartável, a liberação para teste passou nas 384 decisões de
+privacidade e em 12 cenários de navegador. A etapa de homologação pelo site
+depende de adaptar o piloto, que hoje exige Next em desenvolvimento e Supabase
+em loopback.
+
 ## Explorar · Novas vozes
 
 A seção mostra até 12 obras de autores distintos por dia, durante os 90 dias

@@ -22,6 +22,14 @@ A equivalência com as regras canônicas passou em 297 decisões no laboratório
 A instalação com acesso fechado e a reversão foram homologadas localmente.
 Ver [testes e reversão](../refatoracao-comunidade.md#consulta-de-sinais-instalada-com-acesso-fechado).
 
+### Consulta de catálogo com instalação fechada
+
+`20261119064537_recomendacoes_catalogo_inativo.sql` registra a consulta
+autorizada do Explorar e do Ver mais, com acesso fechado na instalação.
+Passaram 384 verificações de privacidade, 12 cenários de navegador e a reversão
+no Supabase descartável. A homologação das telas hospedadas depende de adaptar
+o piloto local. Ver [contrato e reversão](../refatoracao-comunidade.md#consulta-de-catálogo-instalada-com-acesso-fechado).
+
 ### Novas vozes em preparação local
 
 A seção do Explorar tem listagem desativada por padrão. As duas migrations
