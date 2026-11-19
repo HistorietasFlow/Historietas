@@ -849,6 +849,8 @@ export default function ExplorarPage() {
         <ExplorarActiveCatalogFilters
           language={language}
           modoConteudo={modoConteudo}
+          categoriaSelecionada={categoriaSelecionada}
+          onSelecionarCategoria={selecionarCategoria}
           filtroFormato={filtroFormato}
           filtroTag={filtroTag}
           tagExcluida={tagExcluida}

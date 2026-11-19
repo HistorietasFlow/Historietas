@@ -38,6 +38,7 @@ const EXPLORAR_UI_TRANSLATIONS: Record<string, ExplorarTranslationEntry> = {
   "Filtros": { en: "Filters", es: "Filtros" },
   "Filtros selecionados": { en: "Selected filters", es: "Filtros seleccionados" },
   "Remover filtro": { en: "Remove filter", es: "Quitar filtro" },
+  "Gênero": { en: "Genre", es: "Género" },
   "Formato": { en: "Format", es: "Formato" },
   "Tag": { en: "Tag", es: "Etiqueta" },
   "Formato da obra": { en: "Work format", es: "Formato de la obra" },
