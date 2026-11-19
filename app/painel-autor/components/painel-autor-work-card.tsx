@@ -66,6 +66,8 @@ import {
 } from "../lib/painel-autor-route-utils";
 import { obterCapitulosPublicadosPainel } from "../lib/painel-autor-reading-progress-utils";
 import type { RascunhosCapitulosPainel } from "../lib/painel-autor-draft-chapters";
+import type { OrientacoesObraPainel } from "../lib/painel-autor-types";
+import { PainelAutorOrientacoes } from "./painel-autor-orientacoes";
 
 type CapituloPainelCard = {
   id: string;
@@ -98,9 +100,11 @@ export function ObraPainelCard<T extends ObraPainelCardBase>({
   onCompartilhar,
   onExcluirObra,
   rascunhosConfirmados,
+  orientacoes,
 }: {
   obra: T;
   rascunhosConfirmados?: RascunhosCapitulosPainel;
+  orientacoes?: OrientacoesObraPainel;
   isDesktop: boolean;
   onAbrirArquivo: (obra: T) => void | Promise<void>;
   onCompartilhar: (obra: T) => void | Promise<void>;
@@ -264,6 +268,8 @@ export function ObraPainelCard<T extends ObraPainelCardBase>({
                 <span style={sheetStatValueStyle}>{indicadorPrimarioValor}</span>
               </span>
             </div>
+
+            {obraComStatusPublicado && <PainelAutorOrientacoes dados={orientacoes} />}
 
             <div style={isDesktop ? desktopCardActionsGridStyle : actionsGridStyle}>
               {obraComStatusPublicado && (

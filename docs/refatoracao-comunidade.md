@@ -541,6 +541,11 @@ Contrato e limites em `docs/memory/STORIES_AVALIACOES_ETAPA_3.md`.
 
 - Os contratos de tipos locais e as constantes/configurações estáticas da página foram movidos para módulos dedicados, preservando valores, estruturas, ordem e os consumidores de `page.tsx` sem alterar lógica, carregamento ou apresentação.
 
+## Painel do Autor — Orientações por obra
+
+- As opções das obras publicadas incluem uma área recolhível com totais acumulados de visualizações, seguidores e avaliações, além das visualizações dos capítulos publicados. A área usa o contrato de métricas já carregado pelo painel e retém os resultados em memória durante a sessão.
+- Métricas ausentes são identificadas como indisponíveis. Continuidade e crescimento exibem “Dados insuficientes para esta análise”. O piloto de marcações de leitura com contas fictícias fica fora da integração com o painel.
+
 ## Painel do Autor — Fase 3
 
 - A ação sensível de exclusão de obra foi movida para hook dedicado, preservando autorização, consultas e exclusões Supabase, limpeza de Storage e referências locais, mensagens, ordem dos efeitos e setters.

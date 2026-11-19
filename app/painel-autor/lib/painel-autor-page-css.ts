@@ -109,4 +109,83 @@ export const painelAutorPageCss = `
     cursor: not-allowed !important;
     box-shadow: none !important;
   }
+
+  .painel-autor-orientacoes {
+    margin: 0 22px 10px;
+    min-width: 0;
+    border: 1px solid #363636;
+    border-radius: 12px;
+    background: var(--historietas-painel-surface, #050505);
+    color: #ffffff;
+    font-size: 14px;
+    line-height: 1.45;
+  }
+
+  .painel-autor-orientacoes > summary {
+    min-height: 44px;
+    box-sizing: border-box;
+    padding: 11px 14px;
+    cursor: pointer;
+    font-weight: 700;
+  }
+
+  .painel-autor-orientacoes > summary:focus-visible {
+    outline: 2px solid #ffffff;
+    outline-offset: -3px;
+    border-radius: 12px;
+  }
+
+  .painel-autor-orientacoes-conteudo {
+    display: grid;
+    gap: 12px;
+    padding: 0 14px 14px;
+    overflow-wrap: anywhere;
+  }
+
+  .painel-autor-orientacoes :is(h3, p, dl, dd) {
+    margin: 0;
+  }
+
+  .painel-autor-orientacoes h3 {
+    font-size: 15px;
+    font-weight: 700;
+  }
+
+  .painel-autor-orientacoes p,
+  .painel-autor-orientacoes dd {
+    color: #cccccc;
+  }
+
+  .painel-autor-orientacoes-totais {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 135px), 1fr));
+    gap: 8px;
+  }
+
+  .painel-autor-orientacoes-totais > div {
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #363636;
+  }
+
+  .painel-autor-orientacoes-totais dd:first-of-type {
+    color: #ffffff;
+    font-size: 21px;
+    font-weight: 700;
+  }
+
+  .painel-autor-orientacoes-capitulos > div {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .painel-autor-orientacoes :is(.painel-autor-orientacoes-capitulos, .painel-autor-orientacoes-analises) > div {
+    border-top: 1px solid #363636;
+    padding: 7px 0;
+  }
+
+  .painel-autor-orientacoes .painel-autor-orientacoes-capitulos {
+    margin-top: 8px;
+  }
 `;

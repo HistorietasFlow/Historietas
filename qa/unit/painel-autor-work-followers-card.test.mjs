@@ -4,6 +4,7 @@ import test from "node:test";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import typescript from "typescript";
+import { loadApplicationModule } from "../helpers/load-application-module.mjs";
 import "./painel-autor-draft-chapters.test.mjs";
 
 const source = readFileSync(
@@ -22,6 +23,7 @@ const Link = ({ children, prefetch, ...props }) => {
   return React.createElement("a", props, children);
 };
 const styles = new Proxy({}, { get: () => ({}) });
+let idiomaOrientacoes = "pt-BR";
 const dependencies = {
   "next/link": { __esModule: true, default: Link },
   react: React,
@@ -50,6 +52,14 @@ const dependencies = {
   "../lib/painel-autor-reading-progress-utils": {
     obterCapitulosPublicadosPainel: () => [],
   },
+  "./painel-autor-orientacoes": loadApplicationModule(
+    "app/painel-autor/components/painel-autor-orientacoes.tsx",
+    {
+      "../../../components/HistorietasLanguageProvider": {
+        useHistorietasLanguage: () => ({ language: idiomaOrientacoes }),
+      },
+    },
+  ),
 };
 let acoesAbertasNoTeste = false;
 dependencies.react = {...React, useState: () => [acoesAbertasNoTeste, () => {}]};
@@ -107,6 +117,69 @@ test("opções da obra publicada reutilizam o deep link de comentários em deskt
       assert.match(html, /href="\/obra\/obra-teste\?comentarios=1"[^>]*>Ver comentários<\/a>/);
     }
   } finally { acoesAbertasNoTeste = false; }
+});
+
+test("Orientações distingue métricas indisponíveis de totais confirmados iguais a zero", () => {
+  acoesAbertasNoTeste = true;
+  try {
+    for (const orientacoes of [undefined, {
+      visualizacoes: 0, seguidores: 0, avaliacoes: 0,
+      capitulos: [{ id: "publicado", titulo: "Capítulo publicado", visualizacoes: null }],
+    }]) {
+      const html = renderToStaticMarkup(React.createElement(ObraPainelCard, {
+        obra: {
+          id: "obra-1", titulo: "Obra teste", autor: "Autora", publicado: true,
+          capitulos: [], ultimoCapituloLido: null, visualizacoes: 0, totalCurtidas: 0,
+          totalComentarios: 0, totalSalvos: 0, totalSeguidores: 0,
+        },
+        isDesktop: false, orientacoes,
+        onAbrirArquivo: () => {}, onCompartilhar: () => {}, onExcluirObra: () => {},
+      }));
+      assert.match(html, /<summary>Orientações<\/summary>/);
+      assert.equal(html.match(/Dados insuficientes para esta análise/g)?.length, 2);
+      if (orientacoes) {
+        assert.match(html, /<dt>Visualizações<\/dt><dd>0<\/dd>/);
+        assert.match(html, /<dt>Capítulo publicado<\/dt><dd>Indisponível<\/dd>/);
+      } else {
+        assert.match(html, /Métricas indisponíveis nesta atualização\./);
+        assert.doesNotMatch(html, /<dd>0<\/dd>/);
+      }
+    }
+  } finally {
+    acoesAbertasNoTeste = false;
+  }
+});
+
+test("Orientações localiza rótulos e o título ausente, preservando títulos escritos pelo autor", () => {
+  const { PainelAutorOrientacoes } = dependencies["./painel-autor-orientacoes"];
+  const dados = {
+    visualizacoes: 42,
+    seguidores: 8,
+    avaliacoes: 3,
+    capitulos: [
+      { id: "primeiro", titulo: "Avaliações", visualizacoes: 0 },
+      { id: "segundo", titulo: "Rascunho", visualizacoes: 1 },
+      { id: "terceiro", titulo: "", visualizacoes: 2 },
+    ],
+  };
+  try {
+    for (const [idioma, sumario, avaliacoes, semTitulo] of [
+      ["pt-BR", "Orientações", "Avaliações", "Capítulo sem título"],
+      ["en", "Insights", "Ratings", "Untitled chapter"],
+      ["es", "Orientaciones", "Valoraciones", "Capítulo sin título"],
+    ]) {
+      idiomaOrientacoes = idioma;
+      const html = renderToStaticMarkup(React.createElement(PainelAutorOrientacoes, { dados }));
+      assert.match(html, /<details[^>]*translate="no"/);
+      assert.ok(html.includes(`<summary>${sumario}</summary>`));
+      assert.ok(html.includes(`<dt>${avaliacoes}</dt><dd>3</dd>`));
+      assert.ok(html.includes(`<dt>${semTitulo}</dt><dd>2</dd>`));
+      assert.ok(html.includes("<dt>Avaliações</dt><dd>0</dd>"));
+      assert.ok(html.includes("<dt>Rascunho</dt><dd>1</dd>"));
+    }
+  } finally {
+    idiomaOrientacoes = "pt-BR";
+  }
 });
 
 test("rascunhos confirmados: indicação, destino e Editar capítulo preservado, sem prefetch", () => {

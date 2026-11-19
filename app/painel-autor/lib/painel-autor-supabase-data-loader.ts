@@ -18,7 +18,7 @@ import { carregarCapitulosPainelAutorSupabase } from "./painel-autor-supabase-ch
 import { prepararEstadoMetricasPainel } from "./painel-autor-metrics-state";
 import { mesclarResultadoSupabasePainelAutor } from "./painel-autor-supabase-result-merge";
 import { normalizarListaIds } from "./painel-autor-storage-utils";
-import type { ObraLocal } from "./painel-autor-types";
+import type { ObraLocal, OrientacoesObraPainel } from "./painel-autor-types";
 import { confirmarRascunhosPainel, type ConfirmacaoRascunhosPainel } from "./painel-autor-draft-chapters";
 
 export async function carregarPainelAutorSupabase(
@@ -26,7 +26,11 @@ export async function carregarPainelAutorSupabase(
   obrasFavoritasLocais: string[],
   obrasConcluidasLocais: string[],
   onRascunhosConfirmados?: (confirmacao: ConfirmacaoRascunhosPainel) => void,
-  opcoes: { usuarioIdEsperado?: string; onFalha?: () => void } = {},
+  opcoes: {
+    usuarioIdEsperado?: string;
+    onFalha?: () => void;
+    onOrientacoes?: (dados: ReadonlyMap<string, OrientacoesObraPainel>) => void;
+  } = {},
 ) {
   try {
     const { data: usuarioData } = await supabase.auth.getUser();
@@ -92,6 +96,7 @@ export async function carregarPainelAutorSupabase(
       carregarComentariosCapitulosUsuarioPainel(userId, capituloIds),
     ]);
     const { favoritosSupabase, concluidasSupabase, capitulosSalvos, capitulosCurtidos, progressoPorCapitulo, progressoCarregado, capitulosComMetricas } = prepararEstadoMetricasPainel(metricas);
+    const orientacoesPorObra = new Map<string, OrientacoesObraPainel>();
     const obrasSupabase = obrasSupabaseBanco.map((obraBanco, index) => {
       const obraLocal = obrasLocaisUsuario.find((obraAtual) => {
         const slugLocal = obraAtual.slug || criarSlugBase(obraAtual.titulo);
@@ -119,6 +124,26 @@ export async function carregarPainelAutorSupabase(
       });
 
       const metrica = metricas.obras.get(obraBanco.id);
+      if (metricas.carregado && metrica && obraBanco.publicado === true && obraBanco.user_id === userId) {
+        const capitulosPublicados = capitulosDaObra.filter(
+          capitulo => capitulo.publicado === true && capitulo.user_id === userId,
+        );
+        orientacoesPorObra.set(obraBanco.id, {
+          visualizacoes: metrica.visualizacoes,
+          seguidores: metrica.interacoesDiretas.seguidores,
+          avaliacoes: metrica.avaliacao.total,
+          capitulos: capitulosPublicados.map((capitulo) => {
+            const metricaCapitulo = metricas.capitulos.get(capitulo.id);
+            return {
+              id: capitulo.id,
+              titulo: capitulo.titulo?.trim() || "",
+              visualizacoes: metricaCapitulo?.obraId === obraBanco.id
+                ? metricaCapitulo.visualizacoes
+                : null,
+            };
+          }),
+        });
+      }
 
       return {
         ...obraNormalizada,
@@ -134,6 +159,7 @@ export async function carregarPainelAutorSupabase(
       onRascunhosConfirmados?.(confirmarRascunhosPainel(userId, obrasSupabaseBanco, capitulosSupabaseBanco));
     }
     if (!capitulosConfirmados || metricas.carregado === false) opcoes.onFalha?.();
+    opcoes.onOrientacoes?.(orientacoesPorObra);
     return resultado;
   } catch (error) {
     opcoes.onFalha?.();
