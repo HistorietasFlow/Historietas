@@ -11,12 +11,14 @@ Uma falha da RPC exibe erro com a seção vazia. O carregador usa apenas os
 metadados autorizados e não consulta o catálogo amplo para completar a resposta.
 
 O piloto funciona em `next dev` com Supabase em loopback e
-`NEXT_PUBLIC_HISTORIETAS_RECOMENDACOES_LOCAL=1`. Para ensaiar preferências
-fictícias, defina `NEXT_PUBLIC_HISTORIETAS_RECOMENDACOES_GENEROS=Fantasia`
-ou até três gêneros separados por vírgula. Sem gêneros, use descoberta geral.
-O piloto não carrega preferências salvas do leitor. Use apenas a chave pública
-do laboratório. Instale o SQL homologado do pacote QA5 no Supabase
-descartável antes de iniciar o site.
+`NEXT_PUBLIC_HISTORIETAS_RECOMENDACOES_LOCAL=1`. Para leitores autenticados,
+`qa5_generos_interacoes_autorizadas` obtém até três gêneros a partir de
+favoritos, obras seguidas e concluídas que o leitor pode acessar. A sessão
+atual autoriza as duas consultas. Um resultado vazio usa a descoberta geral
+do mesmo catálogo autorizado. Se a consulta de gêneros falhar, a seção
+mostra erro e encerra a busca. Visitantes consultam apenas o catálogo.
+Use a chave pública, as migrations da base e contas fictícias no Supabase
+descartável. Para exercitar preferências, prepare interações nessas contas.
 
 No navegador local, compare até 12 obras iniciais com as primeiras do Ver mais,
 em desktop e mobile. A seleção compartilhada admite até duas obras de cada
@@ -72,8 +74,6 @@ Configure somente no ambiente **Preview** dessa branch:
 - `HISTORIETAS_RECOMENDACOES_PREVIEW=1`.
 - `NEXT_PUBLIC_SUPABASE_URL=https://rvmsnsltlhlnvbrlyoxh.supabase.co`.
 - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` com a chave pública desse projeto.
-- `NEXT_PUBLIC_HISTORIETAS_RECOMENDACOES_GENEROS` é opcional e usa gêneros
-  de teste, como `Fantasia,Romance`. Sem a variável, use descoberta geral.
 
 O build exige as variáveis de sistema `VERCEL`, `VERCEL_ENV` e
 `VERCEL_GIT_COMMIT_REF`. A checagem da origem aceita apenas o projeto indicado
@@ -81,13 +81,14 @@ acima. A produção continua com o piloto desligado. A configuração atual do
 repositório restringe o deploy automático à main. Gere um novo Preview na
 etapa de homologação, depois de conferir o escopo das variáveis.
 
-Com o catálogo fechado, a seção experimental deve mostrar erro e zero cards
-se a chamada for recusada. A liberação temporária da consulta do catálogo no
-Supabase de homologação exige uma etapa própria. Nesse ensaio, use contas e
-obras fictícias, compare a ordem e o limite por autor no Explorar e no Ver
-mais, em desktop e mobile, e repita a recusa após logout ou falha de rede sem
-fallback para o catálogo legado. Ao terminar, confirme que o acesso temporário
-foi revogado e retire a variável de ativação do próximo build.
+Com as consultas fechadas, a seção experimental mostra erro e zero cards.
+A liberação temporária das consultas de sinais e catálogo no Supabase de
+homologação exige uma etapa própria. Nesse ensaio, use contas fictícias com
+interesses diferentes e uma conta sem histórico. Compare a ordem e o limite
+por autor no Explorar e no Ver mais em desktop e mobile. Confirme que a
+recusa de sessão ou a falha de rede nos sinais encerra a busca. Ao terminar,
+confirme que o acesso temporário foi revogado e retire a variável de ativação
+do próximo build.
 
 ## Explorar · Novas vozes
 

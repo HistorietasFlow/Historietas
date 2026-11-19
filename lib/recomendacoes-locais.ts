@@ -4,7 +4,8 @@ import { normalizarTexto } from "./utils";
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() || "";
 const chave = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY?.trim() ||
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim() || "";
-const rpc = "qa5_recomendar_obras_autorizadas";
+const rpcSinais = "qa5_generos_interacoes_autorizadas";
+const rpcCatalogo = "qa5_recomendar_obras_autorizadas";
 const erro = "Não foi possível carregar as recomendações agora.";
 const uuid = /^[\da-f]{8}-(?:[\da-f]{4}-){3}[\da-f]{12}$/i;
 const classificacoes = new Set(["Livre", "10+", "12+", "14+", "16+"]);
@@ -146,11 +147,21 @@ export async function carregarRecomendacoesLocais(leitor: string, signal: AbortS
     headers.set("Authorization", "Bearer " + (token || chave));
   }
 
-  // Preferências de fixture, comuns às duas telas. Nenhuma leitura de histórico.
-  const valores = (process.env.NEXT_PUBLIC_HISTORIETAS_RECOMENDACOES_GENEROS || "")
-    .split(",").map((valor) => valor.trim()).filter(Boolean);
-  const generos = [...new Map(valores.map((valor) => [normalizarTexto(valor), valor])).values()];
-  if (generos.length > 3 || generos.some((valor) => valor.length > 64)) throw new Error(erro);
+  async function consultar(rpc: string, parametros: Record<string, unknown>): Promise<unknown> {
+    signal.throwIfAborted();
+    const resposta = await fetch(`${origem}/rest/v1/rpc/${rpc}`, {
+      method: "POST", headers, cache: "no-store", redirect: "error", signal,
+      body: JSON.stringify(parametros),
+    });
+    if (!resposta.ok) throw new Error(erro);
+    return resposta.json();
+  }
+
+  const sinais = leitor ? await consultar(rpcSinais, {}) : [];
+  const generos = textos(sinais);
+  if (generos === null || generos.length > 3 || generos.some(
+    (genero) => !genero.trim() || [...genero].length > 64,
+  )) throw new Error(erro);
 
   const consultas = (generos.length ? generos : [""]).map((genero) => ({
     genero, cursor: null as Cursor | null, terminou: false,
@@ -162,20 +173,14 @@ export async function carregarRecomendacoesLocais(leitor: string, signal: AbortS
   while (chamadas < maxChamadas && consultas.some((consulta) => !consulta.terminou)) {
     for (const consulta of consultas) {
       if (consulta.terminou || chamadas === maxChamadas) continue;
-      signal.throwIfAborted();
       const cursor = consulta.cursor;
-      const resposta = await fetch(`${origem}/rest/v1/rpc/${rpc}`, {
-        method: "POST", headers, cache: "no-store", redirect: "error", signal,
-        body: JSON.stringify({
-          p_busca: "", p_genero: consulta.genero, p_formato: "", p_classificacao: "",
-          p_filtro_capitulos: "todos", p_ordenacao: "recentes", p_limite: limite, p_tag: "",
-          p_cursor_valor: cursor?.valor ?? null, p_cursor_data: cursor?.data ?? null,
-          p_cursor_id: cursor?.id ?? null,
-        }),
+      const valor = await consultar(rpcCatalogo, {
+        p_busca: "", p_genero: consulta.genero, p_formato: "", p_classificacao: "",
+        p_filtro_capitulos: "todos", p_ordenacao: "recentes", p_limite: limite, p_tag: "",
+        p_cursor_valor: cursor?.valor ?? null, p_cursor_data: cursor?.data ?? null,
+        p_cursor_id: cursor?.id ?? null,
       });
       chamadas++;
-      if (!resposta.ok) throw new Error(erro);
-      const valor: unknown = await resposta.json();
       if (!Array.isArray(valor) || valor.length > limite) throw new Error(erro);
       const linhas = valor.map(lerLinha);
       const ultima = linhas.at(-1);

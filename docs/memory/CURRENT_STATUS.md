@@ -9,9 +9,11 @@ patch local. Com Auth real e o SQL otimizado, nove obras de um autor
 geraram duas sugestões em cada fluxo. Em 21 obras de sete autores, o
 Explorar apresentou a seleção de 12 e o Ver mais manteve o mesmo início
 com 14 no total. A revogação retornou 401 sem recorrer ao catálogo amplo.
-Gêneros de fixture, recurso desativado por padrão. Ver
+O carregador compartilhado usa os gêneros das interações autorizadas do
+leitor autenticado. Sem interações elegíveis, usa a descoberta geral
+autorizada. Uma falha nos sinais encerra a seleção. O recurso segue
+desativado por padrão. Ver
 [roteiro local](../refatoracao-comunidade.md#explorar--piloto-local-de-recomendações).
-A revalidação desta correção no navegador e a integração seguem pendentes.
 
 ### Consulta de sinais de leitura com instalação fechada
 
