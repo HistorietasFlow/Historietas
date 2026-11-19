@@ -21,11 +21,21 @@ function origemLocal(valor: string) {
   return "";
 }
 
-const origem = origemLocal(url);
-export const recomendacoesLocaisAtivas =
+const origemDev =
   process.env.NODE_ENV === "development" &&
-  process.env.NEXT_PUBLIC_HISTORIETAS_RECOMENDACOES_LOCAL === "1" &&
-  Boolean(origem && chave);
+  process.env.NEXT_PUBLIC_HISTORIETAS_RECOMENDACOES_LOCAL === "1"
+    ? origemLocal(url)
+    : "";
+const origemPreview = process.env.HISTORIETAS_RECOMENDACOES_ORIGEM_PREVIEW || "";
+const origem =
+  origemDev ||
+  (process.env.NODE_ENV === "production" &&
+  origemPreview &&
+  chave.startsWith("sb_publishable_") &&
+  (url === origemPreview || url === origemPreview + "/")
+    ? origemPreview
+    : "");
+export const recomendacoesLocaisAtivas = Boolean(origem && chave);
 
 export function usarRecomendacoesLocais(modo: string, secao: string) {
   return recomendacoesLocaisAtivas && modo === "obras" && secao === "recomendacoes";

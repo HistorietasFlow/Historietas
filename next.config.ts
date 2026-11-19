@@ -25,6 +25,13 @@ const supabaseCoverRemotePatterns: NonNullable<
   NonNullable<NextConfig["images"]>["remotePatterns"]
 > = [];
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() || "";
+const origemHomologacao = "https://rvmsnsltlhlnvbrlyoxh.supabase.co";
+const recomendacoesPreview =
+  process.env.VERCEL === "1" &&
+  process.env.VERCEL_ENV === "preview" &&
+  process.env.VERCEL_GIT_COMMIT_REF === "codex/recomendacoes-homologacao" &&
+  process.env.HISTORIETAS_RECOMENDACOES_PREVIEW === "1" &&
+  (supabaseUrl === origemHomologacao || supabaseUrl === origemHomologacao + "/");
 
 if (supabaseUrl) {
   try {
@@ -44,6 +51,10 @@ if (supabaseUrl) {
 }
 
 const nextConfig: NextConfig = {
+  env: {
+    // O navegador recebe só a origem pública validada durante o build.
+    HISTORIETAS_RECOMENDACOES_ORIGEM_PREVIEW: recomendacoesPreview ? origemHomologacao : "",
+  },
   poweredByHeader: false,
   async headers() {
     return [

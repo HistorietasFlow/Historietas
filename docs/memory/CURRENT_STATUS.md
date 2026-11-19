@@ -27,8 +27,11 @@ Ver [testes e reversão](../refatoracao-comunidade.md#consulta-de-sinais-instala
 `20261119064537_recomendacoes_catalogo_inativo.sql` registra a consulta
 autorizada do Explorar e do Ver mais, com acesso fechado na instalação.
 Passaram 384 verificações de privacidade, 12 cenários de navegador e a reversão
-no Supabase descartável. A homologação das telas hospedadas depende de adaptar
-o piloto local. Ver [contrato e reversão](../refatoracao-comunidade.md#consulta-de-catálogo-instalada-com-acesso-fechado).
+no Supabase descartável. O Supabase de homologação tem as 100 versões esperadas
+e as consultas de catálogo e sinais seguem fechadas pela Data API.
+O piloto pode ser configurado no Preview privado da branch dedicada, com o
+Supabase de homologação. A validação das telas hospedadas está pendente.
+Ver [configuração do Preview](../refatoracao-comunidade.md#preview-privado-de-recomendações).
 
 ### Novas vozes em preparação local
 

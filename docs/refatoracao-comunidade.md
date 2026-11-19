@@ -59,9 +59,35 @@ recusa privilégios que permitam execução pela Data API.
 `supabase test db` cobre o contrato e o bloqueio após a instalação. A reversão
 isolada está em `docs/sql/rollback-recomendacoes-catalogo.sql`.
 No ensaio descartável, a liberação para teste passou nas 384 decisões de
-privacidade e em 12 cenários de navegador. A etapa de homologação pelo site
-depende de adaptar o piloto, que hoje exige Next em desenvolvimento e Supabase
-em loopback.
+privacidade e em 12 cenários de navegador. A migration foi instalada no
+Supabase de homologação e as consultas de catálogo e de sinais seguem
+inacessíveis aos papéis da Data API.
+
+### Preview privado de recomendações
+
+Ao preparar a homologação na Vercel, use a branch
+`codex/recomendacoes-homologacao` e mantenha a autenticação da Vercel.
+Configure somente no ambiente **Preview** dessa branch:
+
+- `HISTORIETAS_RECOMENDACOES_PREVIEW=1`.
+- `NEXT_PUBLIC_SUPABASE_URL=https://rvmsnsltlhlnvbrlyoxh.supabase.co`.
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` com a chave pública desse projeto.
+- `NEXT_PUBLIC_HISTORIETAS_RECOMENDACOES_GENEROS` é opcional e usa gêneros
+  de teste, como `Fantasia,Romance`. Sem a variável, use descoberta geral.
+
+O build exige as variáveis de sistema `VERCEL`, `VERCEL_ENV` e
+`VERCEL_GIT_COMMIT_REF`. A checagem da origem aceita apenas o projeto indicado
+acima. A produção continua com o piloto desligado. A configuração atual do
+repositório restringe o deploy automático à main. Gere um novo Preview na
+etapa de homologação, depois de conferir o escopo das variáveis.
+
+Com o catálogo fechado, a seção experimental deve mostrar erro e zero cards
+se a chamada for recusada. A liberação temporária da consulta do catálogo no
+Supabase de homologação exige uma etapa própria. Nesse ensaio, use contas e
+obras fictícias, compare a ordem e o limite por autor no Explorar e no Ver
+mais, em desktop e mobile, e repita a recusa após logout ou falha de rede sem
+fallback para o catálogo legado. Ao terminar, confirme que o acesso temporário
+foi revogado e retire a variável de ativação do próximo build.
 
 ## Explorar · Novas vozes
 

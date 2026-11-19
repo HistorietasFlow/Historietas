@@ -7,6 +7,13 @@ const id = (n) => "ca000000-0000-4000-8000-" + String(n).padStart(12, "0");
 const leitor = id(99);
 const origem = "http://127.0.0.1:56421";
 const rota = origem + "/rest/v1/rpc/qa5_recomendar_obras_autorizadas";
+const homologacao = "https://rvmsnsltlhlnvbrlyoxh.supabase.co";
+const preview = {
+  VERCEL: "1",
+  VERCEL_ENV: "preview",
+  VERCEL_GIT_COMMIT_REF: "codex/recomendacoes-homologacao",
+  HISTORIETAS_RECOMENDACOES_PREVIEW: "1",
+};
 const fixture = Array.from({ length: 20 }, (_, i) => ({
   obra_id: id(i),
   cursor_valor: 0,
@@ -20,22 +27,39 @@ const fixture = Array.from({ length: 20 }, (_, i) => ({
   },
 }));
 
-function carregar(t, { genero = "Fantasia", url = origem, ambiente = "development", sessao = { user: { id: leitor }, access_token: "qa5-token" }, authError = null } = {}) {
+function carregar(t, {
+  genero = "Fantasia", url = origem, ambiente = "development",
+  sessao = { user: { id: leitor }, access_token: "qa5-token" }, authError = null,
+  build = {},
+} = {}) {
   const valores = {
     NODE_ENV: ambiente,
     NEXT_PUBLIC_SUPABASE_URL: url,
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_qa5",
     NEXT_PUBLIC_HISTORIETAS_RECOMENDACOES_LOCAL: "1",
     NEXT_PUBLIC_HISTORIETAS_RECOMENDACOES_GENEROS: genero,
+    VERCEL: undefined,
+    VERCEL_ENV: undefined,
+    VERCEL_GIT_COMMIT_REF: undefined,
+    HISTORIETAS_RECOMENDACOES_PREVIEW: undefined,
+    HISTORIETAS_RECOMENDACOES_ORIGEM_PREVIEW: undefined,
+    ...build,
   };
   const antigos = new Map(Object.keys(valores).map((nome) => [nome, process.env[nome]]));
-  Object.assign(process.env, valores);
+  for (const [nome, valor] of Object.entries(valores)) {
+    if (valor === undefined) delete process.env[nome];
+    else process.env[nome] = valor;
+  }
   t.after(() => {
     for (const [nome, valor] of antigos) {
       if (valor === undefined) delete process.env[nome];
       else process.env[nome] = valor;
     }
   });
+  const { default: config } = loadApplicationModule("next.config.ts", {
+    "@sentry/nextjs/config": { withSentryConfig: (config) => config },
+  });
+  Object.assign(process.env, config.env);
   return loadApplicationModule("lib/recomendacoes-locais.ts", {
     "./supabase/client": {
       supabase: { auth: { getSession: async () => ({ data: { session: sessao }, error: authError }) } },
@@ -134,9 +158,46 @@ test("erro ao recuperar a sessão não vira consulta anônima", async (t) => {
   assert.equal(fetch.mock.callCount(), 0);
 });
 
-test("destino remoto e build de produção desativam o piloto", async (t) => {
-  assert.equal(carregar(t, { url: "https://example.invalid" }).recomendacoesLocaisAtivas, false);
-  assert.equal(carregar(t, { ambiente: "production" }).recomendacoesLocaisAtivas, false);
+test("Preview da branch dedicada consulta só o Supabase de homologação com a sessão atual", async (t) => {
+  const modulo = carregar(t, { url: homologacao + "/", ambiente: "production", build: preview });
+  assert.equal(modulo.recomendacoesLocaisAtivas, true);
+  assert.equal(modulo.usarRecomendacoesLocais("obras", "recomendacoes"), true);
+  assert.equal(modulo.usarRecomendacoesLocais("obras", "ranking"), false);
+  const fetch = t.mock.method(globalThis, "fetch", async (url, init) => {
+    assert.equal(url, homologacao + "/rest/v1/rpc/qa5_recomendar_obras_autorizadas");
+    assert.equal(init.headers.get("Authorization"), "Bearer qa5-token");
+    assert.equal(init.headers.get("apikey"), "sb_publishable_qa5");
+    assert.equal(init.redirect, "error");
+    return Response.json([]);
+  });
+  assert.deepEqual(await modulo.carregarRecomendacoesLocais(leitor, AbortSignal.timeout(5000)), []);
+  assert.equal(fetch.mock.callCount(), 1);
+});
+
+test("piloto recusa ambientes e destinos fora do escopo antes de consultar", async (t) => {
+  const casos = [
+    ["produção da Vercel", { build: { ...preview, VERCEL_ENV: "production" } }],
+    ["build fora da Vercel", { build: { ...preview, VERCEL: undefined } }],
+    ["branch diferente", { build: { ...preview, VERCEL_GIT_COMMIT_REF: "codex/outra-branch" } }],
+    ["Preview sem ativação", { build: { ...preview, HISTORIETAS_RECOMENDACOES_PREVIEW: undefined } }],
+    ["Supabase de produção", { url: "https://drqqgfxrchnymetmpabd.supabase.co" }],
+    ["origem com sufixo indevido", { url: homologacao + ".example.invalid" }],
+    ["origem com caminho extra", { url: homologacao + "/rest" }],
+    ["origem HTTP", { url: homologacao.replace("https:", "http:") }],
+    ["Preview sem chave publicável", { build: { ...preview, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: undefined } }],
+    ["Preview com chave não publicável", { build: { ...preview, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "chave-de-teste-invalida" } }],
+    ["next dev com destino remoto", { ambiente: "development" }],
+    ["build de produção com loopback", { url: origem, build: {} }],
+  ];
+  for (const [rotulo, opcoes] of casos) {
+    await t.test(rotulo, async (subteste) => {
+      const modulo = carregar(subteste, { url: homologacao, ambiente: "production", build: preview, ...opcoes });
+      const fetch = subteste.mock.method(globalThis, "fetch", async () => assert.fail("requisição indevida"));
+      assert.equal(modulo.recomendacoesLocaisAtivas, false);
+      await assert.rejects(modulo.carregarRecomendacoesLocais(leitor, AbortSignal.timeout(5000)));
+      assert.equal(fetch.mock.callCount(), 0);
+    });
+  }
 });
 
 test("Listas mantém a ordem recebida para as recomendações do piloto", () => {
