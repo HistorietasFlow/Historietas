@@ -77,7 +77,7 @@ Configure somente no ambiente **Preview** dessa branch:
 
 O build exige as variáveis de sistema `VERCEL`, `VERCEL_ENV` e
 `VERCEL_GIT_COMMIT_REF`. A checagem da origem aceita apenas o projeto indicado
-acima. A produção continua com o piloto desligado. A configuração atual do
+acima. O piloto fica desligado por padrão em produção. A configuração atual do
 repositório restringe o deploy automático à main. Gere um novo Preview na
 etapa de homologação, depois de conferir o escopo das variáveis.
 
@@ -89,6 +89,38 @@ por autor no Explorar e no Ver mais em desktop e mobile. Confirme que a
 recusa de sessão ou a falha de rede nos sinais encerra a busca. Ao terminar,
 confirme que o acesso temporário foi revogado e retire a variável de ativação
 do próximo build.
+
+### Preparação da ativação em produção
+
+O build da Vercel só habilita a seleção personalizada em `main`, com
+`VERCEL_ENV=production`, `HISTORIETAS_RECOMENDACOES_PRODUCAO=1` e a URL
+exata do Supabase de produção. O carregador exige a chave publicável desse
+projeto. O Explorar omite a seção para visitantes quando o recurso está
+ativo. A rota direta de Ver mais retorna a lista vazia para visitantes
+sem iniciar as consultas.
+
+1. Compare as versões instaladas com a main. Prepare um lote isolado
+   para instalar somente `20261119064537_recomendacoes_catalogo_inativo.sql`,
+   com o SHA-256 do arquivo versionado. Exclua do lote a migration
+   `20261112013209`, que tem uma decisão própria. O dry-run deve listar
+   somente o catálogo. Após a instalação, confira o corpo, proprietário,
+   `SECURITY INVOKER`, RLS das tabelas e acesso fechado pela Data API.
+2. Após homologar a instalação fechada, libere só para `authenticated`
+   o `EXECUTE` das duas consultas e da auxiliar
+   `qa5_sinais_interno.autores_visiveis(uuid[])`, com `USAGE` no schema
+   privado. Confira que a auxiliar continua fora dos schemas expostos.
+   Valide a recusa do visitante pela Data API antes de ligar a interface.
+3. Configure a flag somente em Production e publique o novo build
+   com Vercel Authentication. Em desktop e mobile, confira a mesma
+   ordem no Explorar e no Ver mais, até duas obras por autor, descoberta
+   geral para leitor autenticado sem sinais e recusa após logout.
+   Em caso de falha dos sinais, confirme zero resultados e ausência
+   de consulta ao catálogo legado no Ver mais.
+
+Para interromper o acesso, revogue as quatro permissões dessa liberação,
+retire a flag de Production e volte ao último deploy privado com o
+recurso desligado. Confira a recusa pela Data API e os aliases depois
+da reversão. O catálogo pode permanecer instalado com acesso fechado.
 
 ## Explorar · Novas vozes
 

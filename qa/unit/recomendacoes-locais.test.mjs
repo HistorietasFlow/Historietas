@@ -10,11 +10,18 @@ const rpcSinais = "/rest/v1/rpc/qa5_generos_interacoes_autorizadas";
 const rpcCatalogo = "/rest/v1/rpc/qa5_recomendar_obras_autorizadas";
 const rota = origem + rpcCatalogo;
 const homologacao = "https://rvmsnsltlhlnvbrlyoxh.supabase.co";
+const producao = "https://drqqgfxrchnymetmpabd.supabase.co";
 const preview = {
   VERCEL: "1",
   VERCEL_ENV: "preview",
   VERCEL_GIT_COMMIT_REF: "codex/recomendacoes-homologacao",
   HISTORIETAS_RECOMENDACOES_PREVIEW: "1",
+};
+const buildProducao = {
+  VERCEL: "1",
+  VERCEL_ENV: "production",
+  VERCEL_GIT_COMMIT_REF: "main",
+  HISTORIETAS_RECOMENDACOES_PRODUCAO: "1",
 };
 const fixture = Array.from({ length: 20 }, (_, i) => ({
   obra_id: id(i),
@@ -44,6 +51,8 @@ function carregar(t, {
     VERCEL_GIT_COMMIT_REF: undefined,
     HISTORIETAS_RECOMENDACOES_PREVIEW: undefined,
     HISTORIETAS_RECOMENDACOES_ORIGEM_PREVIEW: undefined,
+    HISTORIETAS_RECOMENDACOES_PRODUCAO: undefined,
+    HISTORIETAS_RECOMENDACOES_ORIGEM_PRODUCAO: undefined,
     ...build,
   };
   const antigos = new Map(Object.keys(valores).map((nome) => [nome, process.env[nome]]));
@@ -240,7 +249,7 @@ test("piloto recusa ambientes e destinos fora do escopo antes de consultar", asy
     ["build fora da Vercel", { build: { ...preview, VERCEL: undefined } }],
     ["branch diferente", { build: { ...preview, VERCEL_GIT_COMMIT_REF: "codex/outra-branch" } }],
     ["Preview sem ativação", { build: { ...preview, HISTORIETAS_RECOMENDACOES_PREVIEW: undefined } }],
-    ["Supabase de produção", { url: "https://drqqgfxrchnymetmpabd.supabase.co" }],
+    ["Preview apontado para produção", { url: producao }],
     ["origem com sufixo indevido", { url: homologacao + ".example.invalid" }],
     ["origem com caminho extra", { url: homologacao + "/rest" }],
     ["origem HTTP", { url: homologacao.replace("https:", "http:") }],
@@ -260,6 +269,60 @@ test("piloto recusa ambientes e destinos fora do escopo antes de consultar", asy
   }
 });
 
+test("produção ativa usa as consultas do projeto certo com a sessão do leitor", async (t) => {
+  const modulo = carregar(t, { url: producao + "/", ambiente: "production", build: buildProducao });
+  assert.equal(modulo.recomendacoesLocaisAtivas, true);
+  assert.equal(modulo.recomendacoesExigemLogin, true);
+  assert.equal(modulo.usarRecomendacoesLocais("obras", "recomendacoes"), true);
+  assert.equal(modulo.usarRecomendacoesLocais("obras", "em-alta"), false);
+
+  const fetch = t.mock.method(globalThis, "fetch", async (url, init) => {
+    assert.equal(init.headers.get("Authorization"), "Bearer qa5-token");
+    assert.equal(init.headers.get("apikey"), "sb_publishable_qa5");
+    assert.equal(init.cache, "no-store");
+    assert.equal(init.redirect, "error");
+    if (url === producao + rpcSinais) return Response.json(["Fantasia"]);
+    assert.equal(url, producao + rpcCatalogo);
+    assert.equal(JSON.parse(init.body).p_genero, "Fantasia");
+    return responderPagina(url, init);
+  });
+  const obras = await modulo.carregarRecomendacoesLocais(leitor, AbortSignal.timeout(5000));
+  assert.equal(obras.length, 14);
+  assert.equal(fetch.mock.callCount(), 4);
+});
+
+test("produção recusa ativação fora do ambiente e projeto previstos", async (t) => {
+  const casos = [
+    ["flag ausente", { build: { ...buildProducao, HISTORIETAS_RECOMENDACOES_PRODUCAO: undefined } }],
+    ["flag desativada", { build: { ...buildProducao, HISTORIETAS_RECOMENDACOES_PRODUCAO: "0" } }],
+    ["branch diferente", { build: { ...buildProducao, VERCEL_GIT_COMMIT_REF: "codex/outra-branch" } }],
+    ["Preview", { build: { ...buildProducao, ...preview } }],
+    ["build fora da Vercel", { build: { ...buildProducao, VERCEL: undefined } }],
+    ["projeto de homologação", { url: homologacao }],
+    ["origem com caminho extra", { url: producao + "/rest" }],
+    ["origem com sufixo indevido", { url: producao + ".example.invalid" }],
+    ["sem chave publicável", { build: { ...buildProducao, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "" } }],
+    ["chave fora do formato", { build: { ...buildProducao, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "chave-invalida" } }],
+  ];
+  for (const [rotulo, opcoes] of casos) {
+    await t.test(rotulo, async (subteste) => {
+      const modulo = carregar(subteste, { url: producao, ambiente: "production", build: buildProducao, ...opcoes });
+      const fetch = subteste.mock.method(globalThis, "fetch", async () => assert.fail("requisição indevida"));
+      assert.equal(modulo.recomendacoesLocaisAtivas, false);
+      await assert.rejects(modulo.carregarRecomendacoesLocais(leitor, AbortSignal.timeout(5000)));
+      assert.equal(fetch.mock.callCount(), 0);
+    });
+  }
+});
+
+test("Ver mais de produção mantém a rota em modo de recomendações, mas não consulta dados sem login", async (t) => {
+  const modulo = carregar(t, { url: producao, ambiente: "production", build: buildProducao, sessao: null });
+  const fetch = t.mock.method(globalThis, "fetch", async () => assert.fail("requisição indevida"));
+  assert.equal(modulo.usarRecomendacoesLocais("obras", "recomendacoes"), true);
+  assert.deepEqual(await modulo.carregarRecomendacoesLocais("", AbortSignal.timeout(5000)), []);
+  assert.equal(fetch.mock.callCount(), 0);
+});
+
 test("Listas mantém a ordem recebida para as recomendações do piloto", () => {
   const { filtrarOrdenarObrasPublicasListas } = loadApplicationModule("app/listas/lib/listas-filter-sort-utils.ts");
   const obras = [
@@ -268,6 +331,32 @@ test("Listas mantém a ordem recebida para as recomendações do piloto", () => 
   ];
   assert.deepEqual(filtrarOrdenarObrasPublicasListas(obras, "", "titulo", "recomendacoes", true), obras);
   assert.deepEqual(filtrarOrdenarObrasPublicasListas(obras, "", "titulo", "recomendacoes"), obras.toReversed());
+});
+
+test("Explorar ativo em produção omite recomendações sem login em desktop e mobile", () => {
+  const Recomendacoes = () => null;
+  const { ExplorarCreativeWorkSections } = loadApplicationModule(
+    "app/explorar/components/explorar-creative-work-sections.tsx",
+    {
+      "../../../lib/recomendacoes-locais": { recomendacoesLocaisAtivas: true, recomendacoesExigemLogin: true },
+      "./explorar-recomendacoes-locais": { ExplorarRecomendacoesLocais: Recomendacoes },
+      "./explorar-obra-publicada-card": { default: () => assert.fail("card legado") },
+      "./explorar-section-components": {},
+      "../lib/explorar-content-styles": {},
+    },
+  );
+  for (const isDesktop of [true, false]) {
+    const props = {
+      mostrarRecomendacoes: true, isDesktop, tema: {},
+      secoes: [{ titulo: "Recomendações para você", obras: [{ id: "legado" }] }],
+    };
+    const visitante = ExplorarCreativeWorkSections(props);
+    const autenticado = ExplorarCreativeWorkSections({ ...props, leitor });
+    assert.equal(Boolean(visitante.props.children[0]), false);
+    assert.deepEqual(visitante.props.children[1], [null]);
+    assert.equal(autenticado.props.children[0].type, Recomendacoes);
+    assert.deepEqual(autenticado.props.children[1], [null]);
+  }
 });
 
 test("Explorar monta a seção mesmo quando o catálogo comum está vazio", () => {

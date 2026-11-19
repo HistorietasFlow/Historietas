@@ -26,12 +26,19 @@ const supabaseCoverRemotePatterns: NonNullable<
 > = [];
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() || "";
 const origemHomologacao = "https://rvmsnsltlhlnvbrlyoxh.supabase.co";
+const origemProducao = "https://drqqgfxrchnymetmpabd.supabase.co";
 const recomendacoesPreview =
   process.env.VERCEL === "1" &&
   process.env.VERCEL_ENV === "preview" &&
   process.env.VERCEL_GIT_COMMIT_REF === "codex/recomendacoes-homologacao" &&
   process.env.HISTORIETAS_RECOMENDACOES_PREVIEW === "1" &&
   (supabaseUrl === origemHomologacao || supabaseUrl === origemHomologacao + "/");
+const recomendacoesProducao =
+  process.env.VERCEL === "1" &&
+  process.env.VERCEL_ENV === "production" &&
+  process.env.VERCEL_GIT_COMMIT_REF === "main" &&
+  process.env.HISTORIETAS_RECOMENDACOES_PRODUCAO === "1" &&
+  (supabaseUrl === origemProducao || supabaseUrl === origemProducao + "/");
 
 if (supabaseUrl) {
   try {
@@ -54,6 +61,7 @@ const nextConfig: NextConfig = {
   env: {
     // O navegador recebe só a origem pública validada durante o build.
     HISTORIETAS_RECOMENDACOES_ORIGEM_PREVIEW: recomendacoesPreview ? origemHomologacao : "",
+    HISTORIETAS_RECOMENDACOES_ORIGEM_PRODUCAO: recomendacoesProducao ? origemProducao : "",
   },
   poweredByHeader: false,
   async headers() {

@@ -27,16 +27,18 @@ const origemDev =
   process.env.NEXT_PUBLIC_HISTORIETAS_RECOMENDACOES_LOCAL === "1"
     ? origemLocal(url)
     : "";
-const origemPreview = process.env.HISTORIETAS_RECOMENDACOES_ORIGEM_PREVIEW || "";
+const origemProducao = process.env.HISTORIETAS_RECOMENDACOES_ORIGEM_PRODUCAO || "";
+const origemImplantada = origemProducao || process.env.HISTORIETAS_RECOMENDACOES_ORIGEM_PREVIEW || "";
 const origem =
   origemDev ||
   (process.env.NODE_ENV === "production" &&
-  origemPreview &&
+  origemImplantada &&
   chave.startsWith("sb_publishable_") &&
-  (url === origemPreview || url === origemPreview + "/")
-    ? origemPreview
+  (url === origemImplantada || url === origemImplantada + "/")
+    ? origemImplantada
     : "");
 export const recomendacoesLocaisAtivas = Boolean(origem && chave);
+export const recomendacoesExigemLogin = Boolean(origemProducao && recomendacoesLocaisAtivas);
 
 export function usarRecomendacoesLocais(modo: string, secao: string) {
   return recomendacoesLocaisAtivas && modo === "obras" && secao === "recomendacoes";
@@ -140,6 +142,10 @@ export async function carregarRecomendacoesLocais(leitor: string, signal: AbortS
   if (!recomendacoesLocaisAtivas) throw new Error(erro);
   const { data, error } = await supabase.auth.getSession();
   if (error || (data.session?.user.id ?? "") !== leitor) throw new Error(erro);
+  if (recomendacoesExigemLogin && !leitor) {
+    signal.throwIfAborted();
+    return [];
+  }
   const token = data.session?.access_token;
   if (leitor && !token) throw new Error(erro);
   const headers = new Headers({ apikey: chave, "Content-Type": "application/json" });
