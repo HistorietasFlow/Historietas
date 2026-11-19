@@ -9,6 +9,7 @@ import type {
 } from "./lib/painel-autor-types";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
 import { PainelAutorLanguageBridge } from "./components/painel-autor-language-bridge";
+import { PainelAutorNextChapter } from "./components/painel-autor-next-chapter";
 import { LoadingSpinner } from "./components/painel-autor-loading-spinner";
 import { usePainelAutorAuthSession } from "./hooks/use-painel-autor-auth-session";
 import { usePainelAutorDesktopMode } from "./hooks/use-painel-autor-desktop-mode";
@@ -376,6 +377,8 @@ export default function PainelAutorPage() {
             )}
           </header>
         )}
+
+        <PainelAutorNextChapter key={usuarioIdLogado} autorId={usuarioIdLogado} obras={obras} />
 
         <section style={isDesktop ? desktopStudioControlsStyle : studioControlsStyle}>
           {mostrarResumoPainel && (

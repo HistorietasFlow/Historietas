@@ -1,5 +1,14 @@
 # Refatoração da Comunidade
 
+## Painel do Autor · próximo capítulo após publicar uma obra
+
+A publicação de uma nova obra registra o atalho na sessão da aba depois
+que o banco confirma o capítulo 1 publicado e a publicação da obra. O
+Painel mostra a ação para a conta associada à confirmação e à obra.
+O link abre o formulário existente com o identificador da obra, e a
+criação do capítulo acontece no envio do formulário. Uma publicação
+sem capítulo ou o uso do atalho limpa a confirmação da aba.
+
 ## Explorar · exclusões salvas
 
 Na aba Obras, o leitor autenticado pode salvar até um gênero e uma tag

@@ -1,5 +1,9 @@
 import { criarSlugBase, idObraSupabaseValido } from "../../../lib/utils";
 
+export function criarHrefAdicionarCapituloPainel(obraId: string) {
+  return `/adicionar-capitulo?obraId=${encodeURIComponent(obraId)}`;
+}
+
 export function criarLoginHrefPainelAutor() {
   const params = new URLSearchParams({
     redirectTo: "/painel-autor",

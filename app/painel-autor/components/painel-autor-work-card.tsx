@@ -61,6 +61,7 @@ import {
   obterStatusPainelAutor,
 } from "../lib/painel-autor-work-status-utils";
 import {
+  criarHrefAdicionarCapituloPainel,
   criarHrefLeituraCapituloPainel,
   criarPerfilAutorHref,
 } from "../lib/painel-autor-route-utils";
@@ -115,7 +116,7 @@ export function ObraPainelCard<T extends ObraPainelCardBase>({
   const linkObraPainel = obra.link?.trim();
   const obraHref = linkObraPainel || `/obra/${encodeURIComponent(slugObraPainel)}`;
   const editarHref = `/editar-obra?obraId=${obra.id}`;
-  const capituloHref = `/adicionar-capitulo?obraId=${obra.id}`;
+  const capituloHref = criarHrefAdicionarCapituloPainel(obra.id);
   const capitulosPublicados = obterCapitulosPublicadosPainel(obra.capitulos);
   const capituloParaContinuar = obra.ultimoCapituloLido;
   const capituloParaLer =

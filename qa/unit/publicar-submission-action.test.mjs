@@ -166,6 +166,70 @@ test("sem capítulo importado ou anexos publica apenas a obra", async () => {
   assert.deepEqual(escritas(s), ["obras:insert", "obras:update"]);
 });
 
+test("atalho é registrado antes da navegação somente com obra e capítulo 1 publicados", async () => {
+  for (const cenario of ["confirmado", "capítulo rascunho", "outra ordem", "obra recusada", "sem capítulo"]) {
+    const s = criarPublicarHarness();
+    const registros = new Map();
+    const chave = "historietas-publicacao-proximo-capitulo";
+    globalThis.window.sessionStorage = {
+      setItem: (chaveStorage, valor) => registros.set(chaveStorage, valor),
+      removeItem: chaveStorage => registros.delete(chaveStorage),
+    };
+    registros.set(chave, "confirmação anterior");
+    if (cenario === "sem capítulo") s.params.temCapituloImportado = false;
+    if (cenario === "obra recusada") s.falhas.set("obras:update", rejeicaoPublicar);
+    if (cenario === "capítulo rascunho" || cenario === "outra ordem") {
+      s.falhas.set("capitulos:insert", escrever => {
+        const resposta = escrever();
+        const capitulo = resposta.data[0];
+        return {
+          ...resposta,
+          data: [{ ...capitulo, publicado: cenario !== "capítulo rascunho", ordem: cenario === "outra ordem" ? 2 : 1 }],
+        };
+      });
+    }
+
+    const navegacoes = [];
+    s.params.router.replace = href => navegacoes.push({ href, registro: registros.get(chave) });
+    await s.enviar();
+    if (cenario === "obra recusada") {
+      assert.deepEqual(navegacoes, []);
+      assert.equal(registros.get(chave), "confirmação anterior");
+    } else if (cenario === "confirmado") {
+      assert.equal(navegacoes.length, 1);
+      assert.equal(navegacoes[0].href, "/painel-autor");
+      assert.deepEqual(JSON.parse(navegacoes[0].registro), {
+        autorId: "usuario", obraId: [...s.obras.keys()][0], capituloId: [...s.capitulos.keys()][0],
+      });
+    } else {
+      assert.deepEqual(navegacoes, [{ href: "/painel-autor", registro: undefined }], cenario);
+    }
+  }
+});
+
+test("confirmação da aba só é recuperada pela conta dona da obra", () => {
+  const { lerProximoCapitulo, registrarProximoCapitulo } = loadApplicationModule("lib/publicacao-proximo-capitulo.ts");
+  const confirmacao = {
+    autorId: "autora",
+    obraId: "10000000-0000-4000-8000-000000000001",
+    capituloId: "10000000-0000-4000-8000-000000000002",
+  };
+  const registros = new Map();
+  globalThis.window = {
+    sessionStorage: {
+      setItem: (chave, valor) => registros.set(chave, valor),
+      getItem: chave => registros.get(chave),
+      removeItem: chave => registros.delete(chave),
+    },
+  };
+  registrarProximoCapitulo(confirmacao);
+  assert.deepEqual(lerProximoCapitulo("autora"), confirmacao);
+  assert.equal(lerProximoCapitulo("outra-autora"), null);
+  assert.equal(lerProximoCapitulo(""), null);
+  registrarProximoCapitulo(null);
+  assert.equal(lerProximoCapitulo("autora"), null);
+});
+
 function adicionarAnexo(s) {
   s.params.arquivoObra = {nome: "obra.txt", tipo: "text/plain", tamanho: 5, categoria: "texto", conteudo: "", criadoEm: ""};
   s.params.arquivoObraArquivo = new File(["texto"], "obra.txt", {type: "text/plain"});
