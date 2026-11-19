@@ -9,17 +9,7 @@ import {
 const COMMUNITY_RELATED_WORK = "Obra Pública E2E";
 const COMMUNITY_POST_TEXT = "Publicação E2E para denúncia de comentário";
 
-test("sheet de comentários da Comunidade preserva diálogo, foco e teclado", async ({
-  page,
-}) => {
-  test.skip(
-    !hasAuthorCredentials,
-    "Defina E2E_USER_EMAIL e E2E_USER_PASSWORD.",
-  );
-
-  await loginAsAuthor(page);
-  const runtime = monitorRuntime(page);
-
+async function abrirComentarios(page) {
   await page.goto(
     `/comunidade?obra=${encodeURIComponent(COMMUNITY_RELATED_WORK)}`,
     { waitUntil: "domcontentloaded" },
@@ -46,7 +36,43 @@ test("sheet de comentários da Comunidade preserva diálogo, foco e teclado", as
   const handle = dialog.locator('[data-comments-sheet-handle="true"]');
   const enviar = dialog.getByRole("button", { name: "Enviar comentário" });
   await expect(handle).toBeFocused();
+  return { dialog, handle, enviar, trigger };
+}
 
+test("sheet de comentários mantém o foco quando o envio está desabilitado", async ({ page }) => {
+  // Sem login, o envio permanece desabilitado sem depender da hidratação.
+  const { dialog, handle, enviar, trigger } = await abrirComentarios(page);
+  await expect(enviar).toBeDisabled();
+
+  await page.keyboard.press("Shift+Tab");
+  await expect(dialog.locator(":focus")).toHaveCount(1);
+  await expect(handle).not.toBeFocused();
+  await expect(enviar).not.toBeFocused();
+
+  await page.keyboard.press("Tab");
+  await expect(handle).toBeFocused();
+
+  await page.keyboard.press("Escape");
+  await expect(dialog).toHaveCount(0);
+  await expect(trigger).toBeFocused();
+});
+
+test("sheet de comentários da Comunidade preserva diálogo, foco e teclado", async ({
+  page,
+}) => {
+  test.skip(
+    !hasAuthorCredentials,
+    "Defina E2E_USER_EMAIL e E2E_USER_PASSWORD.",
+  );
+
+  await loginAsAuthor(page);
+  const runtime = monitorRuntime(page);
+
+  const { dialog, handle, enviar, trigger } = await abrirComentarios(page);
+
+  // O painel pode abrir antes de a Comunidade terminar de carregar a conta.
+  await expect(enviar).toBeEnabled();
+  await expect(handle).toBeFocused();
   await page.keyboard.press("Shift+Tab");
   await expect(enviar).toBeFocused();
 
