@@ -1,5 +1,5 @@
 import { normalizarTexto } from "../../../lib/utils";
-import { recomendacoesLocaisAtivas } from "../../../lib/recomendacoes-locais";
+import { recomendacoesExigemLogin, recomendacoesLocaisAtivas } from "../../../lib/recomendacoes-locais";
 import { ExplorarRecomendacoesLocais } from "./explorar-recomendacoes-locais";
 import ObraPublicadaCard from "./explorar-obra-publicada-card";
 import {
@@ -71,7 +71,8 @@ export function ExplorarCreativeWorkSections({
 
   return (
     <>
-      {usarPiloto && <ExplorarRecomendacoesLocais leitor={leitor} isDesktop={isDesktop} tema={tema} />}
+      {usarPiloto && (!recomendacoesExigemLogin || leitor) &&
+        <ExplorarRecomendacoesLocais leitor={leitor} isDesktop={isDesktop} tema={tema} />}
       {secoesComuns}
     </>
   );

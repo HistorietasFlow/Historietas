@@ -31,9 +31,22 @@ autorizada do Explorar e do Ver mais, com acesso fechado na instalação.
 Passaram 384 verificações de privacidade, 12 cenários de navegador e a reversão
 no Supabase descartável. O Supabase de homologação tem as 100 versões esperadas
 e as consultas de catálogo e sinais seguem fechadas pela Data API.
-O piloto pode ser configurado no Preview privado da branch dedicada, com o
-Supabase de homologação. A validação das telas hospedadas está pendente.
+O Preview privado foi homologado com Supabase Auth real e contas fictícias.
+As permissões temporárias foram revogadas e os dados de teste removidos.
+A PR #2372 integrou o código do Preview à main (`bc98ab0`).
 Ver [configuração do Preview](../refatoracao-comunidade.md#preview-privado-de-recomendações).
+
+### Recomendações em produção, desligadas por padrão
+
+O preparo de produção isola a origem do Supabase, exige a flag no build
+de `main` e limita a seção a leitores autenticados. As duas funções de
+sinais em produção conferem com as da homologação, considerando a
+normalização das quebras de linha. A verificação em somente leitura
+encontrou 98 versões em produção e duas pendências. O catálogo
+`20261119064537` entra no lote de recomendações e a versão de notificações
+`20261112013209` tem uma decisão separada. O
+[roteiro de ativação e reversão](../refatoracao-comunidade.md#preparação-da-ativação-em-produção)
+define as verificações anteriores à ativação.
 
 ### Novas vozes em preparação local
 
