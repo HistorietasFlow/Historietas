@@ -75,6 +75,8 @@ export const PAINEL_AUTOR_UI_TRANSLATIONS: Record<
   "Ler capítulo": { en: "Read chapter", es: "Leer capítulo" },
   "Editar obra": { en: "Edit work", es: "Editar obra" },
   "Adicionar capítulo": { en: "Add chapter", es: "Añadir capítulo" },
+  "Capítulo 1 publicado": { en: "Chapter 1 published", es: "Capítulo 1 publicado" },
+  "Adicionar próximo capítulo": { en: "Add next chapter", es: "Añadir próximo capítulo" },
   "Ver arquivo": { en: "View file", es: "Ver archivo" },
   "Compartilhar": { en: "Share", es: "Compartir" },
   "Excluir": { en: "Delete", es: "Eliminar" },

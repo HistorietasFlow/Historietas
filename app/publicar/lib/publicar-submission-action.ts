@@ -1,5 +1,6 @@
 import type { FormEvent, MutableRefObject } from "react";
 import { supabase } from "../../../lib/supabase/client";
+import { registrarProximoCapitulo } from "../../../lib/publicacao-proximo-capitulo";
 import { filtroStatusEditorial } from "../../../lib/statusEditorial";
 import {
   ACESSO_CONTEUDO_18_TEMPORARIAMENTE_BLOQUEADO,
@@ -258,6 +259,7 @@ export async function salvarObraPublicar(
       obraCriadaId = obraId;
       escritaIncerta = false;
 
+      let primeiroCapituloPublicado = false;
       if (capitulosIniciais.length > 0) {
         escritaIncerta = true;
         const { data: capitulosSalvos, error: erroCapitulo } = await supabase.from("capitulos").insert(
@@ -272,7 +274,7 @@ export async function salvarObraPublicar(
             criado_em: criadaEm,
             atualizado_em: criadaEm,
           }))
-        ).select("id, obra_id, user_id");
+        ).select("id, obra_id, user_id, ordem, publicado");
 
         if (erroCapitulo) {
           escritaIncerta = !escritaFoiRejeitadaPublicar(erroCapitulo);
@@ -285,6 +287,7 @@ export async function salvarObraPublicar(
             capitulosSalvos[0]?.user_id !== userId) {
           throw new Error("A criação do capítulo inicial não foi confirmada.");
         }
+        primeiroCapituloPublicado = capitulosSalvos[0].ordem === 1 && capitulosSalvos[0].publicado === true;
         escritaIncerta = false;
       }
 
@@ -385,6 +388,7 @@ export async function salvarObraPublicar(
 
       salvarObrasLocalmente(novasObrasDoUsuario, userId);
 
+      registrarProximoCapitulo(primeiroCapituloPublicado ? { autorId: userId, obraId, capituloId } : null);
       router.replace("/painel-autor");
       router.refresh();
     } catch (erroDesconhecido) {
