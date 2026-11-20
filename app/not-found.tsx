@@ -1,5 +1,6 @@
 "use client";
 
+import HistorietasLogoMark from "../components/HistorietasLogoMark";
 import Link from "next/link";
 import type { CSSProperties } from "react";
 import { useHistorietasLanguage } from "../components/HistorietasLanguageProvider";
@@ -60,7 +61,7 @@ export default function NotFound() {
 
       <section style={containerStyle} aria-labelledby="not-found-title">
         <Link href="/" style={logoStyle} aria-label={texts.homeAria}>
-          <span style={logoMarkStyle}>H</span>
+          <span style={logoMarkStyle}><HistorietasLogoMark /></span>
           <span className="historietas-theme-logo-text" style={logoTextStyle}>
             istorietas
           </span>

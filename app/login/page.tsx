@@ -1,5 +1,6 @@
 "use client";
 
+import HistorietasLogoMark from "../../components/HistorietasLogoMark";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
@@ -136,7 +137,7 @@ export default function LoginPage() {
       <section style={containerStyle}>
         <header style={topStyle}>
           <Link href="/" style={logoStyle} aria-label={t("backHome")}>
-            <span style={logoMarkStyle}>H</span>
+            <span style={logoMarkStyle}><HistorietasLogoMark /></span>
             <span className="historietas-theme-logo-text" style={logoTextStyle}>
               istorietas
             </span>

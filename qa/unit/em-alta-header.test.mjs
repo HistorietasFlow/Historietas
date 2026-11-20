@@ -39,7 +39,7 @@ test("EmAltaHeader preserva o cabeçalho responsivo e acessível de Em Alta", ()
     /isDesktop \? desktopHeaderTitleTextStyle : headerTitleTextStyle/,
   );
   assert.match(componente, /className="historietas-em-alta-logo-mark"/);
-  assert.match(componente, />\s*H\s*<\/span>/);
+  assert.match(componente, /<HistorietasLogoMark \/>/);
   assert.match(componente, /className="historietas-em-alta-hero-title"/);
   assert.match(componente, /\{titulo\}/);
 });

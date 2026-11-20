@@ -1,5 +1,6 @@
 "use client";
 
+import HistorietasLogoMark from "../../components/HistorietasLogoMark";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
@@ -78,7 +79,7 @@ export default function AceitarTermosPage() {
         </Link>
 
         <section style={cardStyle}>
-          <div style={markStyle}>H</div>
+          <div style={markStyle}><HistorietasLogoMark /></div>
           <h1 className="historietas-theme-title" style={titleStyle}>
             {t("titulo")}
           </h1>
