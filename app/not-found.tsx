@@ -5,6 +5,7 @@ import type { CSSProperties } from "react";
 import { useHistorietasLanguage } from "../components/HistorietasLanguageProvider";
 import { historietasThemeCss } from "../lib/historietasTheme";
 import type { HistorietasLanguage } from "../lib/i18n";
+import { logoMarkStyle, logoTextStyle } from "./lib/home-shell-header-styles";
 
 type NotFoundTranslation = {
   homeAria: string;
@@ -200,36 +201,6 @@ const logoStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
-const logoMarkStyle: CSSProperties = {
-  width: "34px",
-  height: "34px",
-  borderRadius: "12px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  background:
-    "linear-gradient(135deg, var(--historietas-accent, #F97316) 0%, var(--historietas-secondary, #7C3AED) 100%)",
-  color: "#FFFFFF",
-  fontSize: "17px",
-  fontWeight: 950,
-  letterSpacing: "-0.04em",
-  flex: "0 0 auto",
-  boxShadow: "none",
-};
-
-const logoTextStyle: CSSProperties = {
-  marginLeft: "-1px",
-  background:
-    "linear-gradient(135deg, var(--historietas-title-from, #F5F3FF) 0%, var(--historietas-title-mid, #C4B5FD) 42%, var(--historietas-title-to, #FDBA74) 100%)",
-  WebkitBackgroundClip: "text",
-  backgroundClip: "text",
-  color: "transparent",
-  textShadow:
-    "var(--historietas-logo-shadow, 0 0 26px rgba(139, 92, 246, 0.24))",
-  overflow: "visible",
-  whiteSpace: "nowrap",
-};
-
 const boxStyle: CSSProperties = {
   width: "min(620px, 100%)",
   display: "grid",
@@ -295,8 +266,8 @@ const actionsStyle: CSSProperties = {
 const primaryButtonStyle: CSSProperties = {
   minHeight: "46px",
   borderRadius: "999px",
-  background: "var(--historietas-accent, #F97316)",
-  color: "#FFFFFF",
+  background: "#FFFFFF",
+  color: "#000000",
   textDecoration: "none",
   fontSize: "13px",
   fontWeight: 950,

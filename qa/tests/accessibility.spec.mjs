@@ -82,6 +82,35 @@ for (const { rota, obterMainFinal } of rotasPublicas) {
 }
 
 for (const dispositivo of ["desktop", "mobile"]) {
+  test(`404 mantém a marca da Home e oferece retorno legível por teclado (${dispositivo})`, async ({ page }) => {
+    if (dispositivo === "mobile") await page.setViewportSize({ width: 390, height: 844 });
+    const rotaInexistente = "/rota-inexistente-qa-404";
+    let documentos404 = 0;
+    page.on("request", (request) => {
+      if (request.isNavigationRequest() && request.frame() === page.mainFrame() &&
+        new URL(request.url()).pathname === rotaInexistente) documentos404++;
+    });
+    const resposta = await page.goto(rotaInexistente);
+    expect(resposta.status()).toBe(404);
+    await expect(page.getByRole("heading", { name: "Página não encontrada" })).toBeVisible();
+
+    const marca = page.getByRole("link", { name: "Voltar para a Home", exact: true }).locator("span").first();
+    const corDeFundo = await marca.evaluate((el) => getComputedStyle(el).backgroundColor);
+    await expect(marca).toHaveCSS("background-image", "none");
+    const voltar = page.getByRole("link", { name: "Voltar para Home", exact: true });
+    await expect(voltar).toHaveCSS("background-color", "rgb(255, 255, 255)");
+    await expect(voltar).toHaveCSS("color", "rgb(0, 0, 0)");
+    await expect(page.getByRole("link", { name: "Explorar obras" })).toHaveAttribute("href", "/explorar");
+    await esperarAxeSemViolacoesCriticas(page, "404");
+
+    await voltar.focus();
+    await page.keyboard.press("Enter");
+    await expect(page).toHaveURL(/\/$/);
+    const logoHome = page.getByRole("link", { name: "Historietas", exact: true });
+    await expect(logoHome.locator(".historietas-home-logo-mark")).toHaveCSS("background-color", corDeFundo);
+    expect(documentos404).toBe(1);
+  });
+
   test(`obra pública integra o baseline axe após renderizar o conteúdo (${dispositivo})`, async ({ page }) => {
     test.skip(
       !publicWorkSlug,

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { isAuthSessionMissingError } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 import {
@@ -10,17 +11,19 @@ import {
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() || "";
 
-function removerCookiesAuthInvalidos() {
-  if (typeof document === "undefined" || !supabaseUrl) {
-    return;
-  }
+function listarCookiesDaSessao() {
+  if (!supabaseUrl) return [];
 
   const nomes = document.cookie
     .split(";")
     .map((cookie) => cookie.split("=", 1)[0]?.trim() || "")
     .filter(Boolean);
 
-  obterNomesCookiesSessaoSupabase(nomes, supabaseUrl).forEach((nome) => {
+  return obterNomesCookiesSessaoSupabase(nomes, supabaseUrl);
+}
+
+function removerCookiesAuthInvalidos() {
+  listarCookiesDaSessao().forEach((nome) => {
     document.cookie = `${nome}=; Path=/; Max-Age=0; SameSite=Lax`;
   });
 }
@@ -30,6 +33,15 @@ export default function SupabaseSessionRecovery() {
 
   useEffect(() => {
     let ativo = true;
+    const haviaCookiesDaSessao = listarCookiesDaSessao().length > 0;
+
+    function atualizarRotaAposLimpeza(error: unknown) {
+      // Um visitante já anônimo não mudou de sessão. Revalidar uma URL 404
+      // nesse caso faria o roteador carregar o mesmo documento de novo.
+      if (ativo && (haviaCookiesDaSessao || !isAuthSessionMissingError(error))) {
+        router.refresh();
+      }
+    }
 
     async function validarSessao() {
       try {
@@ -50,9 +62,7 @@ export default function SupabaseSessionRecovery() {
 
         removerCookiesAuthInvalidos();
 
-        if (ativo) {
-          router.refresh();
-        }
+        atualizarRotaAposLimpeza(error);
       } catch (error) {
         if (!ativo || !erroExigeLimpezaSessaoLocal(error)) {
           return;
@@ -60,9 +70,7 @@ export default function SupabaseSessionRecovery() {
 
         removerCookiesAuthInvalidos();
 
-        if (ativo) {
-          router.refresh();
-        }
+        atualizarRotaAposLimpeza(error);
       }
     }
 

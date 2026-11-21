@@ -64,6 +64,8 @@ const nextConfig: NextConfig = {
     HISTORIETAS_RECOMENDACOES_ORIGEM_PRODUCAO: recomendacoesProducao ? origemProducao : "",
   },
   poweredByHeader: false,
+  // Inclui o título da obra ou do capítulo no <head> do primeiro documento.
+  htmlLimitedBots: /.*/,
   async headers() {
     return [
       {

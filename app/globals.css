@@ -327,3 +327,23 @@ pre {
     animation-iteration-count: 1 !important;
   }
 }
+
+/* Evita piscar o indicador da rota nas transições rápidas. */
+.historietas-loading-page {
+  animation: mostrar-carregamento-da-rota 0s 250ms backwards;
+}
+
+@keyframes mostrar-carregamento-da-rota {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes historietas-loading-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .historietas-loading-page .historietas-loading-spinner {
+    animation: none !important;
+  }
+}
